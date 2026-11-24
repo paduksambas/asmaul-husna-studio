@@ -100,6 +100,7 @@ Ikuti urutan ini. Jangan melewati pemeriksaan Preview sebelum perubahan dinyatak
 - [x] Hubungkan repository GitHub dengan integrasi Git Vercel (diverifikasi 24 November 2026: project `asmaul-husna-studio` terhubung ke `paduksambas/asmaul-husna-studio`).
 - [x] Verifikasi deployment otomatis setelah push ke `main`: commit `33a95d7ea0c483114f661cdb967b07a617603c86` otomatis menghasilkan deployment Production Vercel berstatus READY pada 24 November 2026.
 - [ ] Uji interaksi aplikasi di laptop: seluruh 99 nama, pencarian, tema, rasio, animasi, durasi, dan reset.
+- [ ] Uji ulang animasi setelah perbaikan visual pada Preview/Production; pengguna sebelumnya melaporkan animasi tidak terlihat.
 - [x] Uji unggah gambar dan audio yang valid serta tampil/fungsinya di pratinjau (dikonfirmasi pengguna).
 - [x] Uji pratinjau media dan sinkronisasi audio dasar (dikonfirmasi pengguna).
 - [ ] Uji penolakan file tidak valid dan penanganan izin browser.
@@ -151,3 +152,6 @@ Ikuti urutan ini. Jangan melewati pemeriksaan Preview sebelum perubahan dinyatak
 ---
 
 **Aturan kelanjutan:** setiap sesi kerja harus dimulai dengan membaca dokumen ini, memperbarui checklist sesuai hasil nyata, dan melanjutkan dari tugas pertama yang belum dicentang.
+
+
+**Perbaikan animasi (24 November 2026):** setelah pengguna melaporkan animasi tidak berfungsi, efek float diperkuat, zoom diperjelas, shimmer dipercepat/diberi pulsa cahaya, dan partikel latar dibuat lebih terlihat saat pratinjau diputar. Source commit `84a094df5d80906bbe198300ef81eadfae953ec6`; deployment Vercel otomatis berstatus READY (`dpl_AqtSJMZTCsyRgCPjhfGMD4LwzkyD`). Perbaikan sudah ter-deploy, tetapi hasil visual perlu dikonfirmasi ulang oleh pengguna di browser.
