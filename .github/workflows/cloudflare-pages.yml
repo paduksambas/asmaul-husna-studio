@@ -42,11 +42,15 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          mkdir -p dist
+          mkdir -p dist/assets/audio
           cp index.html styles.css asmaul-husna.js app.js dist/
+          curl --fail --location --retry 3 --retry-delay 2 \
+            "https://raw.githubusercontent.com/mohammedfirdouss/MindfulVerse/e1f90102ff17b4cc6a8ea442ddfcb81719d5cbb5/apps/promo/public/audio/alhamdulillah-jawad-syed.m4a" \
+            --output dist/assets/audio/alhamdulillah-jawad-syed.m4a
           test -s dist/index.html
           test -s dist/app.js
-          echo "Prepared $(find dist -maxdepth 1 -type f | wc -l) static files."
+          test -s dist/assets/audio/alhamdulillah-jawad-syed.m4a
+          echo "Prepared $(find dist -type f | wc -l) static files including the licensed nasheed."
 
       - name: Ensure Cloudflare Pages project exists
         if: steps.credentials.outputs.ready == 'true'
