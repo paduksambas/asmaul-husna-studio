@@ -192,7 +192,13 @@
     state.start=performance.now()-state.elapsed*1000;state.playing=true;
     byId('playIcon').textContent='Ⅱ';byId('playButton').setAttribute('aria-label','Jeda pratinjau');
     byId('transportStatus').textContent=state.recorder?'Merekam video…':'Pratinjau berjalan';
-    if(state.audioUrl){if(state.elapsed===0)audio.currentTime=0;audio.play().catch(()=>{});}
+    if(state.audioUrl){
+      if(state.backgroundAudioSource&&state.speechAudioContext&&state.speechAudioContext.state!=='running'){
+        state.speechAudioContext.resume().catch(()=>{});
+      }
+      if(state.elapsed===0)audio.currentTime=0;
+      audio.play().catch(()=>{});
+    }
     ensureRenderLoop();
   }
   function loop(now) {
@@ -258,6 +264,13 @@
     }
     return state.audioDestination;
   }
+  function attachAudioMixTrack(stream, audioDestination) {
+    const track = audioDestination.stream.getAudioTracks()[0];
+    if (!track || typeof track.clone !== 'function') {
+      throw new Error('Browser tidak dapat menggandakan track audio untuk ekspor.');
+    }
+    stream.addTrack(track.clone());
+  }
   function stopNarrationSources() {
     state.exportSources.forEach(entry => { try { (entry.source || entry).stop(); } catch (_) {} });
     state.exportSources = [];
@@ -301,7 +314,7 @@
         const context = ensureSpeechAudioContext();
         const audioDestination = ensureAudioMixDestination();
         await context.resume();
-        audioDestination.stream.getAudioTracks().forEach(track => stream.addTrack(track));
+        attachAudioMixTrack(stream, audioDestination);
       }
       state.chunks = [];
       const rec = new MediaRecorder(stream, { mimeType:mime, videoBitsPerSecond:8000000, audioBitsPerSecond:128000 });
@@ -391,7 +404,7 @@
       if (state.backgroundAudioGain) state.backgroundAudioGain.gain.setValueAtTime(0.18, context.currentTime);
 
       stream = canvas.captureStream(30);
-      audioDestination.stream.getAudioTracks().forEach(track => stream.addTrack(track));
+      attachAudioMixTrack(stream, audioDestination);
       state.chunks = [];
       recorder = new MediaRecorder(stream, { mimeType:mime, videoBitsPerSecond:8000000, audioBitsPerSecond:128000 });
       state.recorder = recorder;
@@ -454,7 +467,6 @@
         true
       );
 
-      recorder.start(500);
       state.index = 0;
       renderNames(byId('searchInput').value);
       state.elapsed = 0;
@@ -463,6 +475,8 @@
       state.exportAudioStart = context.currentTime + 0.25;
       startSpeechAnimation(true);
       updateCaptions();
+      draw(0);
+      recorder.start(500);
       ensureRenderLoop();
       byId('transportStatus').textContent = 'Merekam video + suara AI…';
       byId('speechStatus').textContent = 'Merekam 99 nama dengan preset ' + voice + '…';
