@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#101713" />
+  <meta name="description" content="Studio sederhana untuk merancang video Asmaul Husna dengan tema visual, animasi, dan berbagai rasio." />
+  <title>Asmaul Husna Studio</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Amiri:wght@400;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <a class="brand" href="./" aria-label="Asmaul Husna Studio beranda">
+        <span class="brand-mark">ن</span>
+        <span class="brand-copy"><strong>ASMAUL HUSNA</strong><small>VIDEO STUDIO</small></span>
+      </a>
+      <div class="topbar-center"><span class="status-dot"></span><span id="saveStatus">Tersimpan di perangkat</span></div>
+      <div class="topbar-actions">
+        <button class="icon-button" id="helpButton" title="Panduan singkat" aria-label="Panduan singkat">?</button>
+        <button class="button button-outline button-small" id="resetButton">Atur ulang</button>
+        <button class="button button-primary button-small" id="exportTopButton"><span class="button-icon">↧</span> Ekspor video</button>
+      </div>
+    </header>
+
+    <main class="workspace">
+      <aside class="library-panel panel">
+        <div class="panel-heading">
+          <div><p class="eyebrow">PERPUSTAKAAN</p><h1>Asmaul Husna</h1></div>
+          <span class="count-pill">99 nama</span>
+        </div>
+        <label class="search-box" for="searchInput"><span>⌕</span><input id="searchInput" type="search" placeholder="Cari nama atau arti..." autocomplete="off" /></label>
+        <div class="library-tools"><span id="resultCount">99 nama</span><button id="clearSearch" class="text-button">Bersihkan</button></div>
+        <div class="name-list" id="nameList" aria-label="Daftar Asmaul Husna"></div>
+        <div class="library-note"><span class="note-icon">✦</span><span>Pilih nama untuk memperbarui adegan video.</span></div>
+      </aside>
+
+      <section class="editor-area">
+        <div class="editor-heading">
+          <div><p class="eyebrow">RUANG KREASI</p><h2>Pratinjau komposisi</h2></div>
+          <div class="project-title"><span class="project-label">PROYEK</span><input id="projectName" value="Asmaul Husna — Video 01" aria-label="Nama proyek" maxlength="60" /></div>
+        </div>
+
+        <div class="stage-wrap">
+          <div class="stage-toolbar">
+            <div class="stage-meta"><span class="live-indicator"></span><span>LIVE PREVIEW</span></div>
+            <div class="stage-tools"><span id="dimensionLabel">9:16 · 1080 × 1920</span><button id="fullscreenButton" class="stage-icon" aria-label="Layar penuh" title="Layar penuh">⛶</button></div>
+          </div>
+          <div class="canvas-stage" id="canvasStage">
+            <canvas id="previewCanvas" width="1080" height="1920" aria-label="Pratinjau video Asmaul Husna"></canvas>
+            <div class="canvas-corner canvas-corner-tl"></div><div class="canvas-corner canvas-corner-br"></div>
+          </div>
+          <div class="stage-caption"><span id="previewName">Ar-Rahman</span><span class="caption-divider"></span><span id="previewMeaning">Maha Pengasih</span></div>
+        </div>
+
+        <div class="transport panel">
+          <div class="transport-main">
+            <button class="play-button" id="playButton" aria-label="Putar pratinjau"><span id="playIcon">▶</span></button>
+            <div class="timeline-copy"><strong id="transportStatus">Pratinjau siap</strong><span id="timeLabel">00:00 / 00:15</span></div>
+            <div class="timeline-track"><div class="timeline-fill" id="timelineFill"></div></div>
+            <button class="button button-outline button-small" id="snapshotButton">Simpan gambar</button>
+          </div>
+          <div class="transport-foot"><span><i class="tiny-dot"></i> Adegan tunggal</span><span id="renderHint">Animasi lembut aktif saat diputar</span></div>
+        </div>
+      </section>
+
+      <aside class="inspector-panel panel">
+        <div class="inspector-heading"><div><p class="eyebrow">PENGATURAN</p><h2>Editor adegan</h2></div><span class="settings-icon">☷</span></div>
+        <section class="control-section">
+          <div class="section-title"><span class="section-number">01</span><h3>Gaya visual</h3></div>
+          <div class="theme-grid" id="themeGrid">
+            <button class="theme-card active" data-theme="emerald"><span class="theme-swatch swatch-emerald"><i></i></span><span>Emerald</span></button>
+            <button class="theme-card" data-theme="midnight"><span class="theme-swatch swatch-midnight"><i></i></span><span>Midnight</span></button>
+            <button class="theme-card" data-theme="sand"><span class="theme-swatch swatch-sand"><i></i></span><span>Desert</span></button>
+            <button class="theme-card" data-theme="rose"><span class="theme-swatch swatch-rose"><i></i></span><span>Rose</span></button>
+          </div>
+        </section>
+        <section class="control-section">
+          <div class="section-title"><span class="section-number">02</span><h3>Format video</h3></div>
+          <div class="format-options" id="formatOptions">
+            <button class="format-option" data-format="landscape"><span class="format-shape shape-landscape"></span><span><b>Landscape</b><small>16:9</small></span></button>
+            <button class="format-option active" data-format="portrait"><span class="format-shape shape-portrait"></span><span><b>Portrait</b><small>9:16</small></span></button>
+            <button class="format-option" data-format="square"><span class="format-shape shape-square"></span><span><b>Square</b><small>1:1</small></span></button>
+          </div>
+        </section>
+        <section class="control-section">
+          <div class="section-title"><span class="section-number">03</span><h3>Tipografi & teks</h3></div>
+          <label class="field-label" for="arabicSize">Ukuran kaligrafi <output id="arabicSizeValue">100%</output></label>
+          <input class="range-input" id="arabicSize" type="range" min="70" max="130" value="100" />
+          <label class="field-label field-spaced" for="showTranslation"><span>Tampilkan arti</span><input id="showTranslation" type="checkbox" checked class="toggle-input" /><span class="toggle-ui"></span></label>
+          <label class="field-label" for="showTransliteration"><span>Tampilkan transliterasi</span><input id="showTransliteration" type="checkbox" checked class="toggle-input" /><span class="toggle-ui"></span></label>
+        </section>
+        <section class="control-section">
+          <div class="section-title"><span class="section-number">04</span><h3>Gerakan & durasi</h3></div>
+          <label class="field-label" for="animationSelect">Gaya animasi</label>
+          <select id="animationSelect" class="select-input">
+            <option value="float">Gentle float</option><option value="zoom">Slow zoom</option><option value="shimmer">Soft shimmer</option><option value="none">Tanpa animasi</option>
+          </select>
+          <div class="duration-row"><label class="field-label" for="durationInput">Durasi video</label><strong><span id="durationValue">15</span> detik</strong></div>
+          <input class="range-input" id="durationInput" type="range" min="5" max="60" step="5" value="15" />
+        </section>
+        <section class="control-section assets-section">
+          <div class="section-title"><span class="section-number">05</span><h3>Media tambahan</h3></div>
+          <label class="upload-row" for="backgroundInput"><span class="upload-symbol">▧</span><span><b>Gambar latar</b><small id="backgroundFileLabel">Gunakan latar bawaan</small></span><span class="upload-action">Pilih</span></label>
+          <input class="visually-hidden" id="backgroundInput" type="file" accept="image/*" />
+          <label class="upload-row" for="audioInput"><span class="upload-symbol">♫</span><span><b>Audio / murottal</b><small id="audioFileLabel">Tambahkan audio sendiri</small></span><span class="upload-action">Pilih</span></label>
+          <input class="visually-hidden" id="audioInput" type="file" accept="audio/*" />
+          <button class="remove-media" id="removeMediaButton">Hapus media tambahan</button>
+        </section>
+        <div class="inspector-bottom"><span class="secure-icon">◈</span><span>Proyek tersimpan lokal di browser ini.</span></div>
+      </aside>
+    </main>
+
+    <footer class="footer"><span>ASMAUL HUSNA STUDIO <i>·</i> BETA 1.0</span><span>Dibuat untuk berbagi kebaikan <b>✦</b></span></footer>
+  </div>
+
+  <div class="modal-backdrop hidden" id="helpModal" role="dialog" aria-modal="true" aria-labelledby="helpTitle">
+    <div class="help-modal"><button class="modal-close" id="closeHelp" aria-label="Tutup">×</button><p class="eyebrow">MULAI BERKREASI</p><h2 id="helpTitle">Selamat datang di studio.</h2><p>Pilih salah satu nama di perpustakaan, tentukan tema dan format video, lalu tekan putar untuk melihat animasi. Tambahkan gambar latar atau audio milikmu dari panel pengaturan.</p><div class="help-tip"><b>Catatan ekspor</b><span>Video diunduh dalam format WebM. Dukungan perekaman mengikuti kemampuan browser; Chrome atau Edge desktop direkomendasikan.</span></div><button class="button button-primary" id="gotItButton">Mulai berkarya</button></div>
+  </div>
+
+  <div class="export-overlay hidden" id="exportOverlay" role="status" aria-live="polite"><div class="export-card"><div class="export-spinner"></div><strong id="exportTitle">Menyiapkan video...</strong><span id="exportMessage">Jangan tutup tab ini selama proses ekspor.</span><button class="button button-outline button-small hidden" id="cancelExportButton">Hentikan ekspor</button></div></div>
+  <audio id="backgroundAudio" preload="auto" loop></audio>
+  <script src="./asmaul-husna.js"></script>
+  <script src="./app.js"></script>
+</body>
+</html>
