@@ -88,14 +88,17 @@
         </section>
         <section class="control-section">
           <div class="section-title"><span class="section-number">03</span><h3>Tipografi & teks</h3></div>
-          <label class="field-label" for="arabicVerticalOffset">Posisi kaligrafi Arab (−: atas, +: bawah) <output id="arabicVerticalOffsetValue">0</output></label>
-          <input class="range-input" id="arabicVerticalOffset" type="range" min="-40" max="40" step="1" value="0" />
+          <div class="text-control-group">
+            <div class="text-control-group-title">Kaligrafi Arab</div>
+            <label class="field-label" for="arabicVerticalOffset">Posisi kaligrafi Arab (−: atas, +: bawah) <output id="arabicVerticalOffsetValue">0</output></label>
+            <input class="range-input" id="arabicVerticalOffset" type="range" min="-40" max="40" step="1" value="0" />
+            <label class="field-label field-spaced" for="arabicTextGap">Jarak Arab → transliterasi <output id="arabicTextGapValue">0</output></label>
+            <input class="range-input" id="arabicTextGap" type="range" min="-40" max="40" step="1" value="0" />
+          </div>
           <label class="field-label field-spaced" for="arabicSize">Ukuran kaligrafi <output id="arabicSizeValue">100%</output></label>
           <input class="range-input" id="arabicSize" type="range" min="70" max="130" value="100" />
           <label class="field-label field-spaced" for="showTranslation"><span>Tampilkan arti</span><input id="showTranslation" type="checkbox" checked class="toggle-input" /><span class="toggle-ui"></span></label>
           <label class="field-label" for="showTransliteration"><span>Tampilkan transliterasi</span><input id="showTransliteration" type="checkbox" checked class="toggle-input" /><span class="toggle-ui"></span></label>
-          <label class="field-label field-spaced" for="arabicTextGap">Jarak Arab → transliterasi <output id="arabicTextGapValue">0</output></label>
-          <input class="range-input" id="arabicTextGap" type="range" min="-40" max="40" step="1" value="0" />
           <label class="field-label field-spaced" for="textMeaningGap">Jarak transliterasi → arti <output id="textMeaningGapValue">0</output></label>
           <input class="range-input" id="textMeaningGap" type="range" min="-40" max="40" step="1" value="0" />
         </section>
