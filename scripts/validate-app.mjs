@@ -113,7 +113,10 @@ assert.ok(html.includes('<option value="tasbih">Tasbih Emas 99 · ruang 3D</opti
 assert.ok(app.includes("if(state.template==='tasbih'){drawTasbihTemplate(t,item);return;}"), 'tasbih template must bypass the generic background and scene composition');
 assert.match(app, /tasbihTransitionStart:0, tasbihFromIndex:0, tasbihToIndex:0/, 'Tasbih scene must track its own bead transition state');
 assert.match(app, /state\.template === 'tasbih'[\s\S]*?state\.tasbihTransitionStart = now/, 'Tasbih name changes must trigger a dedicated light transition');
-assert.match(app, /const forward=active\?u\*\(\.022\+\.012\*pulse\):0/, 'the active Tasbih bead must move toward the camera');
+assert.match(app, /const projectTasbihPoint=\(angle,scale=1,zBoost=0\)=>/, 'Tasbih beads must use a dedicated 3D perspective projection');
+assert.match(app, /const yaw=spin, pitch=\.48\+Math\.sin\(elapsed\*\.22\)\*\.025, focal=u\*2\.15/, 'Tasbih camera must animate yaw and subtle pitch');
+assert.match(app, /focal\/Math\.max\(focal\*\.72,focal-rotatedZ\)/, 'Tasbih bead size and position must respond to camera depth');
+assert.match(app, /active\?u\*\(\.045\+\.012\*pulse\):0/, 'the active Tasbih bead must move toward the camera');
 assert.match(app, /const ribbon=ctx\.createLinearGradient[\s\S]*?ctx\.ellipse\(cx,ringY,u\*\.315,u\*\.245,0,fromAngle,toAngle,delta<0\)/, 'a travelling light ribbon must follow the ring between selected beads');
 assert.match(app, /const sheenAngle=elapsed\*\.34/, 'polished beads must receive a moving specular highlight');
 assert.match(app, /Tiny white-gold reflection at the upper-left of each bead/, 'gold beads must render a distinct material highlight');
