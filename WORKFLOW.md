@@ -97,7 +97,8 @@ Ikuti urutan ini. Jangan melewati pemeriksaan Preview sebelum perubahan dinyatak
 - [x] Deployment Production awal berstatus READY.
 - [x] Deployment Preview berstatus READY.
 - [x] Pemeriksaan HTTP untuk halaman utama, CSS, JavaScript aplikasi, dan data Asmaul Husna menghasilkan status 200.
-- [ ] Hubungkan repository GitHub dengan integrasi Git Vercel agar deployment otomatis berjalan saat ada push.
+- [x] Hubungkan repository GitHub dengan integrasi Git Vercel (diverifikasi 24 November 2026: project `asmaul-husna-studio` terhubung ke `paduksambas/asmaul-husna-studio`).
+- [ ] Verifikasi deployment otomatis baru setelah push commit berikutnya ke `main`.
 - [ ] Uji interaksi aplikasi di laptop: seluruh 99 nama, pencarian, tema, rasio, animasi, durasi, dan reset.
 - [ ] Uji unggah gambar dan audio, termasuk kondisi file tidak valid dan izin browser.
 - [ ] Uji pratinjau dan sinkronisasi audio selama pemutaran.
@@ -139,12 +140,12 @@ Ikuti urutan ini. Jangan melewati pemeriksaan Preview sebelum perubahan dinyatak
 **Commit panduan ekspor:** `921593e9d5ee7a62a9783ad7b867d05c27134ba0`  
 **Perubahan:** efisiensi loop pratinjau, ketahanan saat localStorage tidak tersedia, dan pencegahan gangguan kontrol selama ekspor.  
 **Status deployment:** Production yang aktif masih menggunakan commit `e2a150244138d7c98c51f29466831a5654f8e43f`. Preview terbaru READY (`dpl_8qow3ndYtecdmteob2cUbD337CBP`, https://asmaul-husna-studio-fc5v2juwr-paduka-sambas.vercel.app), dibuat dari repository GitHub branch `main`, commit `040fabb49e4c54f42f41adab4c72bd03439f5041`; build Vercel selesai. Commit sesudahnya hanya memperbarui dokumen WORKFLOW; source aplikasi (`app.js`, `index.html`, `styles.css`, `asmaul-husna.js`) tetap sama dengan source yang dibangun pada Preview.  
-**Catatan integrasi:** GitHub Integration belum terhubung ke project Vercel. Deployment yang sudah ada dibuat melalui transfer source langsung.  
+**Catatan integrasi (pembaruan 24 November 2026):** pemeriksaan Vercel Git Deployment Context kini mengonfirmasi project `asmaul-husna-studio` sudah terhubung ke repository GitHub `paduksambas/asmaul-husna-studio` pada tim `paduka-sambas`. Deployment Preview yang terakhir diperiksa tetap READY dan menunjuk ke commit `040fabb49e4c54f42f41adab4c72bd03439f5041`. Otomatisasi deployment dari push baru belum diverifikasi dengan commit uji baru.  
 **Pemeriksaan source:** 99 data nama terdeteksi; seluruh 44 referensi elemen DOM unik di `app.js` cocok dengan 45 ID HTML, tanpa ID HTML duplikat. Pemeriksaan ini statis, bukan pengujian browser.  
 **Perbaikan sesi 24 November 2026:** notifikasi ekspor kini menampilkan ekstensi format yang benar (MP4 atau WebM), dan catatan batasan format di WORKFLOW diselaraskan dengan deteksi MIME `MediaRecorder`. Pemeriksaan statis ulang: 99 entri data, 44 referensi DOM unik di `app.js` semuanya tersedia di HTML, tanpa ID HTML duplikat. Pemeriksaan ini belum menggantikan uji interaksi browser, unggah media, dan pemutaran hasil ekspor.
 **Validasi statis tambahan:** parser JavaScript menerima `app.js` dan `asmaul-husna.js` tanpa kesalahan sintaks. Seluruh 44 ID yang dirujuk `app.js` ditemukan di `index.html`; tidak ada ID ganda; data terdiri dari 99 entri. Ini belum menguji perilaku runtime.
-**Pembaruan tahap berikutnya:** akses Git Vercel untuk tim saat ini hanya menampilkan project lain (`md-v14-paduka-sambas`) sebagai Git-linked; project `asmaul-husna-studio` belum tersambung. `create_git_project` tidak dapat menyambungkan ulang project existing yang tidak linked, sehingga jangan membuat project duplikat. Penyambungan harus dilakukan melalui pengaturan Git Repository pada Vercel Dashboard dengan otorisasi GitHub pengguna. Pemeriksaan URL Preview lewat pembuka web tidak dapat mengambil halaman (tool menolak URL), jadi HTTP/browser functional checks tetap belum terverifikasi pada sesi ini.
-**Pembaruan jalur perangkat:** iPad A17 Pro ditetapkan sebagai perangkat kerja penuh melalui GitHub Codespaces (Safari), selain laptop. Konfigurasi Codespaces telah ditambahkan pada `.devcontainer/devcontainer.json`; pembuatan/penyalakan Codespace dari akun pengguna dan pengujian langsung di iPad masih perlu dilakukan. **Tahap kerja berikutnya:** uji preview baru di browser, verifikasi ekspor MP4/WebM dan audio, lalu nyalakan Codespace di iPad untuk pengujian fungsi penuh dari kedua perangkat.
+**Pembaruan tahap berikutnya:** integrasi Git Vercel sudah diverifikasi tersambung. Pemeriksaan URL Preview lewat pembuka web tetap tidak dapat mengambil halaman (tool menolak URL), sehingga pengujian browser fungsional belum terverifikasi melalui sesi ini.
+**Pembaruan jalur perangkat:** iPad A17 Pro ditetapkan sebagai perangkat kerja penuh melalui GitHub Codespaces (Safari), selain laptop. Konfigurasi Codespaces telah ditambahkan pada `.devcontainer/devcontainer.json`. Pengguna menyatakan Codespaces sudah aktif; namun sesi editor, port 8000, dan server belum dapat diperiksa dari integrasi yang tersedia. **Tahap kerja berikutnya:** verifikasi editor/port 8000 dan uji aplikasi langsung dari browser Codespaces, lanjutkan uji fitur MP4/WebM, audio, serta layout iPad.
 
 ---
 
