@@ -236,6 +236,16 @@
     sheen.addColorStop(0,'#ffe8ae24');sheen.addColorStop(1,'#ffe8ae00');
     ctx.fillStyle=sheen;ctx.fillRect(cx-u*.43,ringY-u*.34,u*.86,u*.68);
     beads.sort((a,b)=>a.depth-b.depth);
+    // A real misbaha reads as a connected strand: draw the dark silk cord first,
+    // then the 99 beads over it so tiny gaps reveal the thread between beads.
+    ctx.save();
+    ctx.beginPath();
+    for(let step=0;step<=198;step++){
+      const p=projectTasbihPoint(step/198*Math.PI*2,1);
+      if(step===0)ctx.moveTo(p.x,p.y);else ctx.lineTo(p.x,p.y);
+    }
+    ctx.closePath();ctx.strokeStyle='#17100a';ctx.lineWidth=u*.009;ctx.lineCap='round';ctx.stroke();
+    ctx.strokeStyle='#d6a64b55';ctx.lineWidth=u*.0022;ctx.stroke();ctx.restore();
     beads.forEach(b=>{
       const r=b.r;ctx.save();ctx.globalAlpha=.15+.85*formation;
       // Soft contact shadow adds separation from the dark scene.
@@ -249,6 +259,40 @@
       ctx.globalAlpha*=b.active?.9:.52;ctx.fillStyle='#fff7dc';ctx.beginPath();ctx.ellipse(b.x-r*.27,b.y-r*.34,r*.19,r*.1,-.6,0,Math.PI*2);ctx.fill();
       ctx.restore();
     });
+    // Three small separator spacers mark the traditional 33-bead sections.
+    [32,65,98].forEach(index=>{
+      const bead=beads[index];if(!bead)return;
+      const r=bead.r*1.24;
+      ctx.save();ctx.shadowColor='#f4c66e';ctx.shadowBlur=u*.009;
+      const spacer=ctx.createLinearGradient(bead.x-r,bead.y-r,bead.x+r,bead.y+r);
+      spacer.addColorStop(0,'#fff0bd');spacer.addColorStop(.32,'#d6a34d');spacer.addColorStop(.7,'#8b5b20');spacer.addColorStop(1,'#f8d98d');
+      ctx.fillStyle=spacer;ctx.beginPath();ctx.ellipse(bead.x,bead.y,r*.72,r*1.38,bead.angle,0,Math.PI*2);ctx.fill();
+      ctx.strokeStyle='#ffe6a0';ctx.lineWidth=u*.001;ctx.stroke();ctx.restore();
+    });
+    // Imam bead (the larger terminal bead), connector and silk tassel make
+    // the silhouette unmistakably resemble a physical prayer bead strand.
+    const imam=projectTasbihPoint(-Math.PI/2,1.04,u*.008);
+    const imamR=u*.018*imam.perspective;
+    ctx.save();ctx.strokeStyle='#b88942';ctx.lineWidth=u*.004;ctx.lineCap='round';
+    ctx.beginPath();ctx.moveTo(imam.x,imam.y-imamR*.72);ctx.lineTo(imam.x,imam.y-imamR*1.55);ctx.stroke();
+    const imamGrad=ctx.createRadialGradient(imam.x-imamR*.35,imam.y-imamR*.42,imamR*.05,imam.x,imam.y,imamR*1.2);
+    imamGrad.addColorStop(0,'#fff8dc');imamGrad.addColorStop(.25,'#f2d18a');imamGrad.addColorStop(.62,'#b77b2d');imamGrad.addColorStop(1,'#573515');
+    ctx.fillStyle=imamGrad;ctx.shadowColor='#f6cf79';ctx.shadowBlur=u*.018;
+    ctx.beginPath();ctx.ellipse(imam.x,imam.y-imamR*.5,imamR*.82,imamR*1.22,0,0,Math.PI*2);ctx.fill();
+    ctx.strokeStyle='#f8dfa0';ctx.lineWidth=u*.0014;ctx.stroke();ctx.shadowBlur=0;
+    // Tassel cap and multiple fine hanging silk strands.
+    const capY=imam.y-imamR*1.85,capW=imamR*.78;
+    ctx.fillStyle='#c39245';ctx.beginPath();ctx.roundRect(imam.x-capW/2,capY-imamR*.38,capW,imamR*.72,imamR*.18);ctx.fill();
+    ctx.strokeStyle='#e5c078';ctx.lineWidth=u*.0015;ctx.stroke();
+    ctx.strokeStyle='#c69a50';ctx.lineWidth=Math.max(1,u*.0018);
+    for(let strand=0;strand<13;strand++){
+      const offset=(strand-6)*imamR*.105;
+      const sway=Math.sin(elapsed*1.15+strand*.55)*imamR*.12;
+      ctx.beginPath();ctx.moveTo(imam.x+offset*.35,capY);
+      ctx.bezierCurveTo(imam.x+offset+sway,capY+imamR*.7,imam.x+offset*.8-sway,capY+imamR*1.35,imam.x+offset*.72,capY+imamR*(2.05+(strand%3)*.12));
+      ctx.stroke();
+    }
+    ctx.restore();
     const activeBead=beads.find(b=>b.active);
     if(activeBead&&opening>=.8){
       const haloPulse=.5+.5*Math.sin(elapsed*2.4);
