@@ -203,7 +203,7 @@
     ctx.save();
     ctx.globalAlpha = nameFade;
     ctx.textAlign='center';ctx.textBaseline='middle';
-    ctx.save();ctx.translate(cx,cy-u*(.14-state.arabicVerticalOffset*.001)+floatY);ctx.scale(zoom*floatScale,zoom*floatScale);
+    ctx.save();ctx.translate(cx,cy-u*(.14-state.arabicVerticalOffset*.0025)+floatY);ctx.scale(zoom*floatScale,zoom*floatScale);
     let font=u*.126*(state.size/100);ctx.font='700 '+font+'px "Amiri",serif';
     while(ctx.measureText(item[1]).width>w*.82&&font>u*.065){font*=.94;ctx.font='700 '+font+'px "Amiri",serif';}
     ctx.shadowColor=c[3]+'55';ctx.shadowBlur=u*(.022+(motionActive?ambientPulse*.004:0));
