@@ -17,7 +17,7 @@
     square: [1080,1080,'1:1 · 1080 × 1080']
   };
   const state = { index:0, theme:'emerald', format:'portrait', animation:'float', duration:15, size:100,
-    translation:true, transliteration:true, arabicVerticalOffset:0, arabicTextGap:0, textMeaningGap:0, builtinMusicEnabled:true, builtinMusicVolume:18, builtinMusicBuffer:null, builtinMusicSource:null, builtinMusicGain:null, playing:false, elapsed:0, start:0, image:null, imageUrl:'',
+    translation:true, transliteration:true, arabicVerticalOffset:0, arabicTextGap:0, textMeaningGap:0, builtinMusicEnabled:true, builtinMusicVolume:18, builtinMusicBuffer:null, builtinMusicSource:null, builtinMusicGain:null, builtinMusicStarting:false, builtinMusicPreview:false, playing:false, elapsed:0, start:0, image:null, imageUrl:'',
     audioUrl:'', recorder:null, chunks:[], timer:0, audioDestination:null, backgroundAudioSource:null, backgroundAudioGain:null,
     ttsPipeline:null, ttsLoadPromise:null, ttsBackend:'', ttsBusy:false, ttsStop:false, speechAudioContext:null, speechSource:null,
     speechAnimating:false, speechAnimationStart:0, renderLoopActive:false, transitionStart:0, transitionDuration:420,
@@ -271,32 +271,56 @@
     const seconds = 16, sampleRate = context.sampleRate, length = Math.floor(seconds * sampleRate);
     const buffer = context.createBuffer(1, length, sampleRate), samples = buffer.getChannelData(0);
     const melody = [330,392,440,392,330,294,330,220];
+    let peak = 0;
     for (let i = 0; i < length; i++) {
       const t = i / sampleRate, beat = Math.floor(t / 2), local = t - beat * 2;
       const slow = 0.5 + 0.5 * Math.sin(2 * Math.PI * t / seconds);
-      const pad = Math.sin(2*Math.PI*110*t)*0.105 + Math.sin(2*Math.PI*165*t)*0.064 + Math.sin(2*Math.PI*220*t)*0.045 + Math.sin(2*Math.PI*330*t)*0.022;
-      const attack = Math.min(1, local / 0.16), decay = Math.exp(-local * 1.55);
-      const pluck = (Math.sin(2*Math.PI*melody[beat]*t) + 0.22*Math.sin(2*Math.PI*melody[beat]*2*t)) * attack * decay * 0.105;
-      const air = Math.sin(2*Math.PI*440*t + Math.sin(2*Math.PI*t/seconds)*0.16) * 0.012;
-      const edge = Math.min(1, t / 0.18, (seconds - t) / 0.18);
-      samples[i] = (pad * (0.88 + slow * 0.12) + pluck + air) * Math.max(0, edge);
+      const phrase = Math.floor(t / 4);
+      const root = [110,98,130.81,110][phrase];
+      const pad = Math.sin(2*Math.PI*root*t)*0.20 + Math.sin(2*Math.PI*root*1.5*t)*0.105 + Math.sin(2*Math.PI*root*2*t)*0.075 + Math.sin(2*Math.PI*root*3*t)*0.035;
+      const attack = Math.min(1, local / 0.12), decay = Math.exp(-local * 1.2);
+      const pluck = (Math.sin(2*Math.PI*melody[beat]*t) + 0.28*Math.sin(2*Math.PI*melody[beat]*2*t)) * attack * decay * 0.17;
+      const air = Math.sin(2*Math.PI*440*t + Math.sin(2*Math.PI*t/seconds)*0.16) * 0.022;
+      const edge = Math.min(1, t / 0.22, (seconds - t) / 0.22);
+      samples[i] = (pad * (0.9 + slow * 0.1) + pluck + air) * Math.max(0, edge);
+      peak = Math.max(peak, Math.abs(samples[i]));
     }
+    // Normalize the generated track so that the user volume slider has an audible range.
+    const normalization = 0.82 / Math.max(peak, 0.0001);
+    for (let i = 0; i < length; i++) samples[i] *= normalization;
     state.builtinMusicBuffer = buffer;
     return buffer;
   }
-  function startBuiltinMusic(offset=0) {
-    if (!state.builtinMusicEnabled || state.builtinMusicVolume <= 0 || state.builtinMusicSource) return;
-    const context = ensureSpeechAudioContext();
-    if (context.state !== 'running') context.resume().catch(() => {});
-    const source = context.createBufferSource(), gain = context.createGain();
-    source.buffer = createBuiltinMusicBuffer(context); source.loop = true;
-    const now = context.currentTime, volume = state.builtinMusicVolume / 100;
-    gain.gain.setValueAtTime(0, now); gain.gain.linearRampToValueAtTime(volume, now + 0.35);
-    source.connect(gain); gain.connect(context.destination);
-    if (state.audioDestination) gain.connect(state.audioDestination);
-    source.onended = () => { if (state.builtinMusicSource === source) { state.builtinMusicSource = null; state.builtinMusicGain = null; } };
-    state.builtinMusicSource = source; state.builtinMusicGain = gain;
-    source.start(now, Math.max(0, offset) % source.buffer.duration);
+  async function startBuiltinMusic(offset=0) {
+    if (!state.builtinMusicEnabled || state.builtinMusicVolume <= 0 || state.builtinMusicSource || state.builtinMusicStarting) return;
+    state.builtinMusicStarting = true;
+    try {
+      const context = ensureSpeechAudioContext();
+      // Call resume inside the user gesture path so Safari/iOS can unlock audio playback.
+      if (context.state !== 'running') await context.resume();
+      if (!state.builtinMusicEnabled || state.builtinMusicVolume <= 0 || !(state.playing || state.builtinMusicPreview) || state.builtinMusicSource) return;
+      const source = context.createBufferSource(), gain = context.createGain();
+      source.buffer = createBuiltinMusicBuffer(context); source.loop = true;
+      const now = context.currentTime, volume = state.builtinMusicVolume / 100;
+      gain.gain.setValueAtTime(0, now); gain.gain.linearRampToValueAtTime(volume, now + 0.22);
+      source.connect(gain); gain.connect(context.destination);
+      if (state.audioDestination) gain.connect(state.audioDestination);
+      source.onended = () => { if (state.builtinMusicSource === source) { state.builtinMusicSource = null; state.builtinMusicGain = null; } };
+      state.builtinMusicSource = source; state.builtinMusicGain = gain;
+      source.start(now, Math.max(0, offset) % source.buffer.duration);
+    } catch (error) {
+      console.warn('Built-in ambient music could not start:', error);
+      notify('Audio belum dapat diputar. Coba tekan Dengarkan musik sekali lagi.');
+    } finally {
+      state.builtinMusicStarting = false;
+    }
+  }
+  function syncBuiltinMusic(offset=state.elapsed) {
+    if (state.builtinMusicEnabled && state.builtinMusicVolume > 0 && (state.playing || state.builtinMusicPreview)) {
+      startBuiltinMusic(offset);
+    } else {
+      stopBuiltinMusic();
+    }
   }
   function scheduleBuiltinMusic(context, audioDestination, startAt) {
     if (!state.builtinMusicEnabled || state.builtinMusicVolume <= 0) return;
@@ -308,7 +332,7 @@
     source.start(startAt);
   }
   function stopPlayback() {
-    state.playing=false;state.elapsed=0;audio.pause();stopBuiltinMusic();
+    state.playing=false;state.elapsed=0;audio.pause();syncBuiltinMusic();
     byId('playIcon').textContent='▶';byId('playButton').setAttribute('aria-label','Putar pratinjau');
     byId('transportStatus').textContent=state.recorder?'Mengekspor video…':'Pratinjau siap';
     byId('timelineFill').style.width='0%';updateCaptions();draw(0);
@@ -319,7 +343,7 @@
     state.start=performance.now()-state.elapsed*1000;state.playing=true;
     byId('playIcon').textContent='Ⅱ';byId('playButton').setAttribute('aria-label','Jeda pratinjau');
     byId('transportStatus').textContent=state.recorder?'Merekam video…':'Pratinjau berjalan';
-    if (state.builtinMusicEnabled) startBuiltinMusic(state.elapsed);
+    syncBuiltinMusic(state.elapsed);
     if(state.audioUrl){
       if(state.backgroundAudioSource&&state.speechAudioContext&&state.speechAudioContext.state!=='running'){
         state.speechAudioContext.resume().catch(()=>{});
@@ -894,7 +918,7 @@
   function reset() {
     stopSpeech(false);
     state.index=0;state.theme='emerald';state.format='portrait';state.animation='float';
-    state.duration=15;state.size=100;state.translation=true;state.transliteration=true;state.arabicVerticalOffset=0;state.arabicTextGap=0;state.textMeaningGap=0;state.builtinMusicEnabled=true;state.builtinMusicVolume=18;state.elapsed=0;
+    state.duration=15;state.size=100;state.translation=true;state.transliteration=true;state.arabicVerticalOffset=0;state.arabicTextGap=0;state.textMeaningGap=0;state.builtinMusicEnabled=true;state.builtinMusicVolume=18;state.builtinMusicPreview=false;byId('builtinMusicTestButton').textContent='Dengarkan musik';state.elapsed=0;
     byId('projectName').value='Asmaul Husna — Video 01';byId('searchInput').value='';
     removeMedia();renderNames('');applyControls();persist();stopPlayback();notify('Pengaturan dikembalikan ke awal.');
   }
@@ -916,10 +940,11 @@
      byId('textMeaningGap').addEventListener('input',e=>{state.textMeaningGap=Number(e.target.value);byId('textMeaningGapValue').textContent=(state.textMeaningGap>0?'+':'')+state.textMeaningGap;draw(0);persist();});
      byId('animationSelect').addEventListener('change',e=>{state.animation=e.target.value;byId('renderHint').textContent=state.animation==='none'?'Animasi dinonaktifkan':'Animasi lembut aktif saat diputar';draw(0);persist();});
     byId('durationInput').addEventListener('input',e=>{state.duration=Number(e.target.value);byId('durationValue').textContent=state.duration;updateCaptions();persist();});
-    byId('builtinMusicEnabled').addEventListener('change',e=>{state.builtinMusicEnabled=e.target.checked;if(state.playing){if(state.builtinMusicEnabled)startBuiltinMusic(state.elapsed);else stopBuiltinMusic();}persist();});
+    byId('builtinMusicEnabled').addEventListener('change',e=>{state.builtinMusicEnabled=e.target.checked;syncBuiltinMusic(state.elapsed);persist();});
+    byId('builtinMusicTestButton').addEventListener('click',()=>{state.builtinMusicPreview=!state.builtinMusicPreview;if(state.builtinMusicPreview){state.builtinMusicEnabled=true;byId('builtinMusicEnabled').checked=true;}byId('builtinMusicTestButton').textContent=state.builtinMusicPreview?'Hentikan contoh musik':'Dengarkan musik';syncBuiltinMusic(0);persist();});
     byId('builtinMusicVolume').addEventListener('input',e=>{state.builtinMusicVolume=Number(e.target.value);byId('builtinMusicVolumeValue').textContent=state.builtinMusicVolume+'%';if(state.builtinMusicGain)state.builtinMusicGain.gain.setTargetAtTime(state.builtinMusicVolume/100,state.speechAudioContext.currentTime,0.08);persist();});
     byId('projectName').addEventListener('input',persist);
-    byId('playButton').addEventListener('click',()=>{if(state.recorder){notify('Ekspor sedang berlangsung. Gunakan tombol Hentikan ekspor untuk menghentikannya.');return;}if(state.playing){state.playing=false;audio.pause();stopBuiltinMusic();byId('playIcon').textContent='▶';byId('transportStatus').textContent='Pratinjau dijeda';}else play();});
+    byId('playButton').addEventListener('click',()=>{if(state.recorder){notify('Ekspor sedang berlangsung. Gunakan tombol Hentikan ekspor untuk menghentikannya.');return;}if(state.playing){state.playing=false;audio.pause();syncBuiltinMusic();byId('playIcon').textContent='▶';byId('transportStatus').textContent='Pratinjau dijeda';}else play();});
     byId('snapshotButton').addEventListener('click',snapshot);
     byId('exportTopButton').addEventListener('click',exportVideo);
     byId('cancelExportButton').addEventListener('click',()=>stopExport(true));
