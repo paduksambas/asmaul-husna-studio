@@ -18,9 +18,11 @@
   };
   const state = { index:0, theme:'emerald', format:'portrait', animation:'float', duration:15, size:100,
     translation:true, transliteration:true, playing:false, elapsed:0, start:0, image:null, imageUrl:'',
-    audioUrl:'', recorder:null, chunks:[], timer:0, audioContext:null, audioDestination:null,
+    audioUrl:'', recorder:null, chunks:[], timer:0, audioDestination:null, backgroundAudioSource:null, backgroundAudioGain:null,
     ttsPipeline:null, ttsLoadPromise:null, ttsBackend:'', ttsBusy:false, ttsStop:false, speechAudioContext:null, speechSource:null,
-    speechAnimating:false, speechAnimationStart:0, renderLoopActive:false };
+    speechAnimating:false, speechAnimationStart:0, renderLoopActive:false,
+    exportBusy:false, exportPreparing:false, exportCancelled:false, narrationExportActive:false,
+    exportDuration:0, exportAudioStart:0, exportTimeline:[], exportSources:[], exportPreviousBackgroundGain:null };
   const clamp = (n,min,max) => Math.min(max,Math.max(min,n));
   const fileSafe = (s) => String(s || 'asmaul-husna').normalize('NFKD').replace(/[^a-z0-9_-]+/gi,'-').replace(/^-+|-+$/g,'').toLowerCase() || 'asmaul-husna';
   const timeText = (n) => {
@@ -83,7 +85,8 @@
     byId('previewName').textContent = item[0];
     byId('previewMeaning').textContent = item[2];
     byId('dimensionLabel').textContent = formats[state.format][2];
-    byId('timeLabel').textContent = timeText(state.elapsed) + ' / ' + timeText(state.duration);
+    const visibleDuration = state.narrationExportActive ? state.exportDuration : state.duration;
+    byId('timeLabel').textContent = timeText(state.elapsed) + ' / ' + timeText(visibleDuration);
   }
   function applyControls() {
     document.querySelectorAll('[data-theme]').forEach(b=>b.classList.toggle('active',b.dataset.theme===state.theme));
@@ -199,10 +202,27 @@
       return;
     }
     if (state.playing) {
-      state.elapsed = Math.min(state.duration, (now - state.start) / 1000);
-      byId('timelineFill').style.width = (state.elapsed / state.duration * 100) + '%';
-      byId('timeLabel').textContent = timeText(state.elapsed) + ' / ' + timeText(state.duration);
-      if (state.elapsed >= state.duration && !state.recorder) stopPlayback();
+      const activeDuration = state.narrationExportActive ? state.exportDuration : state.duration;
+      if (state.narrationExportActive && state.speechAudioContext && state.exportAudioStart) {
+        state.elapsed = clamp(state.speechAudioContext.currentTime - state.exportAudioStart, 0, activeDuration);
+        let nextIndex = 0;
+        for (let i = 1; i < state.exportTimeline.length; i++) {
+          if (state.elapsed >= state.exportTimeline[i]) nextIndex = i;
+          else break;
+        }
+        if (nextIndex !== state.index) {
+          state.index = nextIndex;
+          renderNames(byId('searchInput').value);
+          updateCaptions();
+          persist();
+          startSpeechAnimation(true);
+        }
+      } else {
+        state.elapsed = Math.min(activeDuration, (now - state.start) / 1000);
+      }
+      byId('timelineFill').style.width = (state.elapsed / activeDuration * 100) + '%';
+      byId('timeLabel').textContent = timeText(state.elapsed) + ' / ' + timeText(activeDuration);
+      if (state.elapsed >= activeDuration && !state.recorder) stopPlayback();
     }
     if (state.speechAnimating) draw((now - state.speechAnimationStart) / 1000);
     else if (state.playing) draw(state.elapsed);
@@ -225,52 +245,276 @@
     byId('exportTitle').textContent=title;byId('exportMessage').textContent=message;
     byId('cancelExportButton').classList.toggle('hidden',!cancel);byId('exportOverlay').classList.remove('hidden');
   }
-  function stopExport() {
-    if(state.recorder&&state.recorder.state!=='inactive'){
-      state.recorder.stop();byId('exportTitle').textContent='Menyelesaikan video…';
-      byId('exportMessage').textContent='Menyiapkan file unduhan.';byId('cancelExportButton').classList.add('hidden');
+  function ensureAudioMixDestination() {
+    const context = ensureSpeechAudioContext();
+    if (!state.audioDestination) state.audioDestination = context.createMediaStreamDestination();
+    if (state.audioUrl && !state.backgroundAudioSource) {
+      state.backgroundAudioSource = context.createMediaElementSource(audio);
+      state.backgroundAudioGain = context.createGain();
+      state.backgroundAudioGain.gain.value = 1;
+      state.backgroundAudioSource.connect(state.backgroundAudioGain);
+      state.backgroundAudioGain.connect(context.destination);
+      state.backgroundAudioGain.connect(state.audioDestination);
+    }
+    return state.audioDestination;
+  }
+  function stopNarrationSources() {
+    state.exportSources.forEach(source => { try { source.stop(); } catch (_) {} });
+    state.exportSources = [];
+  }
+  function stopExport(userCancelled=true) {
+    if (state.exportPreparing && !state.recorder) {
+      if (userCancelled) {
+        state.exportCancelled = true;
+        byId('exportTitle').textContent = 'Membatalkan ekspor…';
+        byId('exportMessage').textContent = 'Menghentikan persiapan audio AI dengan aman.';
+        byId('cancelExportButton').disabled = true;
+      }
+      return;
+    }
+    if (state.recorder && state.recorder.state !== 'inactive') {
+      if (userCancelled && state.narrationExportActive) state.exportCancelled = true;
+      if (state.narrationExportActive) {
+        stopNarrationSources();
+        audio.pause();
+      }
+      state.recorder.stop();
+      byId('exportTitle').textContent = 'Menyelesaikan video…';
+      byId('exportMessage').textContent = state.narrationExportActive && state.exportCancelled
+        ? 'Ekspor narasi dibatalkan. Membersihkan rekaman.'
+        : 'Menyiapkan file unduhan.';
+      byId('cancelExportButton').classList.add('hidden');
     }
   }
   async function exportVideo() {
-    if(state.recorder)return;
-    if(!canvas.captureStream||!window.MediaRecorder){notify('Ekspor video memerlukan browser Chrome atau Edge modern.');return;}
-    const mime=['video/mp4;codecs=avc1.42E01E,mp4a.40.2','video/mp4','video/webm;codecs=vp9,opus','video/webm;codecs=vp8,opus','video/webm'].find(x=>MediaRecorder.isTypeSupported(x));
-    if(!mime){notify('Browser ini belum mendukung ekspor MP4 atau WebM.');return;}
-    const fileExtension=mime.includes('mp4')?'mp4':'webm';
+    if (state.recorder || state.exportBusy) return;
+    if (state.ttsBusy) { notify('Hentikan pembacaan suara AI sebelum mengekspor video biasa.'); return; }
+    if (!canvas.captureStream || !window.MediaRecorder) { notify('Ekspor video memerlukan browser Chrome atau Edge modern.'); return; }
+    const mime = ['video/mp4;codecs=avc1.42E01E,mp4a.40.2','video/mp4','video/webm;codecs=vp9,opus','video/webm;codecs=vp8,opus','video/webm'].find(x => MediaRecorder.isTypeSupported(x));
+    if (!mime) { notify('Browser ini belum mendukung ekspor MP4 atau WebM.'); return; }
+    const fileExtension = mime.includes('mp4') ? 'mp4' : 'webm';
     let stream;
-    try{
-      stream=canvas.captureStream(30);
-      if(state.audioUrl){
-        const AC=window.AudioContext||window.webkitAudioContext;
-        if(!AC)throw new Error('Audio Web tidak tersedia pada browser ini.');
-        if(!state.audioContext){
-          state.audioContext=new AC();const source=state.audioContext.createMediaElementSource(audio);
-          state.audioDestination=state.audioContext.createMediaStreamDestination();
-          source.connect(state.audioDestination);source.connect(state.audioContext.destination);
-        }
-        await state.audioContext.resume();
-        state.audioDestination.stream.getAudioTracks().forEach(track=>stream.addTrack(track));
+    state.exportBusy = true;
+    try {
+      stream = canvas.captureStream(30);
+      if (state.audioUrl) {
+        const context = ensureSpeechAudioContext();
+        const audioDestination = ensureAudioMixDestination();
+        await context.resume();
+        audioDestination.stream.getAudioTracks().forEach(track => stream.addTrack(track));
       }
-      state.chunks=[];const rec=new MediaRecorder(stream,{mimeType:mime,videoBitsPerSecond:8000000});state.recorder=rec;
-      rec.ondataavailable=e=>{if(e.data&&e.data.size)state.chunks.push(e.data);};
-      rec.onerror=()=>{state.recorder=null;stream.getTracks().forEach(t=>t.stop());byId('exportOverlay').classList.add('hidden');stopPlayback();notify('Terjadi kesalahan saat merekam.');};
-      rec.onstop=()=>{
-        const blob=new Blob(state.chunks,{type:mime});stream.getTracks().forEach(t=>t.stop());
-        if(blob.size){
-          const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;
-          a.download=fileSafe(byId('projectName').value)+'.'+fileExtension;a.click();setTimeout(()=>URL.revokeObjectURL(url),15000);
-          notify('Video '+fileExtension.toUpperCase()+' berhasil dibuat dan diunduh.');
-        }else notify('Rekaman kosong. Coba lagi.');
-        state.recorder=null;state.chunks=[];clearTimeout(state.timer);
-        byId('exportOverlay').classList.add('hidden');stopPlayback();
+      state.chunks = [];
+      const rec = new MediaRecorder(stream, { mimeType:mime, videoBitsPerSecond:8000000, audioBitsPerSecond:128000 });
+      state.recorder = rec;
+      rec.ondataavailable = e => { if (e.data && e.data.size) state.chunks.push(e.data); };
+      rec.onerror = () => {
+        state.recorder = null; state.exportBusy = false;
+        stream.getTracks().forEach(t => t.stop());
+        byId('exportOverlay').classList.add('hidden'); stopPlayback();
+        notify('Terjadi kesalahan saat merekam.');
       };
-      exportView('Mengekspor video…','Perekaman berlangsung '+state.duration+' detik. Biarkan tab ini tetap terbuka.',true);
-      rec.start(500);state.elapsed=0;play();
-      byId('transportStatus').textContent='Merekam video…';
-      state.timer=setTimeout(stopExport,state.duration*1000+200);
-    }catch(err){
-      if(stream)stream.getTracks().forEach(t=>t.stop());state.recorder=null;
-      byId('exportOverlay').classList.add('hidden');console.error(err);notify(err.message||'Tidak dapat memulai ekspor.');
+      rec.onstop = () => {
+        const blob = new Blob(state.chunks, { type:mime });
+        stream.getTracks().forEach(t => t.stop());
+        if (blob.size) {
+          const url = URL.createObjectURL(blob), a = document.createElement('a');
+          a.href = url; a.download = fileSafe(byId('projectName').value) + '.' + fileExtension; a.click();
+          setTimeout(() => URL.revokeObjectURL(url), 15000);
+          notify('Video ' + fileExtension.toUpperCase() + ' berhasil dibuat dan diunduh.');
+        } else notify('Rekaman kosong. Coba lagi.');
+        state.recorder = null; state.chunks = []; state.exportBusy = false; clearTimeout(state.timer);
+        byId('exportOverlay').classList.add('hidden'); stopPlayback();
+      };
+      exportView('Mengekspor video…', 'Perekaman berlangsung ' + state.duration + ' detik. Biarkan tab ini tetap terbuka.', true);
+      rec.start(500); state.elapsed = 0; play();
+      byId('transportStatus').textContent = 'Merekam video…';
+      state.timer = setTimeout(() => stopExport(false), state.duration * 1000 + 200);
+    } catch (err) {
+      if (stream) stream.getTracks().forEach(t => t.stop());
+      state.recorder = null; state.exportBusy = false;
+      byId('exportOverlay').classList.add('hidden'); console.error(err);
+      notify(err.message || 'Tidak dapat memulai ekspor.');
+    }
+  }
+  async function exportNarrationVideo() {
+    if (state.recorder || state.exportBusy) return;
+    if (state.ttsBusy) { notify('Selesaikan pembacaan suara yang sedang berjalan terlebih dahulu.'); return; }
+    if (data.length !== 99) { notify('Data Asmaul Husna belum lengkap. Ekspor narasi membutuhkan 99 nama.'); return; }
+    if (!canvas.captureStream || !window.MediaRecorder) { notify('Ekspor video memerlukan browser yang mendukung perekaman kanvas dan audio.'); return; }
+    const mime = ['video/mp4;codecs=avc1.42E01E,mp4a.40.2','video/mp4','video/webm;codecs=vp9,opus','video/webm;codecs=vp8,opus','video/webm'].find(x => MediaRecorder.isTypeSupported(x));
+    if (!mime) { notify('Browser ini belum mendukung ekspor MP4 atau WebM.'); return; }
+
+    const fileExtension = mime.includes('mp4') ? 'mp4' : 'webm';
+    let stream = null;
+    let recorder = null;
+    let completed = false;
+    state.exportBusy = true;
+    state.exportPreparing = true;
+    state.exportCancelled = false;
+    state.ttsBusy = true;
+    byId('cancelExportButton').disabled = false;
+
+    try {
+      const voice = selectedSpeechVoice();
+      const context = ensureSpeechAudioContext();
+      await context.resume();
+      exportView('Menyiapkan narasi AI…', 'Memuat Supertonic 3 dan membuat audio untuk 99 nama. Jangan tutup tab ini.', true);
+      await loadSpeechModel();
+
+      const buffers = [];
+      for (let i = 0; i < data.length; i++) {
+        if (state.exportCancelled) throw new Error('EXPORT_CANCELLED');
+        byId('exportTitle').textContent = 'Membuat audio AI ' + (i + 1) + ' / ' + data.length + '…';
+        byId('exportMessage').textContent = data[i][0] + ' · ' + Math.round((i / data.length) * 100) + '% selesai';
+        byId('speechStatus').textContent = 'Menyiapkan narasi video ' + (i + 1) + ' dari 99: ' + data[i][0] + ' · preset ' + voice + '…';
+        const blob = await synthesizeName(i, voice);
+        const buffer = await context.decodeAudioData(await blob.arrayBuffer());
+        if (!buffer || !Number.isFinite(buffer.duration) || buffer.duration <= 0) {
+          throw new Error('Audio untuk ' + data[i][0] + ' tidak valid.');
+        }
+        buffers.push(buffer);
+      }
+      if (state.exportCancelled) throw new Error('EXPORT_CANCELLED');
+
+      const pauseBetweenNames = 0.32;
+      let cursor = 0;
+      const timeline = buffers.map((buffer, index) => {
+        const start = cursor;
+        cursor += buffer.duration + (index < buffers.length - 1 ? pauseBetweenNames : 0);
+        return start;
+      });
+      const totalDuration = cursor;
+      const audioDestination = ensureAudioMixDestination();
+      await context.resume();
+
+      state.exportPreviousBackgroundGain = state.backgroundAudioGain ? state.backgroundAudioGain.gain.value : null;
+      if (state.backgroundAudioGain) state.backgroundAudioGain.gain.setValueAtTime(0.18, context.currentTime);
+
+      stream = canvas.captureStream(30);
+      audioDestination.stream.getAudioTracks().forEach(track => stream.addTrack(track));
+      state.chunks = [];
+      recorder = new MediaRecorder(stream, { mimeType:mime, videoBitsPerSecond:8000000, audioBitsPerSecond:128000 });
+      state.recorder = recorder;
+      state.exportPreparing = false;
+      state.ttsBusy = false;
+      state.narrationExportActive = true;
+      state.exportDuration = totalDuration;
+      state.exportTimeline = timeline;
+      state.exportSources = [];
+
+      recorder.ondataavailable = event => { if (event.data && event.data.size) state.chunks.push(event.data); };
+      recorder.onerror = () => {
+        state.exportCancelled = true;
+        try { if (recorder.state !== 'inactive') recorder.stop(); } catch (_) {}
+      };
+      recorder.onstop = () => {
+        if (completed) return;
+        completed = true;
+        const cancelled = state.exportCancelled;
+        const blob = new Blob(state.chunks, { type:mime });
+        stream.getTracks().forEach(track => track.stop());
+        if (blob.size && !cancelled) {
+          const url = URL.createObjectURL(blob), a = document.createElement('a');
+          a.href = url;
+          a.download = fileSafe(byId('projectName').value) + '-99-nama-ai.' + fileExtension;
+          a.click();
+          setTimeout(() => URL.revokeObjectURL(url), 15000);
+          notify('Video 99 nama dengan narasi AI berhasil diunduh (' + fileExtension.toUpperCase() + ').');
+          byId('speechStatus').textContent = 'Ekspor 99 nama selesai · Supertonic 3 ' + voice + '.';
+        } else if (cancelled) {
+          notify('Ekspor narasi dibatalkan. Tidak ada file parsial yang disimpan.');
+          byId('speechStatus').textContent = 'Ekspor narasi dibatalkan.';
+        } else {
+          notify('Rekaman narasi kosong. Coba lagi.');
+        }
+
+        clearTimeout(state.timer);
+        stopNarrationSources();
+        audio.pause();
+        if (state.backgroundAudioGain && state.exportPreviousBackgroundGain !== null) {
+          state.backgroundAudioGain.gain.setValueAtTime(state.exportPreviousBackgroundGain, context.currentTime);
+        }
+        state.exportPreviousBackgroundGain = null;
+        state.recorder = null; state.chunks = []; state.exportBusy = false;
+        state.exportPreparing = false; state.narrationExportActive = false;
+        state.exportDuration = 0; state.exportAudioStart = 0; state.exportTimeline = [];
+        state.exportCancelled = false; state.ttsBusy = false;
+        byId('cancelExportButton').disabled = false;
+        byId('exportOverlay').classList.add('hidden');
+        stopSpeechAnimation(); stopPlayback();
+        if (typeof resolveRecording === 'function') resolveRecording();
+      };
+
+      let resolveRecording;
+      const recordingFinished = new Promise(resolve => { resolveRecording = resolve; });
+      const estimatedDuration = Math.ceil(totalDuration);
+      exportView(
+        'Merekam video + narasi 99 nama…',
+        'Durasi sekitar ' + timeText(estimatedDuration) + ' · preset ' + voice + (state.audioUrl ? ' · audio latar dipelankan' : '') + '. Biarkan tab tetap terbuka.',
+        true
+      );
+
+      recorder.start(500);
+      state.index = 0;
+      renderNames(byId('searchInput').value);
+      state.elapsed = 0;
+      state.playing = true;
+      state.start = performance.now();
+      state.exportAudioStart = context.currentTime + 0.25;
+      startSpeechAnimation(true);
+      updateCaptions();
+      ensureRenderLoop();
+      byId('transportStatus').textContent = 'Merekam video + suara AI…';
+      byId('speechStatus').textContent = 'Merekam 99 nama dengan preset ' + voice + '…';
+
+      if (state.audioUrl) {
+        audio.currentTime = 0;
+        audio.play().catch(error => console.warn('Audio latar tidak dapat diputar:', error));
+      }
+
+      buffers.forEach((buffer, index) => {
+        const source = context.createBufferSource();
+        const gain = context.createGain();
+        source.buffer = buffer;
+        gain.gain.value = 0.92;
+        source.connect(gain);
+        gain.connect(context.destination);
+        gain.connect(audioDestination);
+        state.exportSources.push(source);
+        source.start(state.exportAudioStart + timeline[index]);
+      });
+
+      state.timer = setTimeout(() => stopExport(false), Math.ceil((totalDuration + 1) * 1000));
+      await recordingFinished;
+    } catch (error) {
+      if (state.recorder && state.recorder.state !== 'inactive') {
+        state.exportCancelled = true;
+        stopNarrationSources();
+        audio.pause();
+        try { state.recorder.stop(); } catch (_) {}
+        return;
+      }
+      if (stream) stream.getTracks().forEach(track => track.stop());
+      stopNarrationSources();
+      if (state.backgroundAudioGain && state.exportPreviousBackgroundGain !== null && state.speechAudioContext) {
+        state.backgroundAudioGain.gain.setValueAtTime(state.exportPreviousBackgroundGain, state.speechAudioContext.currentTime);
+      }
+      state.exportPreviousBackgroundGain = null;
+      state.recorder = null; state.chunks = []; state.exportBusy = false;
+      state.exportPreparing = false; state.narrationExportActive = false;
+      state.exportDuration = 0; state.exportAudioStart = 0; state.exportTimeline = [];
+      state.exportCancelled = false; state.ttsBusy = false;
+      byId('cancelExportButton').disabled = false;
+      byId('exportOverlay').classList.add('hidden');
+      stopSpeechAnimation(); stopPlayback();
+      if (error && error.message === 'EXPORT_CANCELLED') {
+        byId('speechStatus').textContent = 'Persiapan ekspor narasi dibatalkan.';
+        notify('Persiapan ekspor narasi dibatalkan.');
+      } else {
+        console.error('Narrated video export failed:', error);
+        byId('speechStatus').textContent = 'Ekspor narasi gagal: ' + (error.message || String(error));
+        notify(error.message || 'Tidak dapat membuat video dengan narasi AI.');
+      }
     }
   }
   function refreshSpeechVoices() {
@@ -394,6 +638,15 @@
     });
   }
   function stopSpeech(showMessage=true) {
+    if (state.exportPreparing || state.narrationExportActive) {
+      stopExport(true);
+      if (showMessage) byId('speechStatus').textContent = 'Menghentikan ekspor narasi…';
+      return;
+    }
+    if (state.exportBusy) {
+      if (showMessage) byId('speechStatus').textContent = 'Gunakan tombol Hentikan ekspor untuk menghentikan rekaman video.';
+      return;
+    }
     state.ttsStop = true;
     const activeSource = state.speechSource;
     state.speechSource = null;
@@ -404,7 +657,7 @@
     if (showMessage) byId('speechStatus').textContent = 'Pembacaan dihentikan.';
   }
   async function speakCurrent() {
-    if (state.ttsBusy) return;
+    if (state.ttsBusy || state.exportBusy) return;
     state.ttsStop = false;
     state.ttsBusy = true;
     try {
@@ -427,7 +680,7 @@
     }
   }
   async function speakAll() {
-    if (state.ttsBusy) return;
+    if (state.ttsBusy || state.exportBusy) return;
     state.ttsStop = false;
     state.ttsBusy = true;
     try {
@@ -490,6 +743,7 @@
     byId('speakCurrentButton').addEventListener('click',speakCurrent);
     byId('speakAllButton').addEventListener('click',speakAll);
     byId('stopSpeechButton').addEventListener('click',()=>stopSpeech(true));
+    byId('exportNarrationButton').addEventListener('click',exportNarrationVideo);
     byId('clearSearch').addEventListener('click',()=>{byId('searchInput').value='';renderNames('');byId('searchInput').focus();});
     byId('themeGrid').addEventListener('click',e=>{const b=e.target.closest('[data-theme]');if(b){state.theme=b.dataset.theme;applyControls();persist();}});
     byId('formatOptions').addEventListener('click',e=>{const b=e.target.closest('[data-format]');if(b){state.format=b.dataset.format;applyControls();persist();}});
@@ -502,7 +756,7 @@
     byId('playButton').addEventListener('click',()=>{if(state.recorder){notify('Ekspor sedang berlangsung. Gunakan tombol Hentikan ekspor untuk menghentikannya.');return;}if(state.playing){state.playing=false;audio.pause();byId('playIcon').textContent='▶';byId('transportStatus').textContent='Pratinjau dijeda';}else play();});
     byId('snapshotButton').addEventListener('click',snapshot);
     byId('exportTopButton').addEventListener('click',exportVideo);
-    byId('cancelExportButton').addEventListener('click',stopExport);
+    byId('cancelExportButton').addEventListener('click',()=>stopExport(true));
     byId('backgroundInput').addEventListener('change',e=>uploadImage(e.target.files&&e.target.files[0]));
     byId('audioInput').addEventListener('change',e=>uploadAudio(e.target.files&&e.target.files[0]));
     byId('removeMediaButton').addEventListener('click',removeMedia);
