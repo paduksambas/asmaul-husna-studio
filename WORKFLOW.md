@@ -307,3 +307,6 @@ Ikuti urutan ini. Jangan melewati pemeriksaan Preview sebelum perubahan dinyatak
 
 
 **Ukuran kaligrafi masuk ke kelompok Posisi & Jarak Teks — 24 November 2026:** slider “Ukuran kaligrafi” dipindahkan ke dalam subbagian yang sama dengan posisi kaligrafi Arab, jarak Arab→transliterasi, dan jarak transliterasi→arti. Keempat kontrol tersebut kini menjadi satu kelompok; sakelar tampil/sembunyi transliterasi dan arti tetap terpisah. Validator statis memeriksa keempat kontrol berada di grup tersebut. Hanya branch Preview yang diperbarui; `main`/Production tidak disentuh.
+
+
+**Pengelompokan durasi video — 24 November 2026:** slider durasi video (5–60 detik) dipindahkan dari bagian Gerakan & durasi ke kelompok “Posisi & Jarak Teks”, bersama posisi kaligrafi Arab, jarak antarteks, dan ukuran kaligrafi. Pengaturan gaya animasi tetap berada pada bagian Gerakan & animasi. Nilai durasi tetap memakai state, penyimpanan lokal, pratinjau, dan alur ekspor yang sudah ada. Validator statis ditambah untuk memastikan slider durasi berada dalam kelompok yang sama. Hanya branch Preview yang diubah; `main`/Production tidak disentuh.
