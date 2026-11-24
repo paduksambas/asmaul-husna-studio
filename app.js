@@ -253,6 +253,16 @@
       const {pipeline,env}=await import('https://esm.sh/@huggingface/transformers@3.8.1');
       env.allowLocalModels=false;
       env.useBrowserCache=true;
+      // Ask the browser to retain downloaded model files between visits when supported.
+      // Transformers.js stores remote model responses in the browser Cache API.
+      try {
+        if(navigator.storage && navigator.storage.persist) {
+          const retained=await navigator.storage.persist();
+          byId('speechStatus').textContent=retained
+            ? 'Mengaktifkan penyimpanan model di perangkat…'
+            : 'Menyiapkan cache browser. Browser dapat menghapus cache jika ruang penyimpanan dibutuhkan…';
+        }
+      } catch(cacheError) { console.warn('Persistent storage request unavailable:',cacheError); }
       const model='open-world-group/Supertonic-3-ONNX';
       try {
         byId('speechStatus').textContent='Mencoba akselerasi WebGPU…';
