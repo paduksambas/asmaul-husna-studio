@@ -99,7 +99,7 @@ Ikuti urutan ini. Jangan melewati pemeriksaan Preview sebelum perubahan dinyatak
 - [x] Pemeriksaan HTTP untuk halaman utama, CSS, JavaScript aplikasi, dan data Asmaul Husna menghasilkan status 200.
 - [x] Hubungkan repository GitHub dengan integrasi Git Vercel (diverifikasi 24 November 2026: project `asmaul-husna-studio` terhubung ke `paduksambas/asmaul-husna-studio`).
 - [x] Verifikasi deployment otomatis setelah push ke `main`: commit `33a95d7ea0c483114f661cdb967b07a617603c86` otomatis menghasilkan deployment Production Vercel berstatus READY pada 24 November 2026.
-- [ ] Uji interaksi lengkap di laptop: tema, rasio, durasi, dan reset (pemilihan nama serta pencarian sudah dikonfirmasi berhasil).
+- [ ] Uji interaksi lanjutan di laptop: durasi dan reset (pemilihan nama, pencarian, tema, dan rasio sudah dikonfirmasi berhasil).
 - [x] Uji ulang animasi setelah perbaikan visual; pengguna mengonfirmasi animasi kini berfungsi.
 - [x] Uji unggah gambar dan audio yang valid serta tampil/fungsinya di pratinjau (dikonfirmasi pengguna).
 - [x] Uji pratinjau media dan sinkronisasi audio dasar (dikonfirmasi pengguna).
@@ -164,3 +164,5 @@ Ikuti urutan ini. Jangan melewati pemeriksaan Preview sebelum perubahan dinyatak
 
 
 **Konfirmasi pengujian laptop (24 November 2026):** pengguna mengonfirmasi pemilihan nama dan pencarian berfungsi; tampilan aplikasi juga responsif pada perangkat yang diuji. Pengujian tema, rasio, durasi, reset, dan verifikasi terpisah di iPad tetap dilanjutkan.
+
+**Konfirmasi tema dan rasio (24 November 2026):** pengguna mengonfirmasi keempat tema (Emerald, Midnight, Sand, Rose) dan pilihan rasio Landscape, Portrait, Square berfungsi baik pada pengujian laptop.
