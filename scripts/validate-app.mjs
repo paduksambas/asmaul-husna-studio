@@ -116,7 +116,11 @@ const speakAllSource = app.slice(app.indexOf('async function speakAll()'), app.i
 assert.ok(speakAllSource.includes('const prefetchAhead = 3;') && speakAllSource.includes('const aheadLimit = playbackStarted ? prefetchAhead : 1;'), 'the narration sequence must maintain a bounded three-clip look-ahead queue after playback starts');
 assert.ok(speakAllSource.includes('prefetchSpeechBuffers();') && speakAllSource.includes('await task;'), 'the next speech clips must be generated in the background and awaited only when needed');
 assert.ok(app.includes('async function playSpeechBuffer(buffer, onStart=()=>{})') && app.includes('source.buffer = buffer;') && app.includes('onStart();') && app.includes('source.start(0);'), 'prepared narration audio must trigger a synchronized on-start callback');
-assert.ok(app.includes('(performance.now() - state.wheelTransitionStart) / 520'), 'wheel transitions must use the quicker 520 ms duration');
+assert.ok(app.includes('const WHEEL_TRANSITION_MS = 520;'), 'wheel transition duration must remain short and consistent');
+assert.ok(app.includes('const WHEEL_TRANSITION_LEAD_MS = WHEEL_TRANSITION_MS + 40;'), 'wheel rotation must finish with a small timing buffer before the next voice starts');
+assert.ok(speakAllSource.includes('preparedBuffer.duration - WHEEL_TRANSITION_LEAD_MS / 1000'), 'the next wheel item must rotate during the tail of the current spoken clip');
+assert.ok(app.includes('state.speechAudioContext.currentTime >= state.pendingWheelTransition.at') && app.includes('beginNameTransition(pending.nextIndex);'), 'wheel transition timing must follow the audio playback clock');
+assert.ok(speakAllSource.includes("if (state.animation !== 'wheel') beginNameTransition(i);"), 'wheel mode must not begin the next item transition at the start of its own audio');
 
 assert.match(app, /state\.wheelTransitionStart = performance\.now\(\);\s*state\.transitionStart = 0;\s*ensureRenderLoop\(\)/, 'manual selection must start a render loop for the wheel transition');
 assert.ok(app.includes("const ambientPulse=motionActive ? .5+.5*Math.sin(t*.72) : 0;"), 'ambient glow must use a smooth continuous pulse');
