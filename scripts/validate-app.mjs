@@ -108,6 +108,7 @@ assert.match(app, /const depthAlpha = \.08 \+ \.92 \* Math\.pow\(perspective, 2\
 assert.match(app, /const movementProgress = clamp\(\(rawProgress - \.14\) \/ \.86, 0, 1\)/, 'the incoming label must wait until the outgoing label has disappeared');
 assert.match(app, /entry\.offset === 0[\s\S]*?rawProgress \/ \.14/, 'the just-read label must disappear before the incoming label starts moving');
 assert.match(app, /if \(alpha <= \.015\) return;/, 'fully faded wheel labels must not be painted');
+assert.match(app, /const wheelOffsets = direction >= 0 \? \[0, 1\] : \[-1, 0\]/, 'the previously read label must be excluded so it cannot reappear in the incoming position');
 assert.match(app, /wheelEntries\.sort\(\(a,b\) => a\.depth - b\.depth\)/, 'rear labels must render before the incoming/front label');
 assert.match(app, /state\.transliteration && entry\.depth > -\.15/, 'rear-most labels must hide supporting text until they approach the reading position');
 assert.match(app, /ctx\.fillText\(wheelItem\[1\],0,arabicY,w\*\.78\);\s*ctx\.shadowBlur = 0;/, 'Arabic calligraphy shadow must not leak into wheel transliteration or meaning');
