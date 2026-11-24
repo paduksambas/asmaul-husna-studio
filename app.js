@@ -321,7 +321,7 @@
       console.error('TTS load failed:',err);
       const detail=(err&&err.message?err.message:String(err)).slice(0,420);
       byId('speechStatus').textContent='Gagal memuat mesin suara: '+detail;
-      notify('Mesin suara AI belum berhasil dimuat. Baca rincian pada status suara.');
+      notify('Gagal memuat suara: '+detail.slice(0,180));
       return null;
     } finally {
       state.ttsBusy=false;
