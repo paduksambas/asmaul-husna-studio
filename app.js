@@ -16,7 +16,7 @@
     portrait: [1080,1920,'9:16 · 1080 × 1920'],
     square: [1080,1080,'1:1 · 1080 × 1080']
   };
-  const state = { index:0, theme:'emerald', format:'portrait', animation:'float', duration:15, size:100,
+  const state = { index:0, theme:'emerald', format:'portrait', animation:'float', tasbihStart:0, duration:15, size:100,
     translation:true, transliteration:true, arabicVerticalOffset:0, arabicTextGap:0, textMeaningGap:0, builtinMusicEnabled:true, builtinMusicVolume:10, builtinMusicMode:'vocal', builtinMusicBuffers:{}, builtinMusicLoadPromises:{}, builtinMusicSource:null, builtinMusicGain:null, builtinMusicStarting:false, builtinMusicPreview:false, playing:false, elapsed:0, start:0, image:null, imageUrl:'',
     audioUrl:'', recorder:null, chunks:[], timer:0, audioDestination:null, backgroundAudioSource:null, backgroundAudioGain:null,
     ttsPipeline:null, ttsLoadPromise:null, ttsBackend:'', ttsBusy:false, ttsStop:false, speechSequenceActive:false, speechAudioContext:null, speechSource:null, wheelTransitionStart:0, wheelFromIndex:0, wheelToIndex:0, wheelDirection:1, pendingWheelTransition:null,
@@ -56,7 +56,7 @@
       if (Number.isInteger(s.index)) state.index = clamp(s.index,0,data.length-1);
       if (themes[s.theme]) state.theme = s.theme;
       if (formats[s.format]) state.format = s.format;
-      if (['float','zoom','shimmer','none','wheel'].includes(s.animation)) state.animation = s.animation;
+      if (['float','zoom','shimmer','none','wheel','tasbih'].includes(s.animation)) state.animation = s.animation;
       if (Number.isFinite(s.duration)) state.duration = clamp(s.duration,5,60);
       if (typeof s.builtinMusicEnabled === 'boolean') state.builtinMusicEnabled = s.builtinMusicEnabled;
       if (['vocal','instrumental'].includes(s.builtinMusicMode)) state.builtinMusicMode = s.builtinMusicMode;
@@ -146,7 +146,7 @@
   }
   function draw(t) {
     if (!ctx || !data.length) return;
-    const animated = state.playing || state.speechAnimating;
+    const animated = state.playing || state.speechAnimating || state.animation === 'tasbih';
     const w=canvas.width,h=canvas.height,cx=w/2,cy=h/2,u=Math.min(w,h);
     const c=themes[state.theme] || themes.emerald;
     const g=ctx.createLinearGradient(0,0,w,h); g.addColorStop(0,c[0]);g.addColorStop(.55,c[1]);g.addColorStop(1,c[2]);
@@ -220,6 +220,34 @@
     ctx.fillStyle=c[3]+'bb';ctx.font='400 '+Math.max(13,u*.013)+'px "Amiri",serif';
     ctx.fillText('أَسْمَاءُ اللَّهِ الْحُسْنَى',cx,cy-u*.39);
     ctx.restore();
+
+    // Tasbih Emas 99: a softly rotating 3D ring of 99 luminous beads.
+    if (state.animation === 'tasbih') {
+      const tasbihTime = animated ? Math.max(0, (performance.now() - state.tasbihStart) / 1000) : 0;
+      const opening = clamp(tasbihTime / 2.1, 0, 1), formation = 1 - Math.pow(1 - opening, 3);
+      const finale = state.index === 98 && !state.speechSequenceActive && !state.ttsBusy;
+      const spin = tasbihTime * .115, beadPositions = [];
+      for (let i=0;i<99;i++) {
+        const angle=i*Math.PI*2/99+spin-Math.PI/2, depth=.5+.5*Math.sin(angle);
+        const radius=u*(.315+depth*.012), targetX=cx+Math.cos(angle)*radius, targetY=cy+Math.sin(angle)*radius*.72;
+        const scatterX=cx+Math.sin(i*12.9898+1.7)*u*(.18+(i%7)*.025), scatterY=cy+Math.cos(i*7.233+2.4)*u*(.22+(i%5)*.025);
+        const x=scatterX+(targetX-scatterX)*formation, y=scatterY+(targetY-scatterY)*formation;
+        const active=i===state.index, lit=finale||active, beadRadius=u*(.0052+depth*.0022)*(active?1.55:1);
+        beadPositions.push({x,y,depth,active,lit,beadRadius});
+      }
+      beadPositions.sort((a,b)=>a.depth-b.depth);
+      beadPositions.forEach(bead=>{
+        const r=bead.beadRadius;ctx.save();ctx.globalAlpha=.12+.88*formation;
+        if(bead.lit){ctx.shadowColor='#ffe6a0';ctx.shadowBlur=u*(bead.active?.035:.018);}
+        const sphere=ctx.createRadialGradient(bead.x-r*.38,bead.y-r*.42,r*.08,bead.x,bead.y,r*1.25);
+        sphere.addColorStop(0,bead.lit?'#fff9df':'#f8e3ad');sphere.addColorStop(.35,bead.lit?'#f5cf78':'#b58a45');sphere.addColorStop(1,bead.lit?'#9b6827':'#49351f');
+        ctx.fillStyle=sphere;ctx.beginPath();ctx.arc(bead.x,bead.y,r,0,Math.PI*2);ctx.fill();ctx.shadowBlur=0;
+        ctx.strokeStyle=bead.lit?'#fff0b8':'#e2c58c88';ctx.lineWidth=Math.max(1,u*.0011);ctx.stroke();ctx.restore();
+      });
+      ctx.save();ctx.globalAlpha=.24*formation;ctx.strokeStyle=c[3];ctx.lineWidth=Math.max(1,u*.0015);ctx.beginPath();ctx.ellipse(cx,cy,u*.326,u*.237,0,0,Math.PI*2);ctx.stroke();ctx.restore();
+      if(opening<1)beadPositions.forEach((p,i)=>{ctx.save();ctx.globalAlpha=(1-opening)*(.25+.55*(.5+.5*Math.sin(tasbihTime*7+i)));ctx.fillStyle='#ffe7a8';ctx.shadowColor='#ffd77d';ctx.shadowBlur=u*.012;ctx.beginPath();ctx.arc(p.x,p.y,u*.0028,0,Math.PI*2);ctx.fill();ctx.restore();});
+      if(finale){const halo=ctx.createRadialGradient(cx,cy,u*.12,cx,cy,u*.39);halo.addColorStop(0,'#ffe6a022');halo.addColorStop(1,'#ffe6a000');ctx.save();ctx.globalAlpha=.72+.28*Math.sin(tasbihTime*2.2);ctx.fillStyle=halo;ctx.fillRect(cx-u*.4,cy-u*.3,u*.8,u*.6);ctx.restore();}
+    }
 
     // Roda bacaan affects only the names/text: the frame, ornaments and background stay still.
     if (state.animation === 'wheel') {
@@ -488,7 +516,7 @@
         persist();
       }
     }
-    if (!state.playing && !state.speechAnimating && !state.wheelTransitionStart) {
+    if (!state.playing && !state.speechAnimating && !state.wheelTransitionStart && state.animation !== 'tasbih') {
       state.renderLoopActive = false;
       draw(0);
       return;
@@ -520,6 +548,7 @@
     if (state.speechAnimating) draw((now - state.speechAnimationStart) / 1000);
     else if (state.playing) draw(state.elapsed);
     else if (state.wheelTransitionStart) draw((now - state.wheelTransitionStart) / 1000);
+    else if (state.animation === 'tasbih') draw((now - state.tasbihStart) / 1000);
     else {
       state.renderLoopActive = false;
       draw(0);
@@ -1173,7 +1202,7 @@
     }
     stopSpeech(false);
     state.index=0;state.theme='emerald';state.format='portrait';state.animation='float';
-    state.duration=15;state.size=100;state.translation=true;state.transliteration=true;state.arabicVerticalOffset=0;state.arabicTextGap=0;state.textMeaningGap=0;state.wheelTransitionStart=0;state.pendingWheelTransition=null;state.transitionStart=0;state.builtinMusicEnabled=true;state.builtinMusicMode='vocal';state.builtinMusicVolume=10;state.builtinMusicPreview=false;byId('builtinMusicTestButton').textContent='Dengarkan contoh audio';state.elapsed=0;
+    state.duration=15;state.size=100;state.tasbihStart=0;state.translation=true;state.transliteration=true;state.arabicVerticalOffset=0;state.arabicTextGap=0;state.textMeaningGap=0;state.wheelTransitionStart=0;state.pendingWheelTransition=null;state.transitionStart=0;state.builtinMusicEnabled=true;state.builtinMusicMode='vocal';state.builtinMusicVolume=10;state.builtinMusicPreview=false;byId('builtinMusicTestButton').textContent='Dengarkan contoh audio';state.elapsed=0;
     byId('projectName').value='Asmaul Husna — Video 01';byId('searchInput').value='';
     removeMedia();renderNames('');applyControls();persist();stopPlayback();notify('Pengaturan dikembalikan ke awal.');
   }
@@ -1193,7 +1222,7 @@
     byId('arabicVerticalOffset').addEventListener('input',e=>{state.arabicVerticalOffset=Number(e.target.value);byId('arabicVerticalOffsetValue').textContent=(state.arabicVerticalOffset>0?'+':'')+state.arabicVerticalOffset;draw(0);persist();});
     byId('arabicTextGap').addEventListener('input',e=>{state.arabicTextGap=Number(e.target.value);byId('arabicTextGapValue').textContent=(state.arabicTextGap>0?'+':'')+state.arabicTextGap;draw(0);persist();});
      byId('textMeaningGap').addEventListener('input',e=>{state.textMeaningGap=Number(e.target.value);byId('textMeaningGapValue').textContent=(state.textMeaningGap>0?'+':'')+state.textMeaningGap;draw(0);persist();});
-     byId('animationSelect').addEventListener('change',e=>{state.animation=e.target.value;state.wheelTransitionStart=0;state.transitionStart=0;byId('renderHint').textContent=state.animation==='none'?'Animasi dinonaktifkan':state.animation==='wheel'?'Roda bacaan: teks aktif membesar, tetangganya mengecil dan berputar':'Animasi lembut aktif saat diputar';draw(0);persist();});
+     byId('animationSelect').addEventListener('change',e=>{state.animation=e.target.value;state.wheelTransitionStart=0;state.transitionStart=0;if(state.animation==='tasbih'){state.tasbihStart=performance.now();ensureRenderLoop();}byId('renderHint').textContent=state.animation==='none'?'Animasi dinonaktifkan':state.animation==='wheel'?'Roda bacaan: teks aktif membesar, tetangganya mengecil dan berputar':state.animation==='tasbih'?'Tasbih Emas 99: 99 butir berputar 3D dan menyala mengikuti bacaan':'Animasi lembut aktif saat diputar';draw(0);persist();});
     byId('durationInput').addEventListener('input',e=>{state.duration=Number(e.target.value);byId('durationValue').textContent=state.duration;updateCaptions();persist();});
     byId('builtinMusicEnabled').addEventListener('change',e=>{state.builtinMusicEnabled=e.target.checked;syncBuiltinMusic(state.elapsed);persist();});
     byId('builtinMusicMode').addEventListener('change',e=>{state.builtinMusicMode=e.target.value;stopBuiltinMusic();state.builtinMusicPreview=false;byId('builtinMusicTestButton').textContent='Dengarkan contoh audio';syncBuiltinMusic(state.elapsed);draw(0);persist();});
@@ -1220,7 +1249,7 @@
   function init() {
     if(!ctx){notify('Browser tidak mendukung kanvas HTML5.');return;}
     restore();renderNames('');applyControls();
-    byId('renderHint').textContent=state.animation==='none'?'Animasi dinonaktifkan':state.animation==='wheel'?'Roda bacaan: teks aktif membesar, tetangganya mengecil dan berputar':'Animasi lembut aktif saat diputar';
+    byId('renderHint').textContent=state.animation==='none'?'Animasi dinonaktifkan':state.animation==='wheel'?'Roda bacaan: teks aktif membesar, tetangganya mengecil dan berputar':state.animation==='tasbih'?'Tasbih Emas 99: 99 butir berputar 3D dan menyala mengikuti bacaan':'Animasi lembut aktif saat diputar';if(state.animation==='tasbih'){state.tasbihStart=performance.now();ensureRenderLoop();}
     bind();
     refreshSpeechVoices();
     byId('speechStatus').textContent = 'Pilih preset suara, lalu tekan Muat model AI. Model akan diunduh otomatis dan disimpan dalam cache browser bila tersedia.';
