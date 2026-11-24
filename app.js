@@ -248,53 +248,71 @@
     state.ttsBusy=true;
     const loadButton=byId('loadSpeechButton');
     loadButton.disabled=true;
-    byId('speechStatus').textContent='Mengunduh mesin suara AI (sekitar 200 MB) dan menyiapkannya…';
+    byId('speechStatus').textContent='Menyiapkan mesin suara AI…';
+    let webgpuError=null;
     try {
       const {pipeline,env}=await import('https://esm.sh/@huggingface/transformers@3.8.1');
       env.allowLocalModels=false;
       env.useBrowserCache=true;
-      // iPadOS Safari can stall while ONNX Runtime initializes a threaded WASM session.
-      // Use a single WASM thread on iPad/iPhone; this does not clear or redownload model cache.
       const isAppleMobile = /iPad|iPhone|iPod/.test(navigator.userAgent)
         || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-      if(isAppleMobile && env.backends && env.backends.onnx && env.backends.onnx.wasm) {
-        env.backends.onnx.wasm.numThreads=1;
-        byId('speechStatus').textContent='Menyiapkan WASM mode kompatibel untuk iPad/iPhone…';
-      }
-      // Ask the browser to retain downloaded model files between visits when supported.
-      // Transformers.js stores remote model responses in the browser Cache API.
       try {
-        if(navigator.storage && navigator.storage.persist) {
-          const retained=await navigator.storage.persist();
-          byId('speechStatus').textContent=retained
-            ? 'Mengaktifkan penyimpanan model di perangkat…'
-            : 'Menyiapkan cache browser. Browser dapat menghapus cache jika ruang penyimpanan dibutuhkan…';
-        }
+        if(navigator.storage && navigator.storage.persist) await navigator.storage.persist();
       } catch(cacheError) { console.warn('Persistent storage request unavailable:',cacheError); }
+
       const model='open-world-group/Supertonic-3-ONNX';
-      try {
-        byId('speechStatus').textContent='Mencoba akselerasi WebGPU…';
-        state.ttsPipeline=await pipeline('text-to-speech',model,{
-          device:'webgpu',dtype:'fp16',
-          progress_callback:(p)=>{if(p&&p.status==='progress')byId('speechStatus').textContent='Mengunduh model suara: '+Math.round(p.progress||0)+'%';}
-        });
-        byId('speechStatus').textContent='Mesin suara siap (WebGPU). Pilih Uji M1 atau Uji F1.';
-      } catch(webgpuError) {
-        console.warn('WebGPU tidak tersedia, mencoba WASM Q8:',webgpuError);
-        byId('speechStatus').textContent='WebGPU tidak tersedia. Menyiapkan mode kompatibel…';
-        state.ttsPipeline=await pipeline('text-to-speech',model,{
-          device:'wasm',
-          dtype:{text_encoder:'fp32',latent_denoiser:'q8',voice_decoder:'fp32'},
-          progress_callback:(p)=>{if(p&&p.status==='progress')byId('speechStatus').textContent='Menyiapkan model WASM: '+Math.round(p.progress||0)+'%';}
-        });
-        byId('speechStatus').textContent='Mesin suara siap (WASM). Pilih Uji M1 atau Uji F1.';
+      const wasmOptions={
+        device:'wasm',
+        dtype:{text_encoder:'fp32',latent_denoiser:'q8',voice_decoder:'fp32'},
+        progress_callback:(p)=>{
+          if(p&&p.status==='progress') {
+            byId('speechStatus').textContent='Menyiapkan model WASM: '+Math.round(p.progress||0)+'%';
+          } else if(p&&p.status) {
+            byId('speechStatus').textContent='WASM: '+p.status+(p.file?' — '+p.file:'');
+          }
+        }
+      };
+
+      // Safari on iPad/iPhone uses WASM directly to avoid a failed WebGPU
+      // allocation followed by a second large model initialization.
+      if(isAppleMobile) {
+        byId('speechStatus').textContent='Safari iPad/iPhone terdeteksi. Menyiapkan mesin WASM Q8 langsung…';
+        try {
+          state.ttsPipeline=await pipeline('text-to-speech',model,wasmOptions);
+        } catch(wasmError) {
+          const detail=wasmError&&wasmError.message?wasmError.message:String(wasmError);
+          throw new Error('WASM iPad gagal: '+detail);
+        }
+        byId('speechStatus').textContent='Mesin suara siap (WASM Q8). Pilih Uji M1 atau Uji F1.';
+      } else {
+        try {
+          byId('speechStatus').textContent='Mencoba akselerasi WebGPU…';
+          state.ttsPipeline=await pipeline('text-to-speech',model,{
+            device:'webgpu',dtype:'fp16',
+            progress_callback:(p)=>{if(p&&p.status==='progress')byId('speechStatus').textContent='Mengunduh model suara: '+Math.round(p.progress||0)+'%';}
+          });
+          byId('speechStatus').textContent='Mesin suara siap (WebGPU). Pilih Uji M1 atau Uji F1.';
+        } catch(error) {
+          webgpuError=error;
+          console.warn('WebGPU tidak tersedia, mencoba WASM Q8:',error);
+          byId('speechStatus').textContent='WebGPU gagal. Menyiapkan mode WASM Q8…';
+          try {
+            state.ttsPipeline=await pipeline('text-to-speech',model,wasmOptions);
+          } catch(wasmError) {
+            const gpuDetail=webgpuError&&webgpuError.message?webgpuError.message:String(webgpuError);
+            const wasmDetail=wasmError&&wasmError.message?wasmError.message:String(wasmError);
+            throw new Error('WebGPU: '+gpuDetail+' | WASM: '+wasmDetail);
+          }
+          byId('speechStatus').textContent='Mesin suara siap (WASM Q8). Pilih Uji M1 atau Uji F1.';
+        }
       }
       loadButton.textContent='Mesin suara siap';
       return state.ttsPipeline;
     } catch(err) {
       console.error('TTS load failed:',err);
-      byId('speechStatus').textContent='Gagal memuat mesin suara: '+(err.message||'Periksa koneksi lalu coba lagi.');
-      notify('Mesin suara AI belum berhasil dimuat.');
+      const detail=(err&&err.message?err.message:String(err)).slice(0,420);
+      byId('speechStatus').textContent='Gagal memuat mesin suara: '+detail;
+      notify('Mesin suara AI belum berhasil dimuat. Baca rincian pada status suara.');
       return null;
     } finally {
       state.ttsBusy=false;
