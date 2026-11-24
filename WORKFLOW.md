@@ -101,6 +101,7 @@ Ikuti urutan ini. Jangan melewati pemeriksaan Preview sebelum perubahan dinyatak
 - [x] Verifikasi deployment otomatis setelah push ke `main`: commit `33a95d7ea0c483114f661cdb967b07a617603c86` otomatis menghasilkan deployment Production Vercel berstatus READY pada 24 November 2026.
 - [x] Uji interaksi di laptop: pemilihan nama, pencarian, tema, rasio, durasi, dan reset.
 - [x] Uji interaksi utama di iPad A17 Pro melalui Safari: pemilihan nama, pencarian, tema, rasio, durasi, dan reset.
+- [x] Uji ekspor PNG dan video dari iPad A17 Pro; file unduhan berhasil dibuka dan animasinya berjalan.
 - [x] Uji ulang animasi setelah perbaikan visual; pengguna mengonfirmasi animasi kini berfungsi.
 - [x] Uji unggah gambar dan audio yang valid serta tampil/fungsinya di pratinjau (dikonfirmasi pengguna).
 - [x] Uji pratinjau media dan sinkronisasi audio dasar (dikonfirmasi pengguna).
@@ -177,3 +178,5 @@ Ikuti urutan ini. Jangan melewati pemeriksaan Preview sebelum perubahan dinyatak
 **Konfirmasi durasi dan Reset iPad (24 November 2026):** pengguna mengonfirmasi perubahan durasi dan tombol Reset berfungsi baik melalui Safari di iPad A17 Pro. Pengujian interaksi utama pada laptop dan iPad kini terkonfirmasi. Pengujian tata letak sentuh lintas orientasi, upload media, ekspor dari iPad, dan alur Codespaces/editor tetap dilanjutkan.
 
 **Konfirmasi upload media iPad (24 November 2026):** pengguna mengonfirmasi unggah gambar dan file audio serta pratinjau media berfungsi dengan baik melalui Safari di iPad A17 Pro. Pengujian ekspor video/PNG langsung dari iPad dan verifikasi audio pada hasil ekspor masih perlu dilakukan.
+
+**Konfirmasi ekspor iPad (24 November 2026):** pengguna mengonfirmasi langkah 1–4 berhasil melalui Safari di iPad A17 Pro: PNG tersimpan, animasi dijalankan, video diekspor, dan file video hasil unduhan dibuka dengan animasi bergerak. Keberhasilan audio di dalam video hasil ekspor belum dikonfirmasi secara terpisah.
