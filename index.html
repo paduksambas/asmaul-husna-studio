@@ -127,16 +127,21 @@
           </select>
         </section>
         <section class="control-section builtin-music-section">
-          <div class="section-title"><span class="section-number">05</span><h3>Nasheed vokal-only</h3></div>
-          <p class="music-description">Lantunan “Alhamdulilah (Vocal Only Nasheed)” oleh SyedsLife, tanpa instrumen. Cuplikan 46 detik diputar berulang dengan sambungan crossfade yang lembut. Audio ini disertakan dalam pratinjau dan ekspor video.</p>
-          <label class="field-label music-toggle" for="builtinMusicEnabled"><span>Aktifkan nasheed latar</span><input id="builtinMusicEnabled" type="checkbox" checked class="toggle-input" /><span class="toggle-ui"></span></label>
-          <button class="button button-outline music-test-button" id="builtinMusicTestButton" type="button">Dengarkan nasheed</button>
-          <label class="field-label music-volume-label" for="builtinMusicVolume"><span>Volume nasheed</span><output class="range-value" id="builtinMusicVolumeValue">10%</output></label>
+          <div class="section-title"><span class="section-number">05</span><h3>Nasheed & musik latar</h3></div>
+          <p class="music-description">Pilih lantunan vokal-only SyedsLife atau musik instrumental bernuansa Islami dari Alex Morgan. Audio terpilih dipakai pada pratinjau dan ekspor video.</p>
+          <label class="field-label" for="builtinMusicMode"><span>Jenis audio latar</span></label>
+          <select id="builtinMusicMode" class="select-input">
+            <option value="vocal">Nasheed vokal-only · SyedsLife</option>
+            <option value="instrumental">Instrumental tanpa vokal · Alex Morgan</option>
+          </select>
+          <label class="field-label music-toggle" for="builtinMusicEnabled"><span>Aktifkan audio latar</span><input id="builtinMusicEnabled" type="checkbox" checked class="toggle-input" /><span class="toggle-ui"></span></label>
+          <button class="button button-outline music-test-button" id="builtinMusicTestButton" type="button">Dengarkan contoh audio</button>
+          <label class="field-label music-volume-label" for="builtinMusicVolume"><span>Volume audio latar</span><output class="range-value" id="builtinMusicVolumeValue">10%</output></label>
           <input class="range-input" id="builtinMusicVolume" type="range" min="0" max="30" step="1" value="10" />
-          <p class="music-footnote">Volume awal 10% agar lantunan AI Asmaul Husna tetap jelas. Kredit audio ditampilkan pada video yang dibuat selama nasheed aktif.</p>
-          <p class="music-credit-note">Atribusi untuk caption: Audio: “Alhamdulilah (Vocal Only Nasheed)” — SyedsLife. Lisensi CC BY 3.0. Sumber asli: Wikimedia Commons. Cuplikan dipotong dan di-loop dengan crossfade.</p>
+          <p class="music-footnote">Volume awal 10% agar lantunan AI Asmaul Husna tetap jelas. Kredit audio otomatis tampil pada video sesuai pilihan aktif.</p>
+          <p class="music-credit-note">Vokal: “Alhamdulilah (Vocal Only Nasheed)” — SyedsLife · CC BY 3.0. Instrumental: “Ramadan Music With Dark Reflective Tone” — Alex Morgan · CC BY 4.0. Track instrumental ditandai FMA sebagai sebagian dibuat dengan AI.</p>
           <button class="button button-outline music-credit-button" id="builtinMusicCreditButton" type="button">Salin atribusi untuk caption</button>
-          <p class="music-credit-source"><a href="https://commons.wikimedia.org/wiki/File:Jawad_Syed_-_Alhamdulilah_(Vocal_Only_Nasheed).flac" target="_blank" rel="noopener noreferrer">Sumber asli dan detail lisensi CC BY 3.0</a></p>
+          <p class="music-credit-source"><a href="https://commons.wikimedia.org/wiki/File:Jawad_Syed_-_Alhamdulilah_(Vocal_Only_Nasheed).flac" target="_blank" rel="noopener noreferrer">Sumber nasheed · CC BY 3.0</a> · <a href="https://freemusicarchive.org/music/alex-morgan/world-celebration-vol-1/ramadan-music-with-dark-reflective-tone" target="_blank" rel="noopener noreferrer">Sumber instrumental · CC BY 4.0</a></p>
         </section>
         <section class="control-section assets-section">
           <div class="section-title"><span class="section-number">06</span><h3>Media tambahan</h3></div>
