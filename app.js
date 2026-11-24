@@ -920,7 +920,7 @@
     const blob = await synthesizeName(index, voice);
     return decodeSpeechBlob(blob);
   }
-  async function playSpeechBuffer(buffer) {
+  async function playSpeechBuffer(buffer, onStart=()=>{}) {
     const context = ensureSpeechAudioContext();
     if (context.state !== 'running') await context.resume();
     if (state.ttsStop) return false;
@@ -935,6 +935,7 @@
       };
       try {
         startSpeechAnimation();
+        onStart();
         source.start(0);
       } catch (error) {
         state.speechSource = null;
@@ -997,7 +998,12 @@
     if (state.ttsBusy || state.exportBusy) return;
     state.ttsStop = false;
     state.ttsBusy = true;
-    let pendingBufferPromise = null;
+    const readySpeechBuffers = new Map();
+    const prefetchAhead = 3;
+    let nextBufferIndex = 0;
+    let playbackIndex = 0;
+    let playbackStarted = false;
+    let prefetchTask = null;
     try {
       const context = ensureSpeechAudioContext();
       await context.resume();
@@ -1009,47 +1015,83 @@
       await loadSpeechModel();
       startSpeechAnimation();
 
-      // Prepare the first clip, then synthesize and decode the following clip
-      // while the current clip is already playing.
-      byId('speechStatus').textContent = 'Menyiapkan audio AI 1 dari ' + data.length + ' · preset ' + voice + '…';
-      let preparedBuffer = await prepareSpeechBuffer(0, voice);
+      // Keep a short, ordered audio queue ready so synthesis does not hold up
+      // the wheel between names. Before the first clip, warm one clip ahead;
+      // once playback starts, maintain up to three clips ahead.
+      const prefetchSpeechBuffers = () => {
+        if (prefetchTask) return prefetchTask;
+        if (state.ttsStop || nextBufferIndex >= data.length) return null;
+        prefetchTask = (async () => {
+          while (!state.ttsStop && nextBufferIndex < data.length) {
+            const aheadReady = [...readySpeechBuffers.keys()].filter(index => index > playbackIndex).length;
+            const aheadLimit = playbackStarted ? prefetchAhead : 1;
+            if (aheadReady >= aheadLimit) break;
+            const index = nextBufferIndex++;
+            try {
+              const buffer = await prepareSpeechBuffer(index, voice);
+              if (state.ttsStop) break;
+              readySpeechBuffers.set(index, { buffer });
+            } catch (error) {
+              readySpeechBuffers.set(index, { error });
+              break;
+            }
+          }
+        })().finally(() => { prefetchTask = null; });
+        return prefetchTask;
+      };
+
+      const takePreparedBuffer = async index => {
+        playbackIndex = index;
+        while (!state.ttsStop) {
+          const ready = readySpeechBuffers.get(index);
+          if (ready) {
+            readySpeechBuffers.delete(index);
+            prefetchSpeechBuffers();
+            if (ready.error) throw ready.error;
+            return ready.buffer;
+          }
+          byId('speechStatus').textContent = 'Menyiapkan antrean audio ' + (index + 1) + ' dari ' + data.length + '…';
+          const task = prefetchSpeechBuffers();
+          if (task) await task;
+          else if (!readySpeechBuffers.has(index)) {
+            throw new Error('Antrean audio AI terhenti sebelum nama berikutnya siap.');
+          }
+        }
+        return null;
+      };
+
+      byId('speechStatus').textContent = 'Menyiapkan audio AI pertama…';
+      await prefetchSpeechBuffers();
+
       for (let i = 0; i < data.length; i++) {
         if (state.ttsStop) break;
-        if (i !== state.index) beginNameTransition(i);
-        state.index = i;
-        renderNames(byId('searchInput').value);
-        updateCaptions();
-        persist();
-        draw(state.speechAnimating ? (performance.now() - state.speechAnimationStart) / 1000 : 0);
+        const preparedBuffer = await takePreparedBuffer(i);
+        if (!preparedBuffer || state.ttsStop) break;
 
-        pendingBufferPromise = i + 1 < data.length
-          ? prepareSpeechBuffer(i + 1, voice).then(
-              buffer => ({ buffer }),
-              error => ({ error })
-            )
-          : null;
-        byId('speechStatus').textContent = 'Membacakan ' + (i + 1) + ' dari ' + data.length + ': ' + data[i][0]
-          + (pendingBufferPromise ? ' · menyiapkan audio nama berikutnya…' : ' · preset ' + voice + '…');
-
-        const played = await playSpeechBuffer(preparedBuffer);
+        const played = await playSpeechBuffer(preparedBuffer, () => {
+          // Change the visible wheel item at the exact moment its audio starts,
+          // never while that item is merely waiting in the preparation queue.
+          if (i !== state.index) beginNameTransition(i);
+          state.index = i;
+          playbackStarted = true;
+          renderNames(byId('searchInput').value);
+          updateCaptions();
+          persist();
+          draw(state.speechAnimating ? (performance.now() - state.speechAnimationStart) / 1000 : 0);
+          byId('speechStatus').textContent = 'Membacakan ' + (i + 1) + ' dari ' + data.length + ': ' + data[i][0] + ' · preset ' + voice + '…';
+          prefetchSpeechBuffers();
+        });
         if (!played || state.ttsStop) break;
-        if (pendingBufferPromise) {
-          byId('speechStatus').textContent = 'Menyiapkan audio AI ' + (i + 2) + ' dari ' + data.length + '…';
-          const nextResult = await pendingBufferPromise;
-          pendingBufferPromise = null;
-          if (state.ttsStop) break;
-          if (nextResult.error) throw nextResult.error;
-          preparedBuffer = nextResult.buffer;
-        }
+        playbackIndex = i + 1;
+        prefetchSpeechBuffers();
       }
       if (!state.ttsStop) byId('speechStatus').textContent = 'Selesai membaca seluruh 99 Asmaul Husna dengan Supertonic 3 ' + state.ttsBackend + '.';
     } catch (error) {
       console.error('Supertonic 3 sequence failed:', error);
       if (!state.ttsStop) byId('speechStatus').textContent = 'Pembacaan terhenti: ' + (error.message || String(error));
     } finally {
-      // Do not allow a second TTS pipeline call to overlap an in-flight prefetch
-      // when the user stops in the middle of the current spoken clip.
-      if (pendingBufferPromise) await pendingBufferPromise;
+      // Wait for an in-flight model call to settle before allowing another run.
+      if (prefetchTask) await prefetchTask;
       state.speechSequenceActive = false;
       syncBuiltinMusic();
       stopSpeechAnimation();
