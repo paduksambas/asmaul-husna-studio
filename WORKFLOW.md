@@ -158,3 +158,6 @@ Ikuti urutan ini. Jangan melewati pemeriksaan Preview sebelum perubahan dinyatak
 
 
 **Konfirmasi pengujian animasi (24 November 2026):** pengguna mengonfirmasi animasi berfungsi setelah perbaikan commit `84a094df5d80906bbe198300ef81eadfae953ec6` dan unduhan video berhasil. Pemutaran file hasil serta pengujian lintas laptop/iPad masih perlu dicatat terpisah.
+
+
+**Konfirmasi pemutaran video (24 November 2026):** pengguna mengonfirmasi file hasil unduhan berhasil diputar dan animasinya bergerak sempurna. Keberhasilan audio saat pemutaran serta pengujian lintas laptop/iPad tetap dicatat terpisah.
