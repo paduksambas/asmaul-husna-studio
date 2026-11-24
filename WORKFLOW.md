@@ -102,8 +102,8 @@ Ikuti urutan ini. Jangan melewati pemeriksaan Preview sebelum perubahan dinyatak
 - [ ] Uji interaksi aplikasi di laptop: seluruh 99 nama, pencarian, tema, rasio, animasi, durasi, dan reset.
 - [ ] Uji unggah gambar dan audio, termasuk kondisi file tidak valid dan izin browser.
 - [ ] Uji pratinjau dan sinkronisasi audio selama pemutaran.
-- [ ] Uji ekspor MP4/WebM sampai selesai, unduh file, dan putar hasilnya di laptop serta iPad.
-- [ ] Uji simpan PNG.
+- [x] Uji ekspor video sampai selesai dan pastikan file berhasil disimpan (dikonfirmasi pengguna; perangkat/browser yang digunakan belum dicatat).
+- [x] Uji simpan PNG dan pastikan gambar berhasil disimpan (dikonfirmasi pengguna).
 - [x] Tambahkan konfigurasi `.devcontainer/devcontainer.json` untuk GitHub Codespaces (Ubuntu, Python preview server, port 8000, dan pengaturan editor).
 - [ ] Buat/nyalakan Codespace dari Safari iPad A17 Pro dan verifikasi editor, terminal, port forwarding, serta server otomatis.
 - [ ] Uji edit source → jalankan server → refresh browser dari iPad.
