@@ -20,7 +20,7 @@
     translation:true, transliteration:true, playing:false, elapsed:0, start:0, image:null, imageUrl:'',
     audioUrl:'', recorder:null, chunks:[], timer:0, audioDestination:null, backgroundAudioSource:null, backgroundAudioGain:null,
     ttsPipeline:null, ttsLoadPromise:null, ttsBackend:'', ttsBusy:false, ttsStop:false, speechAudioContext:null, speechSource:null,
-    speechAnimating:false, speechAnimationStart:0, renderLoopActive:false, transitionCanvas:null, transitionStart:0, transitionDuration:680,
+    speechAnimating:false, speechAnimationStart:0, renderLoopActive:false, transitionStart:0, transitionDuration:420,
     exportBusy:false, exportPreparing:false, exportCancelled:false, narrationExportActive:false,
     exportDuration:0, exportAudioStart:0, exportTimeline:[], exportSources:[] };
   const clamp = (n,min,max) => Math.min(max,Math.max(min,n));
@@ -111,18 +111,10 @@
     ctx.closePath(); ctx.stroke(); ctx.restore();
   }
   function beginNameTransition(nextIndex) {
-    if (nextIndex === state.index || !canvas || !canvas.width || !canvas.height) return;
-    try {
-      const snapshot = document.createElement('canvas');
-      snapshot.width = canvas.width;
-      snapshot.height = canvas.height;
-      snapshot.getContext('2d').drawImage(canvas, 0, 0);
-      state.transitionCanvas = snapshot;
-      state.transitionStart = performance.now();
-    } catch (error) {
-      state.transitionCanvas = null;
-      state.transitionStart = 0;
-    }
+    if (nextIndex === state.index) return;
+    // Fade only the changing name/text layer; never cover the animated canvas
+    // with a frozen full-frame snapshot.
+    state.transitionStart = performance.now();
   }
   function draw(t) {
     if (!ctx || !data.length) return;
@@ -187,6 +179,11 @@
     const floatY=animated&&state.animation==='float'?Math.sin(t*.72)*u*.018:0;
     const zoom=animated&&state.animation==='zoom'?1+Math.sin(t*.52)*.032:1;
     const floatScale=animated&&state.animation==='float'?1+Math.sin(t*.72+Math.PI/2)*.006:1;
+    const nameFade = state.transitionStart
+      ? clamp((performance.now() - state.transitionStart) / state.transitionDuration, 0, 1)
+      : 1;
+    ctx.save();
+    ctx.globalAlpha = nameFade;
     ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillStyle=c[3];
     ctx.font='600 '+Math.max(17,u*.019)+'px "DM Sans",sans-serif';ctx.letterSpacing=Math.max(2,u*.003)+'px';
     ctx.fillText('ASMAUL HUSNA',cx,cy-u*.205);ctx.letterSpacing='0px';
@@ -214,20 +211,10 @@
     else {ctx.strokeRect(cx-pw/2,py-ph/2,pw,ph);}
     ctx.fillStyle=c[3];ctx.font='500 '+Math.max(12,u*.014)+'px "DM Sans",sans-serif';
     ctx.fillText(String(state.index+1).padStart(2,'0')+' / 99',cx,py);
+    ctx.restore();
+    if (nameFade >= 1) state.transitionStart = 0;
     ctx.fillStyle=c[4]+'b5';ctx.font='500 '+Math.max(10,u*.011)+'px "DM Sans",sans-serif';
     ctx.fillText('REMEMBER THE BEAUTIFUL NAMES',cx,h-Math.max(54,u*.065));
-    if (state.transitionCanvas) {
-      const progress = clamp((performance.now() - state.transitionStart) / state.transitionDuration, 0, 1);
-      if (progress < 1) {
-        ctx.save();
-        ctx.globalAlpha = 1 - progress;
-        ctx.drawImage(state.transitionCanvas, 0, 0, w, h);
-        ctx.restore();
-      } else {
-        state.transitionCanvas = null;
-        state.transitionStart = 0;
-      }
-    }
   }
   function ensureRenderLoop() {
     if (state.renderLoopActive) return;
