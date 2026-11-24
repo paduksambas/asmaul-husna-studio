@@ -24,7 +24,7 @@ Membangun studio pembuatan video Asmaul Husna yang mudah digunakan di laptop dan
 
 ## 3. Cara melanjutkan dari masing-masing perangkat
 
-### Laptop — perangkat kerja utama
+### Laptop — perangkat kerja penuh
 
 1. Buka repository GitHub di atas.
 2. Clone repository atau buka folder proyek yang sudah ada.
@@ -49,15 +49,44 @@ git switch main
 python -m http.server 8000
 ```
 
-### iPad — akses, pemeriksaan, dan uji penggunaan
+### iPad A17 Pro — perangkat kerja penuh
 
-1. Buka repository GitHub melalui Safari atau aplikasi GitHub.
-2. Buka dokumen `WORKFLOW.md` untuk melihat jalur kerja terbaru.
-3. Buka alamat Preview untuk memeriksa tampilan dan alur editor.
-4. Buka Production untuk penggunaan versi yang dipublikasikan.
-5. Uji pemilihan nama, perubahan tema/rasio, unggah media, pratinjau, dan unduh hasil.
+iPad bukan hanya perangkat untuk melihat hasil. Gunakan Safari dengan GitHub Codespaces agar source dapat dibuka, diedit, dijalankan, dan diuji langsung dari iPad tanpa harus menyiapkan server di laptop.
 
-**Penting:** pengaturan editor dan media yang diunggah saat ini disimpan di browser/perangkat masing-masing. Data tersebut tidak otomatis tersinkron antara laptop dan iPad. Sinkronisasi proyek lintas perangkat perlu dirancang sebagai fitur tersendiri.
+1. Buka repository di Safari: https://github.com/paduksambas/asmaul-husna-studio
+2. Masuk ke GitHub, lalu pilih **Code → Codespaces → Create codespace on main** (atau buka Codespace yang sudah ada).
+3. Tunggu editor VS Code di browser selesai dimuat. Jika tampilan sempit, gunakan menu Safari **Request Desktop Website** dan orientasi landscape.
+4. Buka file `WORKFLOW.md`, lalu edit `app.js`, `styles.css`, `index.html`, atau `asmaul-husna.js` dari panel Explorer.
+5. Buka terminal terintegrasi dan jalankan server:
+
+   ```bash
+   python -m http.server 8000 --bind 0.0.0.0
+   ```
+
+6. Buka tab **Ports** di Codespaces. Pastikan port 8000 terdeteksi, lalu pilih **Open in Browser**. Jika perlu, biarkan visibilitas port tetap **Private**.
+7. Uji aplikasi di tab browser yang terbuka. Kembali ke editor untuk memperbaiki source, lalu refresh tab aplikasi untuk melihat perubahan.
+8. Simpan perubahan ke GitHub dari terminal:
+
+   ```bash
+   git status
+   git add .
+   git commit -m "Deskripsi perubahan"
+   git push origin main
+   ```
+
+9. Buka Preview Vercel untuk memeriksa hasil deployment dari commit terbaru. Jangan langsung menganggap perubahan sudah teruji hanya karena berhasil disimpan.
+
+**Jika Codespaces belum tersedia:** source tetap dapat dibaca dan diedit melalui GitHub di Safari, tetapi menjalankan server lokal dan pengujian interaktif paling praktis dilakukan melalui Codespaces. Pembuatan Codespace memerlukan login GitHub dan ketersediaan kuota/akses Codespaces pada akun.
+
+**Catatan sinkronisasi:** laptop dan iPad harus melakukan pull/sinkronisasi sebelum mulai mengedit, lalu push setelah selesai. Hindari mengedit file yang sama secara bersamaan di dua perangkat. GitHub menjadi pusat source; file media dan preferensi editor yang disimpan lokal di browser tetap terpisah per perangkat.
+
+### Aturan kerja lintas perangkat
+
+- Kedua perangkat dapat mengedit source dan menjalankan pengujian melalui lingkungan kerja masing-masing (terminal lokal di laptop, Codespaces di iPad).
+- Sebelum mulai: jalankan `git pull --rebase origin main` agar source terbaru digunakan.
+- Setelah selesai: commit perubahan dan push ke `main`.
+- Jangan mengedit file yang sama secara bersamaan di laptop dan iPad. Jika terjadi konflik, selesaikan konflik sebelum melanjutkan.
+- Periksa Preview Vercel setelah push. Production hanya diperbarui setelah pengujian Preview lulus.
 
 ## 4. Urutan jalur kerja pengembangan
 
@@ -76,6 +105,8 @@ Ikuti urutan ini. Jangan melewati pemeriksaan Preview sebelum perubahan dinyatak
 - [ ] Uji pratinjau dan sinkronisasi audio selama pemutaran.
 - [ ] Uji ekspor WebM sampai selesai, unduh file, dan putar hasilnya.
 - [ ] Uji simpan PNG.
+- [ ] Siapkan dan verifikasi GitHub Codespaces dari Safari iPad A17 Pro (editor, terminal, port forwarding).
+- [ ] Uji edit source → jalankan server → refresh browser dari iPad.
 - [ ] Uji layout dan kontrol sentuh di iPad.
 - [ ] Uji orientasi portrait/landscape dan ukuran layar kecil.
 - [ ] Periksa aksesibilitas dasar, pesan error, dan konsol browser.
@@ -109,7 +140,7 @@ Ikuti urutan ini. Jangan melewati pemeriksaan Preview sebelum perubahan dinyatak
 **Perubahan:** efisiensi loop pratinjau, ketahanan saat localStorage tidak tersedia, dan pencegahan gangguan kontrol selama ekspor.  
 **Status deployment:** Production READY; Preview READY.  
 **Catatan integrasi:** GitHub Integration belum terhubung ke project Vercel. Deployment yang sudah ada dibuat melalui transfer source langsung.  
-**Tahap kerja berikutnya:** hubungkan GitHub–Vercel, lalu lakukan pengujian fungsi penuh di laptop dan iPad sebelum pembaruan Production berikutnya.
+**Pembaruan jalur perangkat:** iPad A17 Pro ditetapkan sebagai perangkat kerja penuh melalui GitHub Codespaces (Safari), selain laptop. **Tahap kerja berikutnya:** hubungkan GitHub–Vercel, siapkan Codespaces di iPad, lalu lakukan pengujian fungsi penuh dari kedua perangkat.
 
 ---
 
