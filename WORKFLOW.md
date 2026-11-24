@@ -104,7 +104,7 @@ Ikuti urutan ini. Jangan melewati pemeriksaan Preview sebelum perubahan dinyatak
 - [x] Uji unggah gambar dan audio yang valid serta tampil/fungsinya di pratinjau (dikonfirmasi pengguna).
 - [x] Uji pratinjau media dan sinkronisasi audio dasar (dikonfirmasi pengguna).
 - [ ] Uji penolakan file tidak valid dan penanganan izin browser.
-- [x] Uji ekspor video sampai selesai dan pastikan file berhasil disimpan (dikonfirmasi pengguna; perangkat/browser yang digunakan belum dicatat).
+- [x] Uji ekspor video, unduhan, dan pemutaran hasil; pengguna mengonfirmasi video berhasil diputar dengan animasi bergerak sempurna (audio dan perangkat/browser masih perlu dicatat terpisah).
 - [x] Uji simpan PNG dan pastikan gambar berhasil disimpan (dikonfirmasi pengguna).
 - [x] Tambahkan konfigurasi `.devcontainer/devcontainer.json` untuk GitHub Codespaces (Ubuntu, Python preview server, port 8000, dan pengaturan editor).
 - [ ] Buat/nyalakan Codespace dari Safari iPad A17 Pro dan verifikasi editor, terminal, port forwarding, serta server otomatis.
