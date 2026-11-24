@@ -17,7 +17,7 @@
     square: [1080,1080,'1:1 · 1080 × 1080']
   };
   const state = { index:0, theme:'emerald', format:'portrait', animation:'float', duration:15, size:100,
-    translation:true, transliteration:true, arabicVerticalOffset:0, arabicTextGap:0, textMeaningGap:0, playing:false, elapsed:0, start:0, image:null, imageUrl:'',
+    translation:true, transliteration:true, arabicVerticalOffset:0, arabicTextGap:0, textMeaningGap:0, builtinMusicEnabled:true, builtinMusicVolume:18, builtinMusicBuffer:null, builtinMusicSource:null, builtinMusicGain:null, playing:false, elapsed:0, start:0, image:null, imageUrl:'',
     audioUrl:'', recorder:null, chunks:[], timer:0, audioDestination:null, backgroundAudioSource:null, backgroundAudioGain:null,
     ttsPipeline:null, ttsLoadPromise:null, ttsBackend:'', ttsBusy:false, ttsStop:false, speechAudioContext:null, speechSource:null,
     speechAnimating:false, speechAnimationStart:0, renderLoopActive:false, transitionStart:0, transitionDuration:420,
@@ -40,7 +40,7 @@
     try {
       localStorage.setItem('asmaul-husna-studio-v1', JSON.stringify({
         index:state.index,theme:state.theme,format:state.format,animation:state.animation,
-        duration:state.duration,size:state.size,translation:state.translation,
+        duration:state.duration,size:state.size,translation:state.translation,builtinMusicEnabled:state.builtinMusicEnabled,builtinMusicVolume:state.builtinMusicVolume,
         transliteration:state.transliteration,arabicVerticalOffset:state.arabicVerticalOffset,arabicTextGap:state.arabicTextGap,textMeaningGap:state.textMeaningGap,project:byId('projectName').value
       }));
       byId('saveStatus').textContent = 'Tersimpan di perangkat';
@@ -55,6 +55,8 @@
       if (formats[s.format]) state.format = s.format;
       if (['float','zoom','shimmer','none'].includes(s.animation)) state.animation = s.animation;
       if (Number.isFinite(s.duration)) state.duration = clamp(s.duration,5,60);
+      if (typeof s.builtinMusicEnabled === 'boolean') state.builtinMusicEnabled = s.builtinMusicEnabled;
+      if (Number.isFinite(s.builtinMusicVolume)) state.builtinMusicVolume = clamp(s.builtinMusicVolume,0,40);
       if (Number.isFinite(s.size)) state.size = clamp(s.size,70,130);
       if (typeof s.translation === 'boolean') state.translation = s.translation;
       if (typeof s.transliteration === 'boolean') state.transliteration = s.transliteration;
@@ -102,6 +104,9 @@
      byId('textMeaningGap').value = state.textMeaningGap; byId('textMeaningGapValue').textContent = (state.textMeaningGap>0?'+':'')+state.textMeaningGap;
      byId('animationSelect').value = state.animation;
     byId('durationInput').value = state.duration; byId('durationValue').textContent = state.duration;
+    byId('builtinMusicEnabled').checked = state.builtinMusicEnabled;
+    byId('builtinMusicVolume').value = state.builtinMusicVolume;
+    byId('builtinMusicVolumeValue').textContent = state.builtinMusicVolume + '%';
     byId('dimensionLabel').textContent = formats[state.format][2];
     const f = formats[state.format]; canvas.width = f[0]; canvas.height = f[1];
     canvas.style.aspectRatio = f[0] + ' / ' + f[1];
@@ -250,8 +255,60 @@
     state.speechAnimating = false;
     if (!state.playing) draw(0);
   }
+  function stopBuiltinMusic() {
+    const source = state.builtinMusicSource, gain = state.builtinMusicGain;
+    state.builtinMusicSource = null; state.builtinMusicGain = null;
+    if (!source) return;
+    try {
+      const now = source.context.currentTime;
+      gain.gain.cancelScheduledValues(now);
+      gain.gain.setTargetAtTime(0, now, 0.045);
+      source.stop(now + 0.22);
+    } catch (_) { try { source.stop(); } catch (_) {} }
+  }
+  function createBuiltinMusicBuffer(context) {
+    if (state.builtinMusicBuffer && state.builtinMusicBuffer.sampleRate === context.sampleRate) return state.builtinMusicBuffer;
+    const seconds = 16, sampleRate = context.sampleRate, length = Math.floor(seconds * sampleRate);
+    const buffer = context.createBuffer(1, length, sampleRate), samples = buffer.getChannelData(0);
+    const melody = [330,392,440,392,330,294,330,220];
+    for (let i = 0; i < length; i++) {
+      const t = i / sampleRate, beat = Math.floor(t / 2), local = t - beat * 2;
+      const slow = 0.5 + 0.5 * Math.sin(2 * Math.PI * t / seconds);
+      const pad = Math.sin(2*Math.PI*110*t)*0.105 + Math.sin(2*Math.PI*165*t)*0.064 + Math.sin(2*Math.PI*220*t)*0.045 + Math.sin(2*Math.PI*330*t)*0.022;
+      const attack = Math.min(1, local / 0.16), decay = Math.exp(-local * 1.55);
+      const pluck = (Math.sin(2*Math.PI*melody[beat]*t) + 0.22*Math.sin(2*Math.PI*melody[beat]*2*t)) * attack * decay * 0.105;
+      const air = Math.sin(2*Math.PI*440*t + Math.sin(2*Math.PI*t/seconds)*0.16) * 0.012;
+      const edge = Math.min(1, t / 0.18, (seconds - t) / 0.18);
+      samples[i] = (pad * (0.88 + slow * 0.12) + pluck + air) * Math.max(0, edge);
+    }
+    state.builtinMusicBuffer = buffer;
+    return buffer;
+  }
+  function startBuiltinMusic(offset=0) {
+    if (!state.builtinMusicEnabled || state.builtinMusicVolume <= 0 || state.builtinMusicSource) return;
+    const context = ensureSpeechAudioContext();
+    if (context.state !== 'running') context.resume().catch(() => {});
+    const source = context.createBufferSource(), gain = context.createGain();
+    source.buffer = createBuiltinMusicBuffer(context); source.loop = true;
+    const now = context.currentTime, volume = state.builtinMusicVolume / 100;
+    gain.gain.setValueAtTime(0, now); gain.gain.linearRampToValueAtTime(volume, now + 0.35);
+    source.connect(gain); gain.connect(context.destination);
+    if (state.audioDestination) gain.connect(state.audioDestination);
+    source.onended = () => { if (state.builtinMusicSource === source) { state.builtinMusicSource = null; state.builtinMusicGain = null; } };
+    state.builtinMusicSource = source; state.builtinMusicGain = gain;
+    source.start(now, Math.max(0, offset) % source.buffer.duration);
+  }
+  function scheduleBuiltinMusic(context, audioDestination, startAt) {
+    if (!state.builtinMusicEnabled || state.builtinMusicVolume <= 0) return;
+    const source = context.createBufferSource(), gain = context.createGain();
+    source.buffer = createBuiltinMusicBuffer(context); source.loop = true;
+    gain.gain.value = state.builtinMusicVolume / 100;
+    source.connect(gain); gain.connect(context.destination); gain.connect(audioDestination);
+    state.exportSources.push({ source, gain });
+    source.start(startAt);
+  }
   function stopPlayback() {
-    state.playing=false;state.elapsed=0;audio.pause();
+    state.playing=false;state.elapsed=0;audio.pause();stopBuiltinMusic();
     byId('playIcon').textContent='▶';byId('playButton').setAttribute('aria-label','Putar pratinjau');
     byId('transportStatus').textContent=state.recorder?'Mengekspor video…':'Pratinjau siap';
     byId('timelineFill').style.width='0%';updateCaptions();draw(0);
@@ -262,6 +319,7 @@
     state.start=performance.now()-state.elapsed*1000;state.playing=true;
     byId('playIcon').textContent='Ⅱ';byId('playButton').setAttribute('aria-label','Jeda pratinjau');
     byId('transportStatus').textContent=state.recorder?'Merekam video…':'Pratinjau berjalan';
+    if (state.builtinMusicEnabled) startBuiltinMusic(state.elapsed);
     if(state.audioUrl){
       if(state.backgroundAudioSource&&state.speechAudioContext&&state.speechAudioContext.state!=='running'){
         state.speechAudioContext.resume().catch(()=>{});
@@ -404,7 +462,7 @@
     state.exportBusy = true;
     try {
       stream = canvas.captureStream(30);
-      if (state.audioUrl) {
+      if (state.audioUrl || state.builtinMusicEnabled) {
         const context = ensureSpeechAudioContext();
         const audioDestination = ensureAudioMixDestination();
         await context.resume();
@@ -492,6 +550,7 @@
       });
       const totalDuration = cursor;
       const audioDestination = ensureAudioMixDestination();
+      createBuiltinMusicBuffer(context);
       let backgroundBuffer = null;
       if (state.audioUrl) {
         byId('exportMessage').textContent = 'Menyiapkan audio latar untuk dicampur dengan narasi…';
@@ -556,7 +615,7 @@
       const estimatedDuration = Math.ceil(totalDuration);
       exportView(
         'Merekam video + narasi 99 nama…',
-        'Durasi sekitar ' + timeText(estimatedDuration) + ' · preset ' + voice + (state.audioUrl ? ' · audio latar dipelankan' : '') + '. Biarkan tab tetap terbuka.',
+        'Durasi sekitar ' + timeText(estimatedDuration) + ' · preset ' + voice + (state.builtinMusicEnabled ? ' · musik ambient bawaan' : '') + (state.audioUrl ? ' · audio tambahan' : '') + '. Biarkan tab tetap terbuka.',
         true
       );
 
@@ -568,6 +627,7 @@
       state.exportAudioStart = context.currentTime + 0.25;
       audio.pause();
       scheduleBackgroundAudio(context, audioDestination, backgroundBuffer, state.exportAudioStart);
+      scheduleBuiltinMusic(context, audioDestination, state.exportAudioStart);
       startSpeechAnimation(true);
       updateCaptions();
       draw(0);
@@ -834,7 +894,7 @@
   function reset() {
     stopSpeech(false);
     state.index=0;state.theme='emerald';state.format='portrait';state.animation='float';
-    state.duration=15;state.size=100;state.translation=true;state.transliteration=true;state.arabicVerticalOffset=0;state.arabicTextGap=0;state.textMeaningGap=0;state.elapsed=0;
+    state.duration=15;state.size=100;state.translation=true;state.transliteration=true;state.arabicVerticalOffset=0;state.arabicTextGap=0;state.textMeaningGap=0;state.builtinMusicEnabled=true;state.builtinMusicVolume=18;state.elapsed=0;
     byId('projectName').value='Asmaul Husna — Video 01';byId('searchInput').value='';
     removeMedia();renderNames('');applyControls();persist();stopPlayback();notify('Pengaturan dikembalikan ke awal.');
   }
@@ -856,8 +916,10 @@
      byId('textMeaningGap').addEventListener('input',e=>{state.textMeaningGap=Number(e.target.value);byId('textMeaningGapValue').textContent=(state.textMeaningGap>0?'+':'')+state.textMeaningGap;draw(0);persist();});
      byId('animationSelect').addEventListener('change',e=>{state.animation=e.target.value;byId('renderHint').textContent=state.animation==='none'?'Animasi dinonaktifkan':'Animasi lembut aktif saat diputar';draw(0);persist();});
     byId('durationInput').addEventListener('input',e=>{state.duration=Number(e.target.value);byId('durationValue').textContent=state.duration;updateCaptions();persist();});
+    byId('builtinMusicEnabled').addEventListener('change',e=>{state.builtinMusicEnabled=e.target.checked;if(state.playing){if(state.builtinMusicEnabled)startBuiltinMusic(state.elapsed);else stopBuiltinMusic();}persist();});
+    byId('builtinMusicVolume').addEventListener('input',e=>{state.builtinMusicVolume=Number(e.target.value);byId('builtinMusicVolumeValue').textContent=state.builtinMusicVolume+'%';if(state.builtinMusicGain)state.builtinMusicGain.gain.setTargetAtTime(state.builtinMusicVolume/100,state.speechAudioContext.currentTime,0.08);persist();});
     byId('projectName').addEventListener('input',persist);
-    byId('playButton').addEventListener('click',()=>{if(state.recorder){notify('Ekspor sedang berlangsung. Gunakan tombol Hentikan ekspor untuk menghentikannya.');return;}if(state.playing){state.playing=false;audio.pause();byId('playIcon').textContent='▶';byId('transportStatus').textContent='Pratinjau dijeda';}else play();});
+    byId('playButton').addEventListener('click',()=>{if(state.recorder){notify('Ekspor sedang berlangsung. Gunakan tombol Hentikan ekspor untuk menghentikannya.');return;}if(state.playing){state.playing=false;audio.pause();stopBuiltinMusic();byId('playIcon').textContent='▶';byId('transportStatus').textContent='Pratinjau dijeda';}else play();});
     byId('snapshotButton').addEventListener('click',snapshot);
     byId('exportTopButton').addEventListener('click',exportVideo);
     byId('cancelExportButton').addEventListener('click',()=>stopExport(true));
