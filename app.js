@@ -124,6 +124,9 @@
       ctx.fillStyle=shade;ctx.fillRect(0,0,w,h);
     }
     const motionActive=animated&&state.animation!=='none';
+    // Use a monotonic wall-clock phase for shimmer so redraw cadence or elapsed-time
+    // resets cannot make the decorative rotation pause or jump.
+    const motionTime=animated ? performance.now()/1000 : t;
     const ambientPulse=motionActive ? .5+.5*Math.sin(t*.72) : 0;
     const glow=ctx.createRadialGradient(cx,cy,0,cx,cy,u*(.47+ambientPulse*.025));glow.addColorStop(0,c[5]+(motionActive?'48':'40'));glow.addColorStop(1,'#00000000');
     ctx.fillStyle=glow;ctx.fillRect(0,0,w,h);
@@ -133,10 +136,27 @@
       ctx.beginPath();ctx.arc(0,0,u*(.22+i*.035)+ringPulse,0,Math.PI*2);ctx.stroke();
     }
     const shimmering=animated&&state.animation==='shimmer';
+    if(shimmering){
+      // Three separated arc tracks make the rotation visually legible; the angle
+      // advances continuously and wraps naturally through a full 2π revolution.
+      ctx.save();
+      ctx.rotate(motionTime*.34);
+      ctx.strokeStyle=c[3]+'b8';
+      ctx.lineWidth=Math.max(2,w*.0022);
+      ctx.lineCap='round';
+      for(let i=0;i<3;i++){
+        const radius=u*(.285+i*.026);
+        const offset=i*Math.PI*2/3;
+        ctx.beginPath();
+        ctx.arc(0,0,radius,offset+.18,offset+1.12);
+        ctx.stroke();
+      }
+      ctx.restore();
+    }
     for(let i=0;i<16;i++){
-      const starPulse=shimmering ? .66+.34*(.5+.5*Math.sin(t*1.12+i*1.43)) : 1;
-      const starSizePulse=shimmering ? .5+.5*Math.sin(t*.8+i) : 0;
-      ctx.save();ctx.globalAlpha=starPulse;ctx.rotate(i*Math.PI/8+(shimmering?t*.105:0));
+      const starPulse=shimmering ? .66+.34*(.5+.5*Math.sin(motionTime*1.12+i*1.43)) : 1;
+      const starSizePulse=shimmering ? .5+.5*Math.sin(motionTime*.8+i) : 0;
+      ctx.save();ctx.globalAlpha=starPulse;ctx.rotate(i*Math.PI/8+(shimmering?motionTime*.105:0));
       star(0,-u*.34,u*(.024+.0015*starSizePulse),c[3]+'88');ctx.restore();
     }
     ctx.restore();
@@ -164,7 +184,7 @@
     ctx.shadowColor=c[3]+'55';ctx.shadowBlur=u*(.022+(motionActive?ambientPulse*.004:0));
     let arabicFill=c[4];
     if(shimmering){
-      const sheenCenter=-w*.48+((t*.19)%1)*w*.96;
+      const sheenCenter=-w*.48+((motionTime*.19)%1)*w*.96;
       const sheen=ctx.createLinearGradient(sheenCenter-u*.12,0,sheenCenter+u*.12,0);
       sheen.addColorStop(0,c[4]);sheen.addColorStop(.5,'#fff9e9');sheen.addColorStop(1,c[4]);
       arabicFill=sheen;
