@@ -25,6 +25,11 @@ assert.match(app, /createMediaStreamDestination\(\)/, 'recordable audio stream m
 assert.match(app, /stream\.addTrack\(track\.clone\(\)\)/, 'each recording must use a clone of the reusable audio track');
 assert.match(app, /createMediaElementSource\(audio\)/, 'uploaded background audio must feed the mix');
 assert.match(app, /gain\.connect\(audioDestination\)/, 'speech audio must feed the recorded audio track');
+assert.match(app, /async function loadBackgroundAudioBuffer\(context\)/, 'uploaded background audio must be decoded before recording');
+assert.match(app, /function scheduleBackgroundAudio\(context, audioDestination, buffer, startAt\)/, 'background audio must use the scheduled Web Audio timeline');
+assert.match(app, /source\.loop = true/, 'background audio must loop for the full narration');
+assert.match(app, /gain\.gain\.value = 0\.18/, 'background audio must be mixed below the AI narration');
+assert.match(app, /scheduleBackgroundAudio\(context, audioDestination, backgroundBuffer, state\.exportAudioStart\)/, 'background audio must start with the narration');
 assert.match(app, /source\.start\(state\.exportAudioStart \+ timeline\[index\]\)/, 'all speech clips must be scheduled on the shared timeline');
 assert.match(app, /state\.exportCancelled/, 'narration export must support cancellation');
 assert.match(app, /totalDuration \+ 1/, 'recording duration must follow the generated narration');
