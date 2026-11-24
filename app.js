@@ -24,6 +24,7 @@
     exportBusy:false, exportPreparing:false, exportCancelled:false, narrationExportActive:false,
     exportDuration:0, exportAudioStart:0, exportTimeline:[], exportSources:[] };
   const WHEEL_TRANSITION_MS = 520;
+  const WHEEL_TRANSITION_LEAD_MS = WHEEL_TRANSITION_MS + 40;
   const clamp = (n,min,max) => Math.min(max,Math.max(min,n));
   const fileSafe = (s) => String(s || 'asmaul-husna').normalize('NFKD').replace(/[^a-z0-9_-]+/gi,'-').replace(/^-+|-+$/g,'').toLowerCase() || 'asmaul-husna';
   const timeText = (n) => {
@@ -1100,7 +1101,7 @@
           draw(state.speechAnimating ? (performance.now() - state.speechAnimationStart) / 1000 : 0);
           state.pendingWheelTransition = state.animation === 'wheel' && i + 1 < data.length
             ? {
-                at: context.currentTime + Math.max(0, preparedBuffer.duration - WHEEL_TRANSITION_MS / 1000),
+                at: context.currentTime + Math.max(0, preparedBuffer.duration - WHEEL_TRANSITION_LEAD_MS / 1000),
                 nextIndex: i + 1
               }
             : null;
