@@ -240,7 +240,7 @@
         const wheelItem = data[entry.index];
         const depth = Math.max(0, entry.depth);
         const scale = .43 + .57 * depth;
-        const alpha = .42 + .58 * depth;
+        const alpha = .2 + .8 * ((entry.depth + 1) / 2);
         const x = cx + Math.sin(entry.angle) * u * .075;
         const y = cy - u * .025 + Math.sin(entry.angle) * u * .235;
         const arabicY = -u * (.12 - state.arabicVerticalOffset * .0025);
@@ -263,6 +263,7 @@
         ctx.shadowBlur = isFocus ? u * .02 : u * .008;
         ctx.fillStyle = c[4];
         ctx.fillText(wheelItem[1],0,arabicY,w*.78);
+        ctx.shadowBlur = 0;
         if (state.transliteration) {
           ctx.shadowBlur = 0;
           ctx.fillStyle = c[4] + (isFocus ? 'ee' : 'bb');
