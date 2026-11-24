@@ -298,3 +298,6 @@ Ikuti urutan ini. Jangan melewati pemeriksaan Preview sebelum perubahan dinyatak
 
 
 **Kontrol posisi kaligrafi Arab — 24 November 2026:** panel Tipografi & teks kini memiliki slider independen untuk menggeser kaligrafi Arab ke atas/bawah (rentang -40 sampai +40; nilai positif bergerak ke bawah), selain dua kontrol jarak Arab→transliterasi dan transliterasi→arti. Nilai disimpan dan dipulihkan melalui localStorage, berlaku untuk pratinjau serta ekspor, dan direset ke 0 melalui Atur ulang. Pemeriksaan statis memverifikasi kontrol dan pengaruhnya pada koordinat kanvas. Hanya branch `feature/supertonic-narration-export`; `main`/Production tidak disentuh.
+
+
+**Pengelompokan kontrol kaligrafi Arab — 24 November 2026:** slider “Posisi kaligrafi Arab” dan “Jarak Arab → transliterasi” ditempatkan berdampingan dalam satu subbagian visual berjudul “Kaligrafi Arab” pada panel Tipografi & teks. Kontrol ukuran kaligrafi, visibilitas teks, dan jarak transliterasi→arti tetap terpisah. Pemeriksaan statis memastikan kedua slider berada dalam grup yang sama. Hanya branch Preview yang diperbarui; `main`/Production tidak disentuh.
