@@ -133,6 +133,7 @@
       state.wheelDirection = Math.sign(nextIndex - state.index) || 1;
       state.wheelTransitionStart = performance.now();
       state.transitionStart = 0;
+      ensureRenderLoop();
       return;
     }
     state.wheelTransitionStart = 0;
@@ -242,6 +243,9 @@
         const alpha = .42 + .58 * depth;
         const x = cx + Math.sin(entry.angle) * u * .075;
         const y = cy - u * .025 + Math.sin(entry.angle) * u * .235;
+        const arabicY = -u * (.12 - state.arabicVerticalOffset * .0025);
+        const transliterationY = u * (.10 + state.arabicTextGap * .001);
+        const translationY = transliterationY + (state.transliteration ? u * (.055 + state.textMeaningGap * .001) : 0);
         const isFocus = entry.depth > .72;
         ctx.save();
         ctx.translate(x,y);
@@ -258,17 +262,17 @@
         ctx.shadowColor = c[3] + '55';
         ctx.shadowBlur = isFocus ? u * .02 : u * .008;
         ctx.fillStyle = c[4];
-        ctx.fillText(wheelItem[1],0,-u*.025,w*.78);
+        ctx.fillText(wheelItem[1],0,arabicY,w*.78);
         if (state.transliteration) {
           ctx.shadowBlur = 0;
           ctx.fillStyle = c[4] + (isFocus ? 'ee' : 'bb');
           ctx.font = '600 ' + Math.max(12,u*(isFocus ? .028 : .021)) + 'px "DM Sans",sans-serif';
-          ctx.fillText(wheelItem[0],0,u*.065,w*.76);
+          ctx.fillText(wheelItem[0],0,transliterationY,w*.76);
         }
         if (isFocus && state.translation) {
           ctx.fillStyle = c[4];
           ctx.font = '400 ' + Math.max(13,u*.022) + 'px "DM Sans",sans-serif';
-          ctx.fillText(wheelItem[2],0,u*.125,w*.76);
+          ctx.fillText(wheelItem[2],0,translationY,w*.76);
         }
         ctx.restore();
       });
@@ -440,7 +444,7 @@
     ensureRenderLoop();
   }
   function loop(now) {
-    if (!state.playing && !state.speechAnimating) {
+    if (!state.playing && !state.speechAnimating && !state.wheelTransitionStart) {
       state.renderLoopActive = false;
       draw(0);
       return;
@@ -471,6 +475,7 @@
     }
     if (state.speechAnimating) draw((now - state.speechAnimationStart) / 1000);
     else if (state.playing) draw(state.elapsed);
+    else if (state.wheelTransitionStart) draw((now - state.wheelTransitionStart) / 1000);
     else {
       state.renderLoopActive = false;
       draw(0);
@@ -1022,7 +1027,7 @@
   function reset() {
     stopSpeech(false);
     state.index=0;state.theme='emerald';state.format='portrait';state.animation='float';
-    state.duration=15;state.size=100;state.translation=true;state.transliteration=true;state.arabicVerticalOffset=0;state.arabicTextGap=0;state.textMeaningGap=0;state.builtinMusicEnabled=true;state.builtinMusicVolume=10;state.builtinMusicPreview=false;byId('builtinMusicTestButton').textContent='Dengarkan nasheed';state.elapsed=0;
+    state.duration=15;state.size=100;state.translation=true;state.transliteration=true;state.arabicVerticalOffset=0;state.arabicTextGap=0;state.textMeaningGap=0;state.wheelTransitionStart=0;state.transitionStart=0;state.builtinMusicEnabled=true;state.builtinMusicVolume=10;state.builtinMusicPreview=false;byId('builtinMusicTestButton').textContent='Dengarkan nasheed';state.elapsed=0;
     byId('projectName').value='Asmaul Husna — Video 01';byId('searchInput').value='';
     removeMedia();renderNames('');applyControls();persist();stopPlayback();notify('Pengaturan dikembalikan ke awal.');
   }
