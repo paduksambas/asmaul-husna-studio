@@ -17,7 +17,7 @@
     square: [1080,1080,'1:1 · 1080 × 1080']
   };
   const state = { index:0, theme:'emerald', format:'portrait', animation:'float', duration:15, size:100,
-    translation:true, transliteration:true, arabicTextGap:0, textMeaningGap:0, playing:false, elapsed:0, start:0, image:null, imageUrl:'',
+    translation:true, transliteration:true, arabicVerticalOffset:0, arabicTextGap:0, textMeaningGap:0, playing:false, elapsed:0, start:0, image:null, imageUrl:'',
     audioUrl:'', recorder:null, chunks:[], timer:0, audioDestination:null, backgroundAudioSource:null, backgroundAudioGain:null,
     ttsPipeline:null, ttsLoadPromise:null, ttsBackend:'', ttsBusy:false, ttsStop:false, speechAudioContext:null, speechSource:null,
     speechAnimating:false, speechAnimationStart:0, renderLoopActive:false, transitionStart:0, transitionDuration:420,
@@ -41,7 +41,7 @@
       localStorage.setItem('asmaul-husna-studio-v1', JSON.stringify({
         index:state.index,theme:state.theme,format:state.format,animation:state.animation,
         duration:state.duration,size:state.size,translation:state.translation,
-        transliteration:state.transliteration,arabicTextGap:state.arabicTextGap,textMeaningGap:state.textMeaningGap,project:byId('projectName').value
+        transliteration:state.transliteration,arabicVerticalOffset:state.arabicVerticalOffset,arabicTextGap:state.arabicTextGap,textMeaningGap:state.textMeaningGap,project:byId('projectName').value
       }));
       byId('saveStatus').textContent = 'Tersimpan di perangkat';
     } catch (_) { byId('saveStatus').textContent = 'Penyimpanan lokal tidak tersedia'; }
@@ -58,6 +58,7 @@
       if (Number.isFinite(s.size)) state.size = clamp(s.size,70,130);
       if (typeof s.translation === 'boolean') state.translation = s.translation;
       if (typeof s.transliteration === 'boolean') state.transliteration = s.transliteration;
+      if (Number.isFinite(s.arabicVerticalOffset)) state.arabicVerticalOffset = clamp(s.arabicVerticalOffset,-40,40);
       if (Number.isFinite(s.arabicTextGap)) state.arabicTextGap = clamp(s.arabicTextGap,-40,40);
       if (Number.isFinite(s.textMeaningGap)) state.textMeaningGap = clamp(s.textMeaningGap,-40,40);
       if (typeof s.project === 'string') byId('projectName').value = s.project.slice(0,60);
@@ -96,6 +97,7 @@
     byId('arabicSize').value = state.size; byId('arabicSizeValue').textContent = state.size + '%';
     byId('showTranslation').checked = state.translation;
     byId('showTransliteration').checked = state.transliteration;
+    byId('arabicVerticalOffset').value = state.arabicVerticalOffset; byId('arabicVerticalOffsetValue').textContent = (state.arabicVerticalOffset>0?'+':'')+state.arabicVerticalOffset;
     byId('arabicTextGap').value = state.arabicTextGap; byId('arabicTextGapValue').textContent = (state.arabicTextGap>0?'+':'')+state.arabicTextGap;
      byId('textMeaningGap').value = state.textMeaningGap; byId('textMeaningGapValue').textContent = (state.textMeaningGap>0?'+':'')+state.textMeaningGap;
      byId('animationSelect').value = state.animation;
@@ -200,7 +202,7 @@
     ctx.save();
     ctx.globalAlpha = nameFade;
     ctx.textAlign='center';ctx.textBaseline='middle';
-    ctx.save();ctx.translate(cx,cy-u*.14+floatY);ctx.scale(zoom*floatScale,zoom*floatScale);
+    ctx.save();ctx.translate(cx,cy-u*(.14-state.arabicVerticalOffset*.001)+floatY);ctx.scale(zoom*floatScale,zoom*floatScale);
     let font=u*.126*(state.size/100);ctx.font='700 '+font+'px "Amiri",serif';
     while(ctx.measureText(item[1]).width>w*.82&&font>u*.065){font*=.94;ctx.font='700 '+font+'px "Amiri",serif';}
     ctx.shadowColor=c[3]+'55';ctx.shadowBlur=u*(.022+(motionActive?ambientPulse*.004:0));
@@ -826,7 +828,7 @@
   function reset() {
     stopSpeech(false);
     state.index=0;state.theme='emerald';state.format='portrait';state.animation='float';
-    state.duration=15;state.size=100;state.translation=true;state.transliteration=true;state.arabicTextGap=0;state.textMeaningGap=0;state.elapsed=0;
+    state.duration=15;state.size=100;state.translation=true;state.transliteration=true;state.arabicVerticalOffset=0;state.arabicTextGap=0;state.textMeaningGap=0;state.elapsed=0;
     byId('projectName').value='Asmaul Husna — Video 01';byId('searchInput').value='';
     removeMedia();renderNames('');applyControls();persist();stopPlayback();notify('Pengaturan dikembalikan ke awal.');
   }
@@ -843,6 +845,7 @@
     byId('arabicSize').addEventListener('input',e=>{state.size=Number(e.target.value);byId('arabicSizeValue').textContent=state.size+'%';draw(0);persist();});
     byId('showTranslation').addEventListener('change',e=>{state.translation=e.target.checked;draw(0);persist();});
     byId('showTransliteration').addEventListener('change',e=>{state.transliteration=e.target.checked;draw(0);persist();});
+    byId('arabicVerticalOffset').addEventListener('input',e=>{state.arabicVerticalOffset=Number(e.target.value);byId('arabicVerticalOffsetValue').textContent=(state.arabicVerticalOffset>0?'+':'')+state.arabicVerticalOffset;draw(0);persist();});
     byId('arabicTextGap').addEventListener('input',e=>{state.arabicTextGap=Number(e.target.value);byId('arabicTextGapValue').textContent=(state.arabicTextGap>0?'+':'')+state.arabicTextGap;draw(0);persist();});
      byId('textMeaningGap').addEventListener('input',e=>{state.textMeaningGap=Number(e.target.value);byId('textMeaningGapValue').textContent=(state.textMeaningGap>0?'+':'')+state.textMeaningGap;draw(0);persist();});
      byId('animationSelect').addEventListener('change',e=>{state.animation=e.target.value;byId('renderHint').textContent=state.animation==='none'?'Animasi dinonaktifkan':'Animasi lembut aktif saat diputar';draw(0);persist();});
