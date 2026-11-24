@@ -127,13 +127,16 @@
           </select>
         </section>
         <section class="control-section builtin-music-section">
-          <div class="section-title"><span class="section-number">05</span><h3>Musik latar bawaan</h3></div>
-          <p class="music-description">Nuansa teduh dan meditatif dengan melodi lambat terinspirasi maqam Bayati, pad hangat, petikan lembut yang jarang, dan hembusan ney yang halus. Tanpa perkusi, vokal, atau chant; dibuat langsung di aplikasi tanpa impor atau kredit.</p>
-          <label class="field-label music-toggle" for="builtinMusicEnabled"><span>Aktifkan musik ambient</span><input id="builtinMusicEnabled" type="checkbox" checked class="toggle-input" /><span class="toggle-ui"></span></label>
-          <button class="button button-outline music-test-button" id="builtinMusicTestButton" type="button">Dengarkan musik</button>
-          <label class="field-label music-volume-label" for="builtinMusicVolume"><span>Volume musik</span><output class="range-value" id="builtinMusicVolumeValue">18%</output></label>
-          <input class="range-input" id="builtinMusicVolume" type="range" min="0" max="40" step="1" value="18" />
-          <p class="music-footnote">Volume rendah agar bacaan Asmaul Husna tetap terdengar jelas.</p>
+          <div class="section-title"><span class="section-number">05</span><h3>Nasheed vokal-only</h3></div>
+          <p class="music-description">Lantunan “Alhamdulilah (Vocal Only Nasheed)” oleh SyedsLife, tanpa instrumen. Cuplikan 46 detik diputar berulang dengan sambungan crossfade yang lembut. Audio ini disertakan dalam pratinjau dan ekspor video.</p>
+          <label class="field-label music-toggle" for="builtinMusicEnabled"><span>Aktifkan nasheed latar</span><input id="builtinMusicEnabled" type="checkbox" checked class="toggle-input" /><span class="toggle-ui"></span></label>
+          <button class="button button-outline music-test-button" id="builtinMusicTestButton" type="button">Dengarkan nasheed</button>
+          <label class="field-label music-volume-label" for="builtinMusicVolume"><span>Volume nasheed</span><output class="range-value" id="builtinMusicVolumeValue">10%</output></label>
+          <input class="range-input" id="builtinMusicVolume" type="range" min="0" max="30" step="1" value="10" />
+          <p class="music-footnote">Volume awal 10% agar lantunan AI Asmaul Husna tetap jelas. Kredit audio ditampilkan pada video yang dibuat selama nasheed aktif.</p>
+          <p class="music-credit-note">Atribusi untuk caption: Audio: “Alhamdulilah (Vocal Only Nasheed)” — SyedsLife. Lisensi CC BY 3.0. Sumber asli: Wikimedia Commons. Cuplikan dipotong dan di-loop dengan crossfade.</p>
+          <button class="button button-outline music-credit-button" id="builtinMusicCreditButton" type="button">Salin atribusi untuk caption</button>
+          <p class="music-credit-source"><a href="https://commons.wikimedia.org/wiki/File:Jawad_Syed_-_Alhamdulilah_(Vocal_Only_Nasheed).flac" target="_blank" rel="noopener noreferrer">Sumber asli dan detail lisensi CC BY 3.0</a></p>
         </section>
         <section class="control-section assets-section">
           <div class="section-title"><span class="section-number">06</span><h3>Media tambahan</h3></div>
@@ -176,7 +179,7 @@
   </div>
 
   <div class="modal-backdrop hidden" id="helpModal" role="dialog" aria-modal="true" aria-labelledby="helpTitle">
-    <div class="help-modal"><button class="modal-close" id="closeHelp" aria-label="Tutup">×</button><p class="eyebrow">MULAI BERKREASI</p><h2 id="helpTitle">Selamat datang di studio.</h2><p>Pilih nama, tentukan tema dan format video, lalu tekan putar. Musik ambient bawaan tersedia tanpa impor; kamu juga dapat menambahkan gambar atau audio sendiri.</p><div class="help-tip"><b>Catatan ekspor</b><span>Video diunduh dalam format MP4 atau WebM, mengikuti dukungan browser. Safari terbaru, Chrome, atau Edge direkomendasikan.</span></div><button class="button button-primary" id="gotItButton">Mulai berkarya</button></div>
+    <div class="help-modal"><button class="modal-close" id="closeHelp" aria-label="Tutup">×</button><p class="eyebrow">MULAI BERKREASI</p><h2 id="helpTitle">Selamat datang di studio.</h2><p>Pilih nama, tentukan tema dan format video, lalu tekan putar. Nasheed vokal-only tersedia sebagai musik latar; kamu juga dapat menambahkan gambar atau audio sendiri.</p><div class="help-tip"><b>Catatan ekspor</b><span>Video diunduh dalam format MP4 atau WebM, mengikuti dukungan browser. Safari terbaru, Chrome, atau Edge direkomendasikan.</span></div><button class="button button-primary" id="gotItButton">Mulai berkarya</button></div>
   </div>
 
   <div class="export-overlay hidden" id="exportOverlay" role="status" aria-live="polite"><div class="export-card"><div class="export-spinner"></div><strong id="exportTitle">Menyiapkan video...</strong><span id="exportMessage">Jangan tutup tab ini selama proses ekspor.</span><button class="button button-outline button-small hidden" id="cancelExportButton">Hentikan ekspor</button></div></div>
