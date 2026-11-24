@@ -54,18 +54,18 @@ assert.match(app, /async function startBuiltinMusic\(offset=0\)/, 'music start m
 assert.match(app, /if \(context\.state !== 'running'\) await context\.resume\(\)/, 'music playback must explicitly resume the audio context');
 assert.match(app, /builtinMusicPreview=!state\.builtinMusicPreview/, 'music test playback must be independently toggleable');
 
-assert.match(app, /async function loadBuiltinMusicBuffer\\(context\\)/, 'licensed vocal nasheed must load from the bundled audio asset');
-assert.match(app, /fetch\\('\.\\/assets\\/audio\\/alhamdulillah-jawad-syed\\.m4a'/, 'nasheed audio must load from the app origin');
-assert.match(app, /const fadeSamples = Math\\.min\\(Math\\.floor\\(context\\.sampleRate \\* 1\\.8\\)/, 'nasheed loop must use a short crossfade');
-assert.match(app, /source\\.buffer = state\\.builtinMusicBuffer/, 'video export must use the loaded vocal nasheed buffer');
-assert.match(app, /async function startBuiltinMusic\\(offset=0\\)/, 'nasheed preview must await local audio loading and AudioContext resume');
-assert.match(app, /await loadBuiltinMusicBuffer\\(context\\)/, 'export paths must prepare the bundled nasheed before recording');
-assert.match(app, /function scheduleBuiltinMusic\\(context, audioDestination, startAt, duration=0\\)/, 'narrated export must schedule background nasheed on the shared timeline');
+assert.match(app, /async function loadBuiltinMusicBuffer\(context\)/, 'licensed vocal nasheed must load from the bundled audio asset');
+assert.match(app, /fetch\('\.\/assets\/audio\/alhamdulillah-jawad-syed\.m4a'/, 'nasheed audio must load from the app origin');
+assert.match(app, /const fadeSamples = Math\.min\(Math\.floor\(context\.sampleRate \* 1\.8\)/, 'nasheed loop must use a short crossfade');
+assert.match(app, /source\.buffer = state\.builtinMusicBuffer/, 'video export must use the loaded vocal nasheed buffer');
+assert.match(app, /async function startBuiltinMusic\(offset=0\)/, 'nasheed preview must await local audio loading and AudioContext resume');
+assert.match(app, /await loadBuiltinMusicBuffer\(context\)/, 'export paths must prepare the bundled nasheed before recording');
+assert.match(app, /function scheduleBuiltinMusic\(context, audioDestination, startAt, duration=0\)/, 'narrated export must schedule background nasheed on the shared timeline');
 assert.match(app, /builtinMusicVolume:10/, 'nasheed volume must default to a quiet narration-friendly level');
-assert.match(html, /Alhamdulilah \\(Vocal Only Nasheed\\)/, 'music panel must identify the vocal-only nasheed');
-assert.match(html, /CC BY 3\\.0/, 'music panel must disclose the audio license');
+assert.match(html, /Alhamdulilah \(Vocal Only Nasheed\)/, 'music panel must identify the vocal-only nasheed');
+assert.match(html, /CC BY 3\.0/, 'music panel must disclose the audio license');
 assert.match(html, /id="builtinMusicCreditButton"/, 'music panel must provide an attribution copy control');
-assert.match(app, /CC BY 3\\.0/, 'exported video must display the nasheed attribution');
+assert.match(app, /CC BY 3\.0/, 'exported video must display the nasheed attribution');
 assert.match(html, /id="builtinMusicVolume"[^>]*value="10"/, 'nasheed slider must default to 10 percent');
 
 assert.match(app, /source\.start\(state\.exportAudioStart \+ timeline\[index\]\)/, 'all speech clips must be scheduled on the shared timeline');
