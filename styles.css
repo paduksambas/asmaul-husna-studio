@@ -54,3 +54,6 @@
 .music-footnote{margin:8px 0 0;color:#78887b;font-size:8px;line-height:1.5}
 .builtin-music-section .range-value{min-width:42px;padding:4px 7px;border:1px solid #695a3e;border-radius:7px;background:#302d20;color:#e4c991;text-align:center;font-size:9px;font-variant-numeric:tabular-nums}
 @media(max-width:620px){.music-description{font-size:9px}.builtin-music-section{padding:13px 0 15px}}
+
+.music-test-button{width:100%;justify-content:center;margin:0 0 13px;min-height:34px;font-size:9px}
+.music-test-button:active{transform:translateY(1px)}
