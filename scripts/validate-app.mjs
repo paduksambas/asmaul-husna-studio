@@ -22,6 +22,7 @@ assert.match(html, /id="exportNarrationButton"/, 'narration export button must e
 assert.match(app, /byId\('exportNarrationButton'\)\.addEventListener\('click',exportNarrationVideo\)/, 'narration export button must be wired');
 assert.match(app, /function ensureAudioMixDestination\(\)/, 'audio mix destination helper must exist');
 assert.match(app, /createMediaStreamDestination\(\)/, 'recordable audio stream must be created');
+assert.match(app, /stream\.addTrack\(track\.clone\(\)\)/, 'each recording must use a clone of the reusable audio track');
 assert.match(app, /createMediaElementSource\(audio\)/, 'uploaded background audio must feed the mix');
 assert.match(app, /gain\.connect\(audioDestination\)/, 'speech audio must feed the recorded audio track');
 assert.match(app, /source\.start\(state\.exportAudioStart \+ timeline\[index\]\)/, 'all speech clips must be scheduled on the shared timeline');
