@@ -53,6 +53,11 @@ assert.match(html, /id="builtinMusicTestButton"/, 'built-in ambient music must h
 assert.match(app, /async function startBuiltinMusic\(offset=0\)/, 'music start must await AudioContext resume for mobile browsers');
 assert.match(app, /if \(context\.state !== 'running'\) await context\.resume\(\)/, 'music playback must explicitly resume the audio context');
 assert.match(app, /builtinMusicPreview=!state\.builtinMusicPreview/, 'music test playback must be independently toggleable');
+assert.match(app, /speechSequenceActive:false/, 'full 99-name playback must track its own background-music lifecycle');
+assert.match(app, /state\.speechSequenceActive = true;[\s\S]*?syncBuiltinMusic\(0\);/, 'background music must start when full 99-name playback begins');
+assert.match(app, /state\.playing \|\| state\.builtinMusicPreview \|\| state\.speechSequenceActive/, 'background music must remain active during live 99-name recitation');
+assert.match(app, /state\.speechSequenceActive = false;\s*syncBuiltinMusic\(\);\s*stopSpeechAnimation\(\);/, 'background music must stop when full 99-name playback finishes or errors');
+assert.match(app, /if \(state\.speechSequenceActive\) \{\s*state\.speechSequenceActive = false;\s*syncBuiltinMusic\(\);/, 'stopping a 99-name recitation must also stop background music');
 
 assert.match(app, /async function loadBuiltinMusicBuffer\(context\)/, 'licensed vocal nasheed must load from the bundled audio asset');
 assert.match(app, /'\.\/assets\/audio\/alhamdulillah-jawad-syed\.m4a'/, 'vocal nasheed audio must load from the app origin');
@@ -64,6 +69,10 @@ assert.match(app, /source\.buffer = state\.builtinMusicBuffers\[state\.builtinMu
 assert.match(app, /async function startBuiltinMusic\(offset=0\)/, 'nasheed preview must await local audio loading and AudioContext resume');
 assert.match(app, /await loadBuiltinMusicBuffer\(context\)/, 'export paths must prepare the bundled nasheed before recording');
 assert.match(app, /function scheduleBuiltinMusic\(context, audioDestination, startAt, duration=0\)/, 'narrated export must schedule background nasheed on the shared timeline');
+assert.match(app, /attachAudioMixTrack\(stream, audioDestination\)/, 'downloaded narration video must contain the mixed audio track');
+assert.match(app, /scheduleBuiltinMusic\(context, audioDestination, state\.exportAudioStart, totalDuration\)/, 'downloaded narration video must schedule the selected background track for the entire recitation');
+assert.match(app, /stopNarrationSources\(\);[\s\S]*?stopSpeechAnimation\(\); stopPlayback\(\);/, 'narration export cleanup must stop scheduled audio after recording');
+assert.match(app, /gain\.gain\.linearRampToValueAtTime\(0, startAt \+ duration\)/, 'background music must fade out at the end of the downloaded narration');
 assert.match(app, /builtinMusicVolume:10/, 'nasheed volume must default to a quiet narration-friendly level');
 assert.match(html, /Alhamdulilah \(Vocal Only Nasheed\)/, 'music panel must identify the vocal-only nasheed');
 assert.match(html, /Instrumental tanpa vokal · Alex Morgan/, 'music panel must offer the instrumental option');
