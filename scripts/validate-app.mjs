@@ -60,3 +60,6 @@ console.log('HTML IDs:', htmlIds.length, 'unique.');
 console.log('DOM references:', new Set(appIds).size, 'all present.');
 console.log('Asmaul Husna entries:', nameRows.length + '.');
 console.log('Narration audio mix and 99-clip timeline checks passed.');
+
+assert.ok(app.includes('const headerY=cy-u*.43;'), 'Header title keeps the reference spacing from the circular ornament');
+assert.ok(app.includes('const py=cy+u*.43,pw=u*.105,ph=u*.034;'), 'Sequence counter mirrors title spacing below the circular ornament');
