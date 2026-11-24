@@ -115,6 +115,9 @@ jobs:
         run: |
           npm init -y
           npm install --no-save @huggingface/transformers
+          npm install-scripts approve onnxruntime-node
+          npm install-scripts approve protobufjs
+          npm rebuild onnxruntime-node protobufjs
           node scripts/test-supertonic-tts.mjs
 
       - name: Package model and generate checksum
