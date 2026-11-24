@@ -104,7 +104,7 @@ assert.ok(app.includes("const motionActive=animated&&state.animation!=='none'&&s
 assert.match(html, /<option value="wheel">Roda bacaan · teks berputar<\/option>/, 'new rotating-wheel text transition must be selectable');
 assert.match(app, /state\.wheelFromIndex = state\.index;[\s\S]*?state\.wheelTransitionStart = performance\.now\(\)/, 'adjacent reading items must rotate into focus');
 assert.match(app, /const scale = \.28 \+ \.72 \* depth/, 'the active wheel label must enlarge while rear labels recede');
-assert.match(app, /const alpha = \.08 \+ \.92 \* Math\.pow\(perspective, 2\.2\)/, 'rear wheel labels must fade strongly to prevent visual doubling');
+assert.match(app, /const depthAlpha = \.08 \+ \.92 \* Math\.pow\(perspective, 2\.2\)/, 'rear wheel labels must fade strongly to prevent visual doubling');
 assert.match(app, /entry\.offset === 0[\s\S]*?rotationProgress - \.05\) \/ \.18/, 'the just-read label must fully disappear early before the incoming label reaches center');
 assert.match(app, /if \(alpha <= \.015\) return;/, 'fully faded wheel labels must not be painted');
 assert.match(app, /wheelEntries\.sort\(\(a,b\) => a\.depth - b\.depth\)/, 'rear labels must render before the incoming/front label');
