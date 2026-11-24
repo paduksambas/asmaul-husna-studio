@@ -100,8 +100,9 @@ Ikuti urutan ini. Jangan melewati pemeriksaan Preview sebelum perubahan dinyatak
 - [x] Hubungkan repository GitHub dengan integrasi Git Vercel (diverifikasi 24 November 2026: project `asmaul-husna-studio` terhubung ke `paduksambas/asmaul-husna-studio`).
 - [x] Verifikasi deployment otomatis setelah push ke `main`: commit `33a95d7ea0c483114f661cdb967b07a617603c86` otomatis menghasilkan deployment Production Vercel berstatus READY pada 24 November 2026.
 - [ ] Uji interaksi aplikasi di laptop: seluruh 99 nama, pencarian, tema, rasio, animasi, durasi, dan reset.
-- [ ] Uji unggah gambar dan audio, termasuk kondisi file tidak valid dan izin browser.
-- [ ] Uji pratinjau dan sinkronisasi audio selama pemutaran.
+- [x] Uji unggah gambar dan audio yang valid serta tampil/fungsinya di pratinjau (dikonfirmasi pengguna).
+- [x] Uji pratinjau media dan sinkronisasi audio dasar (dikonfirmasi pengguna).
+- [ ] Uji penolakan file tidak valid dan penanganan izin browser.
 - [x] Uji ekspor video sampai selesai dan pastikan file berhasil disimpan (dikonfirmasi pengguna; perangkat/browser yang digunakan belum dicatat).
 - [x] Uji simpan PNG dan pastikan gambar berhasil disimpan (dikonfirmasi pengguna).
 - [x] Tambahkan konfigurasi `.devcontainer/devcontainer.json` untuk GitHub Codespaces (Ubuntu, Python preview server, port 8000, dan pengaturan editor).
