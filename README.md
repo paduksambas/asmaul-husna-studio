@@ -52,3 +52,8 @@ Lalu buka `http://localhost:8000`.
 - `styles.css` — tampilan responsif.
 - `asmaul-husna.js` — data nama, tulisan Arab, dan arti ringkas.
 - `app.js` — editor, pratinjau kanvas, penyimpanan lokal, dan ekspor video.
+
+
+### Pilihan audio latar
+
+Panel **Nasheed & musik latar** menyediakan dua pilihan: nasheed vokal-only SyedsLife (CC BY 3.0) dan instrumental “Ramadan Music With Dark Reflective Tone” oleh Alex Morgan (CC BY 4.0). Pilihan, volume, pratinjau, dan atribusi mengikuti audio yang dipilih; keduanya dibundel ke Preview Cloudflare Pages dan ikut dalam ekspor video.
