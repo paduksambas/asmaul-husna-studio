@@ -103,8 +103,10 @@ assert.match(app, /totalDuration \+ 1/, 'recording duration must follow the gene
 assert.ok(app.includes("const motionActive=animated&&state.animation!=='none'&&state.animation!=='wheel'"), 'wheel mode must keep the backdrop static and animate only reading text');
 assert.match(html, /<option value="wheel">Roda bacaan · teks berputar<\/option>/, 'new rotating-wheel text transition must be selectable');
 assert.match(app, /state\.wheelFromIndex = state\.index;[\s\S]*?state\.wheelTransitionStart = performance\.now\(\)/, 'adjacent reading items must rotate into focus');
-assert.match(app, /const scale = \.43 \+ \.57 \* depth/, 'current reading item must enlarge while neighboring items remain smaller');
-assert.match(app, /const alpha = \.2 \+ \.8 \* \(\(entry\.depth \+ 1\) \/ 2\)/, 'wheel label opacity must remain inside the valid canvas alpha range');
+assert.match(app, /const scale = \.28 \+ \.72 \* depth/, 'the active wheel label must enlarge while rear labels recede');
+assert.match(app, /const alpha = \.08 \+ \.92 \* Math\.pow\(perspective, 2\.2\)/, 'rear wheel labels must fade strongly to prevent visual doubling');
+assert.match(app, /wheelEntries\.sort\(\(a,b\) => a\.depth - b\.depth\)/, 'rear labels must render before the incoming/front label');
+assert.match(app, /state\.transliteration && entry\.depth > -\.15/, 'rear-most labels must hide supporting text until they approach the reading position');
 assert.match(app, /ctx\.fillText\(wheelItem\[1\],0,arabicY,w\*\.78\);\s*ctx\.shadowBlur = 0;/, 'Arabic calligraphy shadow must not leak into wheel transliteration or meaning');
 assert.match(app, /const angle = offset \* \(Math\.PI \* 2 \/ 3\) - direction \* rotationProgress \* \(Math\.PI \* 2 \/ 3\)/, 'wheel transition must rotate the three reading labels around a circular path');
 assert.match(app, /const arabicY = -u \* \(\.12 - state\.arabicVerticalOffset \* \.0025\)/, 'Arabic vertical-position control must affect calligraphy in wheel mode');
