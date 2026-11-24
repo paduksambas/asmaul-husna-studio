@@ -100,6 +100,7 @@ Ikuti urutan ini. Jangan melewati pemeriksaan Preview sebelum perubahan dinyatak
 - [x] Hubungkan repository GitHub dengan integrasi Git Vercel (diverifikasi 24 November 2026: project `asmaul-husna-studio` terhubung ke `paduksambas/asmaul-husna-studio`).
 - [x] Verifikasi deployment otomatis setelah push ke `main`: commit `33a95d7ea0c483114f661cdb967b07a617603c86` otomatis menghasilkan deployment Production Vercel berstatus READY pada 24 November 2026.
 - [x] Uji interaksi di laptop: pemilihan nama, pencarian, tema, rasio, durasi, dan reset.
+- [x] Uji interaksi utama di iPad A17 Pro melalui Safari: pemilihan nama, pencarian, tema, rasio, durasi, dan reset.
 - [x] Uji ulang animasi setelah perbaikan visual; pengguna mengonfirmasi animasi kini berfungsi.
 - [x] Uji unggah gambar dan audio yang valid serta tampil/fungsinya di pratinjau (dikonfirmasi pengguna).
 - [x] Uji pratinjau media dan sinkronisasi audio dasar (dikonfirmasi pengguna).
@@ -172,3 +173,5 @@ Ikuti urutan ini. Jangan melewati pemeriksaan Preview sebelum perubahan dinyatak
 **Konfirmasi pengujian iPad (24 November 2026):** pengguna mengonfirmasi pemilihan nama dan pencarian berfungsi melalui Safari di iPad A17 Pro. Pengujian tema, rasio, durasi, reset, tata letak sentuh, serta alur Codespaces/editor di iPad masih perlu dilakukan.
 
 **Konfirmasi tema dan rasio iPad (24 November 2026):** pengguna mengonfirmasi seluruh tema Emerald, Midnight, Sand, Rose serta rasio Landscape, Portrait, Square berfungsi sempurna melalui Safari di iPad A17 Pro.
+
+**Konfirmasi durasi dan Reset iPad (24 November 2026):** pengguna mengonfirmasi perubahan durasi dan tombol Reset berfungsi baik melalui Safari di iPad A17 Pro. Pengujian interaksi utama pada laptop dan iPad kini terkonfirmasi. Pengujian tata letak sentuh lintas orientasi, upload media, ekspor dari iPad, dan alur Codespaces/editor tetap dilanjutkan.
