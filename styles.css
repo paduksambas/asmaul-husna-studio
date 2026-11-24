@@ -19,3 +19,27 @@
 .text-control-group-title{margin:0 0 8px;color:#d1b176;font-size:9px;font-weight:700;letter-spacing:.9px;text-transform:uppercase}
 .text-control-group .field-label{margin:7px 0}
 .text-control-group .range-input{margin:7px 0 4px}
+
+
+/* Refined typography controls: warm gold accents over the studio's deep emerald surfaces. */
+.text-control-group{margin:12px 0 13px;padding:0;background:linear-gradient(155deg,#1b2820 0%,#141d17 100%);border:1px solid #43513e;border-radius:13px;overflow:hidden;box-shadow:inset 0 1px 0 #ffffff08,0 8px 22px #050a061c}
+.text-control-group-heading{display:flex;align-items:center;gap:11px;padding:13px 13px 12px;background:linear-gradient(105deg,#28392b,#1b2920);border-bottom:1px solid #3b4939}
+.text-control-group-mark{width:31px;height:31px;display:grid;place-items:center;flex:none;border:1px solid #8d7950;border-radius:9px;background:linear-gradient(145deg,#4a4932,#293629);color:#e0c58e;font-family:'Amiri',serif;font-size:21px;box-shadow:0 2px 10px #0002}
+.text-control-group-title{margin:0;color:#e1c58e;font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase}
+.text-control-group-heading p{margin:3px 0 0;color:#92a092;font-size:9px;line-height:1.4}
+.text-control-item{padding:10px 13px 9px;border-bottom:1px solid #ffffff0c}
+.text-control-item:last-child{border-bottom:0}
+.text-control-group .field-label{margin:0 0 8px;color:#c3cec2;font-size:10px;gap:8px}
+.text-control-group .field-label>span:first-child{min-width:0}
+.text-control-group .range-input{display:block;margin:0;width:100%;height:4px;background:linear-gradient(90deg,#796744,#b79a62 50%,#796744);cursor:pointer}
+.text-control-group .range-input:focus-visible{outline:2px solid #e2c68f;outline-offset:5px;border-radius:8px}
+.text-control-group .range-input::-webkit-slider-thumb{width:14px;height:14px;background:#ead29d;border:3px solid #29352a;box-shadow:0 0 0 1px #c5a36b,0 1px 5px #0008}
+.text-control-group .range-input::-moz-range-thumb{width:10px;height:10px;background:#ead29d;border:3px solid #29352a;box-shadow:0 0 0 1px #c5a36b,0 1px 5px #0008}
+.text-control-group output.range-value{min-width:34px;padding:4px 7px;border:1px solid #695a3e;border-radius:7px;background:#302d20;color:#e4c991;text-align:center;font-size:9px;font-variant-numeric:tabular-nums}
+.range-hint{display:flex;justify-content:space-between;margin-top:7px;color:#7f9081;font-size:8px}
+.text-control-duration{background:#ffffff03}
+.text-control-duration .duration-row{display:flex;align-items:center;justify-content:space-between;margin:0 0 9px}
+.text-control-duration .duration-row .field-label{margin:0}
+.text-control-duration .duration-row strong{display:flex;align-items:baseline;gap:4px;padding:4px 8px;border:1px solid #695a3e;border-radius:7px;background:#302d20;color:#e4c991;font-size:11px;font-variant-numeric:tabular-nums}
+.text-control-duration .duration-row strong small{color:#b8a77e;font-size:8px;font-weight:500}
+@media(max-width:620px){.text-control-group{border-radius:12px}.text-control-group-heading{padding:12px}.text-control-item{padding:11px 12px}.text-control-group .field-label{font-size:10px}}
