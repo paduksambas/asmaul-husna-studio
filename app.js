@@ -144,7 +144,7 @@
       state.wheelFromIndex = state.index;
       state.wheelToIndex = nextIndex;
       state.wheelDirection = Math.sign(nextIndex - state.index) || 1;
-      state.wheelTransitionStart = now;
+      state.wheelTransitionStart = performance.now();
       state.transitionStart = 0;
       ensureRenderLoop();
       return;
