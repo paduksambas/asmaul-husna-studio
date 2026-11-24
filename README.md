@@ -17,6 +17,7 @@ Gunakan [WORKFLOW.md](./WORKFLOW.md) sebagai peta kerja utama. Dokumen tersebut 
 - Unggah gambar latar dan audio sendiri.
 - Ekspor video MP4 atau WebM melalui MediaRecorder (bergantung dukungan browser) serta simpan gambar PNG.
 - Preferensi editor disimpan secara lokal di browser.
+- Pembacaan nama berbahasa Arab memakai suara TTS bawaan sistem/browser yang tersedia, tanpa mengunduh model atau memakai API key. Ketersediaan bergantung pada paket suara Arab di perangkat.
 
 ## Menjalankan
 
@@ -38,6 +39,7 @@ Lalu buka `http://localhost:8000`.
 
 - Ekspor video menggunakan `canvas.captureStream()` dan `MediaRecorder`. Aplikasi memilih format MP4 jika didukung browser, lalu menggunakan WebM sebagai fallback. Ekstensi file mengikuti format yang benar-benar dipilih oleh MediaRecorder.
 - Audio dan gambar yang diunggah diproses di browser pengguna dan tidak dikirim ke server.
+- Pembacaan Arab memakai Web Speech API (`speechSynthesis`) dan tidak ikut masuk ke file video ekspor. Untuk saat ini, pemuatan Supertonic 3 melalui pipeline Transformers.js dinonaktifkan karena repositori model tidak menyediakan metadata processor yang diminta pipeline (`preprocessor_config.json`) dan format ONNX upstream memerlukan runtime khusus. Arsip model di GitHub Release tetap menjadi salinan cadangan, tetapi tidak digunakan oleh aplikasi.
 - Daftar nama menggunakan satu susunan Asmaul Husna yang umum dipakai. Ejaan transliterasi serta padanan arti singkat dapat berbeda antar-sumber; mohon lakukan telaah sebelum penggunaan untuk materi pembelajaran atau publikasi keagamaan.
 - Font Arab Amiri dan DM Sans dimuat dari Google Fonts. Jika tidak tersedia, browser memakai font fallback.
 
