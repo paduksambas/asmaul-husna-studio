@@ -90,7 +90,11 @@ assert.match(app, /source\.start\(state\.exportAudioStart \+ timeline\[index\]\)
 assert.match(app, /state\.exportCancelled/, 'narration export must support cancellation');
 assert.match(app, /totalDuration \+ 1/, 'recording duration must follow the generated narration');
 
-assert.ok(app.includes("const motionActive=animated&&state.animation!=='none'"), 'ambient motion must respect the selected animation mode');
+assert.ok(app.includes("const motionActive=animated&&state.animation!=='none'&&state.animation!=='wheel'"), 'wheel mode must keep the backdrop static and animate only reading text');
+assert.match(html, /<option value="wheel">Roda bacaan · teks berputar<\/option>/, 'new rotating-wheel text transition must be selectable');
+assert.match(app, /state\.wheelFromIndex = state\.index;[\s\S]*?state\.wheelTransitionStart = performance\.now\(\)/, 'adjacent reading items must rotate into focus');
+assert.match(app, /const scale = \.43 \+ \.57 \* depth/, 'current reading item must enlarge while neighboring items remain smaller');
+assert.match(app, /const angle = offset \* \(Math\.PI \* 2 \/ 3\) - direction \* rotationProgress \* \(Math\.PI \* 2 \/ 3\)/, 'wheel transition must rotate the three reading labels around a circular path');
 assert.ok(app.includes("const ambientPulse=motionActive ? .5+.5*Math.sin(t*.72) : 0;"), 'ambient glow must use a smooth continuous pulse');
 assert.ok(app.includes("const sheenCenter=-w*.48+((motionTime*.19)%1)*w*.96;"), 'shimmer mode must sweep a highlight across the Arabic title');
 assert.ok(app.includes("const floatScale=animated&&state.animation==='float'"), 'float mode must combine eased vertical drift with subtle scale breathing');
