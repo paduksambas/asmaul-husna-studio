@@ -280,3 +280,6 @@ Ikuti urutan ini. Jangan melewati pemeriksaan Preview sebelum perubahan dinyatak
 
 
 **Transisi antar-Asmaul Husna saat narasi — 24 November 2026:** saat urutan pembacaan 99 nama berpindah ke nama berikutnya, frame sebelumnya disimpan sebagai snapshot lalu memudar selama 680 ms di atas tampilan baru. Diterapkan pada pembacaan seluruh nama dan timeline ekspor narasi. Pemanggilan animasi per klip tidak lagi mereset fase animasi, sehingga gerak dekoratif tetap berkesinambungan selama audio. Pemeriksaan statis memverifikasi helper snapshot, durasi crossfade, kedua jalur pergantian indeks, dan kontinuitas fase. Hanya branch Preview yang diubah; situs utama tetap.
+
+
+**Koreksi jeda Soft Shimmer saat pergantian narasi — 24 November 2026:** penyebab jeda adalah crossfade sebelumnya menggambar snapshot seluruh kanvas di atas frame animasi aktif. Diperbaiki dengan menghapus snapshot kanvas penuh dan menerapkan fade 420 ms hanya pada lapisan teks/nama yang berubah. Lingkaran, busur Soft Shimmer, bintang, dan partikel tidak lagi tertutup frame statis dan tetap dirender setiap frame. Berlaku untuk pembacaan 99 nama serta pergantian pada timeline ekspor. Hanya branch Preview yang diperbarui; situs utama tidak berubah.
