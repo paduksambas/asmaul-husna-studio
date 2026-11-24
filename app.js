@@ -369,7 +369,7 @@
       const arabicVoice=voices.find(v=>/^ar(-|$)/i.test(v.lang));
       if(arabicVoice)utterance.voice=arabicVoice;
       utterance.onend=()=>resolve();
-      utterance.onerror=e=>reject(new Error(e.error||'Suara Arab perangkat gagal diputar.'));
+      utterance.onerror=e=>state.ttsStop?resolve():reject(new Error(e.error||'Suara Arab perangkat gagal diputar.'));
       window.speechSynthesis.cancel();
       window.speechSynthesis.speak(utterance);
     });
