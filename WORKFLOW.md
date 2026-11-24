@@ -57,14 +57,9 @@ iPad bukan hanya perangkat untuk melihat hasil. Gunakan Safari dengan GitHub Cod
 2. Masuk ke GitHub, lalu pilih **Code → Codespaces → Create codespace on main** (atau buka Codespace yang sudah ada).
 3. Tunggu editor VS Code di browser selesai dimuat. Jika tampilan sempit, gunakan menu Safari **Request Desktop Website** dan orientasi landscape.
 4. Buka file `WORKFLOW.md`, lalu edit `app.js`, `styles.css`, `index.html`, atau `asmaul-husna.js` dari panel Explorer.
-5. Buka terminal terintegrasi dan jalankan server:
-
-   ```bash
-   python -m http.server 8000 --bind 0.0.0.0
-   ```
-
-6. Buka tab **Ports** di Codespaces. Pastikan port 8000 terdeteksi, lalu pilih **Open in Browser**. Jika perlu, biarkan visibilitas port tetap **Private**.
-7. Uji aplikasi di tab browser yang terbuka. Kembali ke editor untuk memperbaiki source, lalu refresh tab aplikasi untuk melihat perubahan.
+5. Konfigurasi `.devcontainer/devcontainer.json` menyiapkan lingkungan Ubuntu, meneruskan port 8000, dan otomatis menjalankan server Python saat Codespace dimulai.
+6. Tunggu port **8000** muncul di tab **Ports**. Pilih **Open in Browser** jika tab aplikasi tidak terbuka otomatis. Pertahankan visibilitas port **Private**.
+7. Uji aplikasi di tab browser. Kembali ke editor untuk memperbaiki source, lalu refresh tab aplikasi. Server akan menyajikan perubahan file terbaru.
 8. Simpan perubahan ke GitHub dari terminal:
 
    ```bash
@@ -76,7 +71,9 @@ iPad bukan hanya perangkat untuk melihat hasil. Gunakan Safari dengan GitHub Cod
 
 9. Buka Preview Vercel untuk memeriksa hasil deployment dari commit terbaru. Jangan langsung menganggap perubahan sudah teruji hanya karena berhasil disimpan.
 
-**Jika Codespaces belum tersedia:** source tetap dapat dibaca dan diedit melalui GitHub di Safari, tetapi menjalankan server lokal dan pengujian interaktif paling praktis dilakukan melalui Codespaces. Pembuatan Codespace memerlukan login GitHub dan ketersediaan kuota/akses Codespaces pada akun.
+**Konfigurasi Codespaces:** file `.devcontainer/devcontainer.json` sudah ditambahkan ke repository. Saat Codespace dibuat atau direbuild, konfigurasi ini menyiapkan port 8000 dan menjalankan server pratinjau secara otomatis. Pembuatan/penyalakan Codespace tetap harus dilakukan dari akun GitHub pengguna dan bergantung pada akses serta kuota Codespaces akun tersebut.
+
+**Jika Codespaces belum tersedia:** source tetap dapat dibaca dan diedit melalui GitHub di Safari, tetapi menjalankan server dan pengujian interaktif dari iPad memerlukan lingkungan pengembangan yang dapat menjalankan Python, misalnya Codespaces.
 
 **Catatan sinkronisasi:** laptop dan iPad harus melakukan pull/sinkronisasi sebelum mulai mengedit, lalu push setelah selesai. Hindari mengedit file yang sama secara bersamaan di dua perangkat. GitHub menjadi pusat source; file media dan preferensi editor yang disimpan lokal di browser tetap terpisah per perangkat.
 
@@ -105,7 +102,8 @@ Ikuti urutan ini. Jangan melewati pemeriksaan Preview sebelum perubahan dinyatak
 - [ ] Uji pratinjau dan sinkronisasi audio selama pemutaran.
 - [ ] Uji ekspor WebM sampai selesai, unduh file, dan putar hasilnya.
 - [ ] Uji simpan PNG.
-- [ ] Siapkan dan verifikasi GitHub Codespaces dari Safari iPad A17 Pro (editor, terminal, port forwarding).
+- [x] Tambahkan konfigurasi `.devcontainer/devcontainer.json` untuk GitHub Codespaces (Ubuntu, Python preview server, port 8000, dan pengaturan editor).
+- [ ] Buat/nyalakan Codespace dari Safari iPad A17 Pro dan verifikasi editor, terminal, port forwarding, serta server otomatis.
 - [ ] Uji edit source → jalankan server → refresh browser dari iPad.
 - [ ] Uji layout dan kontrol sentuh di iPad.
 - [ ] Uji orientasi portrait/landscape dan ukuran layar kecil.
@@ -140,7 +138,7 @@ Ikuti urutan ini. Jangan melewati pemeriksaan Preview sebelum perubahan dinyatak
 **Perubahan:** efisiensi loop pratinjau, ketahanan saat localStorage tidak tersedia, dan pencegahan gangguan kontrol selama ekspor.  
 **Status deployment:** Production READY; Preview READY.  
 **Catatan integrasi:** GitHub Integration belum terhubung ke project Vercel. Deployment yang sudah ada dibuat melalui transfer source langsung.  
-**Pembaruan jalur perangkat:** iPad A17 Pro ditetapkan sebagai perangkat kerja penuh melalui GitHub Codespaces (Safari), selain laptop. **Tahap kerja berikutnya:** hubungkan GitHub–Vercel, siapkan Codespaces di iPad, lalu lakukan pengujian fungsi penuh dari kedua perangkat.
+**Pembaruan jalur perangkat:** iPad A17 Pro ditetapkan sebagai perangkat kerja penuh melalui GitHub Codespaces (Safari), selain laptop. Konfigurasi Codespaces telah ditambahkan pada `.devcontainer/devcontainer.json`; pembuatan/penyalakan Codespace dari akun pengguna dan pengujian langsung di iPad masih perlu dilakukan. **Tahap kerja berikutnya:** nyalakan Codespace di iPad, verifikasi server dan port 8000, lalu lakukan pengujian fungsi penuh dari kedua perangkat.
 
 ---
 
