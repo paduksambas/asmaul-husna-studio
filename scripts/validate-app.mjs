@@ -48,6 +48,13 @@ assert.match(app, /scheduleBackgroundAudio\(context, audioDestination, backgroun
 
 assert.match(html, /id="builtinMusicEnabled"/, 'built-in ambient music toggle must exist');
 assert.match(html, /id="builtinMusicVolume"/, 'built-in ambient music volume control must exist');
+
+assert.match(html, /id="builtinMusicTestButton"/, 'built-in ambient music must have an independent test-play button');
+assert.match(app, /async function startBuiltinMusic\(offset=0\)/, 'music start must await AudioContext resume for mobile browsers');
+assert.match(app, /if \(context\.state !== 'running'\) await context\.resume\(\)/, 'music playback must explicitly resume the audio context');
+assert.match(app, /const normalization = 0\.82 \/ Math\.max\(peak, 0\.0001\)/, 'generated music must be normalized to an audible signal level');
+assert.match(app, /builtinMusicPreview=!state\.builtinMusicPreview/, 'music test playback must be independently toggleable');
+
 assert.match(app, /function createBuiltinMusicBuffer\(context\)/, 'ambient music must be synthesized locally with Web Audio');
 assert.match(app, /const melody = \[330,392,440,392,330,294,330,220\]/, 'built-in music must include a gentle melodic phrase');
 assert.match(app, /function startBuiltinMusic\(offset=0\)/, 'built-in music must play in the live preview');
