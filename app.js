@@ -253,6 +253,14 @@
       const {pipeline,env}=await import('https://esm.sh/@huggingface/transformers@3.8.1');
       env.allowLocalModels=false;
       env.useBrowserCache=true;
+      // iPadOS Safari can stall while ONNX Runtime initializes a threaded WASM session.
+      // Use a single WASM thread on iPad/iPhone; this does not clear or redownload model cache.
+      const isAppleMobile = /iPad|iPhone|iPod/.test(navigator.userAgent)
+        || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+      if(isAppleMobile && env.backends && env.backends.onnx && env.backends.onnx.wasm) {
+        env.backends.onnx.wasm.numThreads=1;
+        byId('speechStatus').textContent='Menyiapkan WASM mode kompatibel untuk iPad/iPhone…';
+      }
       // Ask the browser to retain downloaded model files between visits when supported.
       // Transformers.js stores remote model responses in the browser Cache API.
       try {
