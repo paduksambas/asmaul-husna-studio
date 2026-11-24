@@ -104,6 +104,8 @@ assert.ok(app.includes("const motionActive=animated&&state.animation!=='none'&&s
 assert.match(html, /<option value="wheel">Roda bacaan · teks berputar<\/option>/, 'new rotating-wheel text transition must be selectable');
 assert.match(app, /state\.wheelFromIndex = state\.index;[\s\S]*?state\.wheelTransitionStart = performance\.now\(\)/, 'adjacent reading items must rotate into focus');
 assert.match(app, /const scale = \.43 \+ \.57 \* depth/, 'current reading item must enlarge while neighboring items remain smaller');
+assert.match(app, /const alpha = \.2 \+ \.8 \* \(\(entry\.depth \+ 1\) \/ 2\)/, 'wheel label opacity must remain inside the valid canvas alpha range');
+assert.match(app, /ctx\.fillText\(wheelItem\[1\],0,arabicY,w\*\.78\);\s*ctx\.shadowBlur = 0;/, 'Arabic calligraphy shadow must not leak into wheel transliteration or meaning');
 assert.match(app, /const angle = offset \* \(Math\.PI \* 2 \/ 3\) - direction \* rotationProgress \* \(Math\.PI \* 2 \/ 3\)/, 'wheel transition must rotate the three reading labels around a circular path');
 assert.match(app, /const arabicY = -u \* \(\.12 - state\.arabicVerticalOffset \* \.0025\)/, 'Arabic vertical-position control must affect calligraphy in wheel mode');
 assert.match(app, /const transliterationY = u \* \(\.10 \+ state\.arabicTextGap \* \.001\)/, 'Arabic-to-transliteration spacing control must affect wheel mode');
