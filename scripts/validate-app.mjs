@@ -95,6 +95,11 @@ assert.match(html, /<option value="wheel">Roda bacaan · teks berputar<\/option>
 assert.match(app, /state\.wheelFromIndex = state\.index;[\s\S]*?state\.wheelTransitionStart = performance\.now\(\)/, 'adjacent reading items must rotate into focus');
 assert.match(app, /const scale = \.43 \+ \.57 \* depth/, 'current reading item must enlarge while neighboring items remain smaller');
 assert.match(app, /const angle = offset \* \(Math\.PI \* 2 \/ 3\) - direction \* rotationProgress \* \(Math\.PI \* 2 \/ 3\)/, 'wheel transition must rotate the three reading labels around a circular path');
+assert.match(app, /const arabicY = -u \* \(\.12 - state\.arabicVerticalOffset \* \.0025\)/, 'Arabic vertical-position control must affect calligraphy in wheel mode');
+assert.match(app, /const transliterationY = u \* \(\.10 \+ state\.arabicTextGap \* \.001\)/, 'Arabic-to-transliteration spacing control must affect wheel mode');
+assert.match(app, /state\.textMeaningGap \* \.001/, 'transliteration-to-meaning spacing control must affect wheel mode');
+assert.match(app, /else if \(state\.wheelTransitionStart\) draw\(/, 'manual wheel transitions must continue rendering even when speech is not active');
+assert.match(app, /state\.wheelTransitionStart = performance\.now\(\);\s*state\.transitionStart = 0;\s*ensureRenderLoop\(\)/, 'manual selection must start a render loop for the wheel transition');
 assert.ok(app.includes("const ambientPulse=motionActive ? .5+.5*Math.sin(t*.72) : 0;"), 'ambient glow must use a smooth continuous pulse');
 assert.ok(app.includes("const sheenCenter=-w*.48+((motionTime*.19)%1)*w*.96;"), 'shimmer mode must sweep a highlight across the Arabic title');
 assert.ok(app.includes("const floatScale=animated&&state.animation==='float'"), 'float mode must combine eased vertical drift with subtle scale breathing');
