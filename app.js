@@ -374,14 +374,15 @@
   }
   async function startBuiltinMusic(offset=0) {
     if (!state.builtinMusicEnabled || state.builtinMusicVolume <= 0 || state.builtinMusicSource || state.builtinMusicStarting) return;
-    const requestedMode = state.builtinMusicMode;
+    let loadingMode = state.builtinMusicMode;
     state.builtinMusicStarting = true;
     try {
       const context = ensureSpeechAudioContext();
       // Call resume inside the user gesture path so Safari/iOS can unlock audio playback.
       if (context.state !== 'running') await context.resume();
+      loadingMode = state.builtinMusicMode;
       const buffer = await loadBuiltinMusicBuffer(context);
-      if (requestedMode !== state.builtinMusicMode) return;
+      if (loadingMode !== state.builtinMusicMode) return;
       if (!state.builtinMusicEnabled || state.builtinMusicVolume <= 0 || !(state.playing || state.builtinMusicPreview || state.speechSequenceActive) || state.builtinMusicSource) return;
       const source = context.createBufferSource(), gain = context.createGain();
       source.buffer = buffer; source.loop = true;
@@ -399,7 +400,7 @@
       state.builtinMusicStarting = false;
       // A mode change during decode must restart the newly selected track, not
       // accidentally start the old buffer or leave playback silent.
-      if (requestedMode !== state.builtinMusicMode && state.builtinMusicEnabled && state.builtinMusicVolume > 0 &&
+      if (loadingMode !== state.builtinMusicMode && state.builtinMusicEnabled && state.builtinMusicVolume > 0 &&
           (state.playing || state.builtinMusicPreview || state.speechSequenceActive) && !state.builtinMusicSource) {
         startBuiltinMusic(offset);
       }
