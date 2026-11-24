@@ -268,21 +268,47 @@
   }
   function createBuiltinMusicBuffer(context) {
     if (state.builtinMusicBuffer && state.builtinMusicBuffer.sampleRate === context.sampleRate) return state.builtinMusicBuffer;
-    const seconds = 16, sampleRate = context.sampleRate, length = Math.floor(seconds * sampleRate);
+    // Original instrumental bed shaped around a Hijaz-flavoured phrase.
+    // The tones are synthesized locally: no samples, downloads, API calls, or credits.
+    const seconds = 24, sampleRate = context.sampleRate, length = Math.floor(seconds * sampleRate);
     const buffer = context.createBuffer(1, length, sampleRate), samples = buffer.getChannelData(0);
-    const melody = [330,392,440,392,330,294,330,220];
+    // D Hijaz: D, Eb, F#, G, A, Bb, C#, D (with a gentle descending resolution).
+    const melody = [293.66,311.13,369.99,392,440,392,369.99,311.13,293.66,440,466.16,440,392,369.99,311.13,293.66];
+    const neyLine = [587.33,466.16,440,392,369.99,311.13,293.66,392];
+    const bassLine = [146.83,110,130.81,110,98,110,130.81,110];
     let peak = 0;
     for (let i = 0; i < length; i++) {
-      const t = i / sampleRate, beat = Math.floor(t / 2), local = t - beat * 2;
-      const slow = 0.5 + 0.5 * Math.sin(2 * Math.PI * t / seconds);
-      const phrase = Math.floor(t / 4);
-      const root = [110,98,130.81,110][phrase];
-      const pad = Math.sin(2*Math.PI*root*t)*0.20 + Math.sin(2*Math.PI*root*1.5*t)*0.105 + Math.sin(2*Math.PI*root*2*t)*0.075 + Math.sin(2*Math.PI*root*3*t)*0.035;
-      const attack = Math.min(1, local / 0.12), decay = Math.exp(-local * 1.2);
-      const pluck = (Math.sin(2*Math.PI*melody[beat]*t) + 0.28*Math.sin(2*Math.PI*melody[beat]*2*t)) * attack * decay * 0.17;
-      const air = Math.sin(2*Math.PI*440*t + Math.sin(2*Math.PI*t/seconds)*0.16) * 0.022;
-      const edge = Math.min(1, t / 0.22, (seconds - t) / 0.22);
-      samples[i] = (pad * (0.9 + slow * 0.1) + pluck + air) * Math.max(0, edge);
+      const t = i / sampleRate;
+      const pulse = 0.5 + 0.5 * Math.sin(2 * Math.PI * t / seconds);
+      const pad = Math.sin(2*Math.PI*73.416*t)*0.15
+        + Math.sin(2*Math.PI*110*t)*0.085
+        + Math.sin(2*Math.PI*146.832*t)*0.04
+        + Math.sin(2*Math.PI*220*t)*0.018;
+
+      // Qanun/oud-inspired plucks: bright attack, several warm partials, quick natural decay.
+      const beat = Math.floor(t / 1.5), local = t - beat * 1.5, note = melody[beat % melody.length];
+      const pluckAttack = Math.min(1, local / 0.018);
+      const pluckDecay = Math.exp(-local * 2.35);
+      const stringTone = Math.sin(2*Math.PI*note*t)
+        + 0.34*Math.sin(2*Math.PI*note*2*t + 0.3)
+        + 0.15*Math.sin(2*Math.PI*note*3*t + 0.8)
+        + 0.055*Math.sin(2*Math.PI*note*4*t + 1.1);
+      const pluck = stringTone * pluckAttack * pluckDecay * 0.19;
+
+      // Lower oud-like answer on each two-beat phrase.
+      const bassBeat = Math.floor(t / 3), bassLocal = t - bassBeat * 3, bassNote = bassLine[bassBeat % bassLine.length];
+      const bassEnvelope = Math.min(1, bassLocal / 0.025) * Math.exp(-bassLocal * 1.65);
+      const bassPluck = (Math.sin(2*Math.PI*bassNote*t) + 0.18*Math.sin(2*Math.PI*bassNote*2*t)) * bassEnvelope * 0.10;
+
+      // Airy ney-like sustained notes with subtle breath-shaped vibrato (not a voice).
+      const neyBeat = Math.floor(t / 3), neyLocal = t - neyBeat * 3, neyNote = neyLine[neyBeat % neyLine.length];
+      const neyEnvelope = Math.min(1, neyLocal / 0.35, Math.max(0, (2.75 - neyLocal) / 0.55));
+      const vibrato = Math.sin(2*Math.PI*4.6*t) * 0.0035;
+      const neyFrequency = neyNote * (1 + vibrato);
+      const ney = (Math.sin(2*Math.PI*neyFrequency*t) + 0.12*Math.sin(2*Math.PI*neyFrequency*2*t)) * neyEnvelope * 0.055;
+
+      const edge = Math.max(0, Math.min(1, t / 0.32, (seconds - t) / 0.32));
+      samples[i] = (pad * (0.92 + pulse * 0.08) + pluck + bassPluck + ney) * edge;
       peak = Math.max(peak, Math.abs(samples[i]));
     }
     // Normalize the generated track so that the user volume slider has an audible range.
