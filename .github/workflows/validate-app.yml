@@ -1,0 +1,41 @@
+name: Validate Asmaul Husna Studio
+
+on:
+  push:
+    branches:
+      - main
+      - "feature/**"
+    paths:
+      - "app.js"
+      - "index.html"
+      - "asmaul-husna.js"
+      - "scripts/validate-app.mjs"
+      - ".github/workflows/validate-app.yml"
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "app.js"
+      - "index.html"
+      - "asmaul-husna.js"
+      - "scripts/validate-app.mjs"
+      - ".github/workflows/validate-app.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Check JavaScript syntax
+        run: |
+          node --check app.js
+          node --check asmaul-husna.js
+          node --check scripts/validate-app.mjs
+      - name: Validate application structure and narration export
+        run: node scripts/validate-app.mjs
