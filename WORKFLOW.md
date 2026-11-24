@@ -292,3 +292,6 @@ Ikuti urutan ini. Jangan melewati pemeriksaan Preview sebelum perubahan dinyatak
 
 
 **Penghapusan slogan footer — 24 November 2026:** teks dekoratif bahasa Inggris “REMEMBER THE BEAUTIFUL NAMES” di bagian bawah kanvas dihapus dari fungsi render. Tidak mengganti dengan slogan lain dan tidak mengubah tata letak elemen utama. Perubahan hanya pada branch `feature/supertonic-narration-export`; `main` dan Production tidak disentuh. Menunggu validasi CI dan deployment Preview.
+
+
+**Kontrol jarak teks kanvas — 24 November 2026:** panel Tipografi & teks memiliki dua slider independen untuk mengatur jarak vertikal kaligrafi Arab ke transliterasi dan transliterasi ke arti. Nilai 0 mempertahankan tata letak sebelumnya; rentang -40 sampai +40 menggeser jarak secara proporsional terhadap sisi terpendek kanvas agar konsisten pada Landscape, Portrait, dan Square. Nilai disimpan di localStorage, dipulihkan saat aplikasi dibuka, diikutkan pada pratinjau dan ekspor melalui fungsi render yang sama, serta dikembalikan ke 0 melalui Atur ulang. Pemeriksaan statis ditambah. Hanya branch `feature/supertonic-narration-export` yang diubah; `main`/Production tidak disentuh. Menunggu CI dan deployment Preview.
