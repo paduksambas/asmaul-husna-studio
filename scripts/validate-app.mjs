@@ -28,7 +28,7 @@ assert.ok(arabicTextGroup.includes('id="textMeaningGap"'), 'transliteration-to-m
 assert.ok(arabicTextGroup.includes('id="arabicSize"'), 'Arabic calligraphy size control must be inside the text spacing group');
 assert.ok(arabicTextGroup.includes('id="durationInput"'), 'Video duration control must be inside the text and layout group');
 assert.match(html, /id="arabicVerticalOffset"/, 'Arabic calligraphy vertical position control must exist');
-assert.ok(app.includes('state.arabicVerticalOffset*.001'), 'Arabic calligraphy vertical position must affect canvas layout');
+assert.ok(app.includes('state.arabicVerticalOffset*.0025'), 'Arabic calligraphy vertical position must affect canvas layout');
 assert.match(html, /id="arabicTextGap"/, 'Arabic-to-transliteration spacing control must exist');
 assert.match(html, /id="textMeaningGap"/, 'transliteration-to-meaning spacing control must exist');
 assert.ok(app.includes('state.arabicTextGap*.001'), 'Arabic-to-transliteration spacing must affect canvas layout');
