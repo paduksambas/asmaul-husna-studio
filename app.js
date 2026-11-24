@@ -19,7 +19,7 @@
   const state = { index:0, theme:'emerald', format:'portrait', animation:'float', duration:15, size:100,
     translation:true, transliteration:true, arabicVerticalOffset:0, arabicTextGap:0, textMeaningGap:0, builtinMusicEnabled:true, builtinMusicVolume:10, builtinMusicMode:'vocal', builtinMusicBuffers:{}, builtinMusicLoadPromises:{}, builtinMusicSource:null, builtinMusicGain:null, builtinMusicStarting:false, builtinMusicPreview:false, playing:false, elapsed:0, start:0, image:null, imageUrl:'',
     audioUrl:'', recorder:null, chunks:[], timer:0, audioDestination:null, backgroundAudioSource:null, backgroundAudioGain:null,
-    ttsPipeline:null, ttsLoadPromise:null, ttsBackend:'', ttsBusy:false, ttsStop:false, speechSequenceActive:false, speechAudioContext:null, speechSource:null,
+    ttsPipeline:null, ttsLoadPromise:null, ttsBackend:'', ttsBusy:false, ttsStop:false, speechSequenceActive:false, speechAudioContext:null, speechSource:null, wheelTransitionStart:0, wheelFromIndex:0, wheelToIndex:0, wheelDirection:1,
     speechAnimating:false, speechAnimationStart:0, renderLoopActive:false, transitionStart:0, transitionDuration:420,
     exportBusy:false, exportPreparing:false, exportCancelled:false, narrationExportActive:false,
     exportDuration:0, exportAudioStart:0, exportTimeline:[], exportSources:[] };
@@ -53,7 +53,7 @@
       if (Number.isInteger(s.index)) state.index = clamp(s.index,0,data.length-1);
       if (themes[s.theme]) state.theme = s.theme;
       if (formats[s.format]) state.format = s.format;
-      if (['float','zoom','shimmer','none'].includes(s.animation)) state.animation = s.animation;
+      if (['float','zoom','shimmer','none','wheel'].includes(s.animation)) state.animation = s.animation;
       if (Number.isFinite(s.duration)) state.duration = clamp(s.duration,5,60);
       if (typeof s.builtinMusicEnabled === 'boolean') state.builtinMusicEnabled = s.builtinMusicEnabled;
       if (['vocal','instrumental'].includes(s.builtinMusicMode)) state.builtinMusicMode = s.builtinMusicMode;
@@ -81,7 +81,7 @@
       b.querySelector('strong').textContent = item[0];
       b.querySelector('small').textContent = item[2];
       b.querySelector('.name-item-arabic').textContent = item[1];
-      b.addEventListener('click',()=>{ stopSpeech(false); state.index=i; renderNames(byId('searchInput').value); updateCaptions(); persist(); draw(0); });
+      b.addEventListener('click',()=>{ stopSpeech(false); if(state.animation==='wheel' && i!==state.index) beginNameTransition(i); state.index=i; renderNames(byId('searchInput').value); updateCaptions(); persist(); draw(0); });
       list.appendChild(b);
     });
   }
@@ -126,6 +126,16 @@
   }
   function beginNameTransition(nextIndex) {
     if (nextIndex === state.index) return;
+    // In wheel mode, rotate only the three reading labels around a vertical loop.
+    if (state.animation === 'wheel' && Math.abs(nextIndex - state.index) === 1) {
+      state.wheelFromIndex = state.index;
+      state.wheelToIndex = nextIndex;
+      state.wheelDirection = Math.sign(nextIndex - state.index) || 1;
+      state.wheelTransitionStart = performance.now();
+      state.transitionStart = 0;
+      return;
+    }
+    state.wheelTransitionStart = 0;
     // Fade only the changing name/text layer; never cover the animated canvas
     // with a frozen full-frame snapshot.
     state.transitionStart = performance.now();
@@ -143,7 +153,7 @@
       const shade=ctx.createLinearGradient(0,0,0,h);shade.addColorStop(0,'#08130cb0');shade.addColorStop(1,'#08130ce0');
       ctx.fillStyle=shade;ctx.fillRect(0,0,w,h);
     }
-    const motionActive=animated&&state.animation!=='none';
+    const motionActive=animated&&state.animation!=='none'&&state.animation!=='wheel';
     // Use a monotonic wall-clock phase for shimmer so redraw cadence or elapsed-time
     // resets cannot make the decorative rotation pause or jump.
     const motionTime=animated ? performance.now()/1000 : t;
@@ -207,29 +217,86 @@
     ctx.fillText('أَسْمَاءُ اللَّهِ الْحُسْنَى',cx,cy-u*.39);
     ctx.restore();
 
-    // Only the changing name, transliteration and meaning fade.
-    ctx.save();
-    ctx.globalAlpha = nameFade;
-    ctx.textAlign='center';ctx.textBaseline='middle';
-    ctx.save();ctx.translate(cx,cy-u*(.14-state.arabicVerticalOffset*.0025)+floatY);ctx.scale(zoom*floatScale,zoom*floatScale);
-    let font=u*.126*(state.size/100);ctx.font='700 '+font+'px "Amiri",serif';
-    while(ctx.measureText(item[1]).width>w*.82&&font>u*.065){font*=.94;ctx.font='700 '+font+'px "Amiri",serif';}
-    ctx.shadowColor=c[3]+'55';ctx.shadowBlur=u*(.022+(motionActive?ambientPulse*.004:0));
-    let arabicFill=c[4];
-    if(shimmering){
-      const sheenCenter=-w*.48+((motionTime*.19)%1)*w*.96;
-      const sheen=ctx.createLinearGradient(sheenCenter-u*.12,0,sheenCenter+u*.12,0);
-      sheen.addColorStop(0,c[4]);sheen.addColorStop(.5,'#fff9e9');sheen.addColorStop(1,c[4]);
-      arabicFill=sheen;
+    // Roda bacaan affects only the names/text: the frame, ornaments and background stay still.
+    if (state.animation === 'wheel') {
+      let baseIndex = state.index;
+      let rotationProgress = 0;
+      let direction = 1;
+      if (state.wheelTransitionStart) {
+        baseIndex = state.wheelFromIndex;
+        direction = state.wheelDirection || 1;
+        const rawProgress = clamp((performance.now() - state.wheelTransitionStart) / 720, 0, 1);
+        rotationProgress = 1 - Math.pow(1 - rawProgress, 3);
+        if (rawProgress >= 1) state.wheelTransitionStart = 0;
+      }
+      const wheelEntries = [-1, 0, 1].map(offset => {
+        const angle = offset * (Math.PI * 2 / 3) - direction * rotationProgress * (Math.PI * 2 / 3);
+        return { index:baseIndex + offset, angle, depth:Math.cos(angle) };
+      }).filter(entry => entry.index >= 0 && entry.index < data.length);
+      // Draw the rear/smaller labels first; the active name passes in front.
+      wheelEntries.sort((a,b) => a.depth - b.depth);
+      wheelEntries.forEach(entry => {
+        const wheelItem = data[entry.index];
+        const depth = Math.max(0, entry.depth);
+        const scale = .43 + .57 * depth;
+        const alpha = .42 + .58 * depth;
+        const x = cx + Math.sin(entry.angle) * u * .075;
+        const y = cy - u * .025 + Math.sin(entry.angle) * u * .235;
+        const isFocus = entry.depth > .72;
+        ctx.save();
+        ctx.translate(x,y);
+        ctx.scale(scale,scale);
+        ctx.globalAlpha = alpha;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        let arabicFont = u * .12 * (state.size / 100);
+        ctx.font = '700 ' + arabicFont + 'px "Amiri",serif';
+        while (ctx.measureText(wheelItem[1]).width > w * .76 && arabicFont > u * .06) {
+          arabicFont *= .94;
+          ctx.font = '700 ' + arabicFont + 'px "Amiri",serif';
+        }
+        ctx.shadowColor = c[3] + '55';
+        ctx.shadowBlur = isFocus ? u * .02 : u * .008;
+        ctx.fillStyle = c[4];
+        ctx.fillText(wheelItem[1],0,-u*.025,w*.78);
+        if (state.transliteration) {
+          ctx.shadowBlur = 0;
+          ctx.fillStyle = c[4] + (isFocus ? 'ee' : 'bb');
+          ctx.font = '600 ' + Math.max(12,u*(isFocus ? .028 : .021)) + 'px "DM Sans",sans-serif';
+          ctx.fillText(wheelItem[0],0,u*.065,w*.76);
+        }
+        if (isFocus && state.translation) {
+          ctx.fillStyle = c[4];
+          ctx.font = '400 ' + Math.max(13,u*.022) + 'px "DM Sans",sans-serif';
+          ctx.fillText(wheelItem[2],0,u*.125,w*.76);
+        }
+        ctx.restore();
+      });
+      state.transitionStart = 0;
+    } else {
+      ctx.save();
+      ctx.globalAlpha = nameFade;
+      ctx.textAlign='center';ctx.textBaseline='middle';
+      ctx.save();ctx.translate(cx,cy-u*(.14-state.arabicVerticalOffset*.0025)+floatY);ctx.scale(zoom*floatScale,zoom*floatScale);
+      let font=u*.126*(state.size/100);ctx.font='700 '+font+'px "Amiri",serif';
+      while(ctx.measureText(item[1]).width>w*.82&&font>u*.065){font*=.94;ctx.font='700 '+font+'px "Amiri",serif';}
+      ctx.shadowColor=c[3]+'55';ctx.shadowBlur=u*(.022+(motionActive?ambientPulse*.004:0));
+      let arabicFill=c[4];
+      if(shimmering){
+        const sheenCenter=-w*.48+((motionTime*.19)%1)*w*.96;
+        const sheen=ctx.createLinearGradient(sheenCenter-u*.12,0,sheenCenter+u*.12,0);
+        sheen.addColorStop(0,c[4]);sheen.addColorStop(.5,'#fff9e9');sheen.addColorStop(1,c[4]);
+        arabicFill=sheen;
+      }
+      ctx.fillStyle=arabicFill;ctx.fillText(item[1],0,0,w*.82);ctx.restore();ctx.shadowBlur=0;
+      const ly=cy+u*.025;ctx.strokeStyle=c[3]+'aa';ctx.lineWidth=Math.max(1,w*.0014);
+      ctx.beginPath();ctx.moveTo(cx-u*.12,ly);ctx.lineTo(cx-u*.035,ly);ctx.moveTo(cx+u*.035,ly);ctx.lineTo(cx+u*.12,ly);ctx.stroke();star(cx,ly,u*.012,c[3]);
+      let ty=cy+u*(.10+state.arabicTextGap*.001);
+      if(state.transliteration){ctx.fillStyle=c[4]+'dd';ctx.font='600 '+Math.max(18,u*.03)+'px "DM Sans",sans-serif';ctx.fillText(item[0],cx,ty);ty+=u*(.055+state.textMeaningGap*.001);}
+      if(state.translation){ctx.fillStyle=c[4];ctx.font='400 '+Math.max(16,u*.024)+'px "DM Sans",sans-serif';ctx.fillText(item[2],cx,ty,w*.8);}
+      ctx.restore();
+  
     }
-    ctx.fillStyle=arabicFill;ctx.fillText(item[1],0,0,w*.82);ctx.restore();ctx.shadowBlur=0;
-    const ly=cy+u*.025;ctx.strokeStyle=c[3]+'aa';ctx.lineWidth=Math.max(1,w*.0014);
-    ctx.beginPath();ctx.moveTo(cx-u*.12,ly);ctx.lineTo(cx-u*.035,ly);ctx.moveTo(cx+u*.035,ly);ctx.lineTo(cx+u*.12,ly);ctx.stroke();star(cx,ly,u*.012,c[3]);
-    let ty=cy+u*(.10+state.arabicTextGap*.001);
-    if(state.transliteration){ctx.fillStyle=c[4]+'dd';ctx.font='600 '+Math.max(18,u*.03)+'px "DM Sans",sans-serif';ctx.fillText(item[0],cx,ty);ty+=u*(.055+state.textMeaningGap*.001);}
-    if(state.translation){ctx.fillStyle=c[4];ctx.font='400 '+Math.max(16,u*.024)+'px "DM Sans",sans-serif';ctx.fillText(item[2],cx,ty,w*.8);}
-    ctx.restore();
-
     // The sequence counter is persistent UI, not part of the fading name layer.
     const py=cy+u*.43,pw=u*.105,ph=u*.034;
     ctx.save();ctx.globalAlpha=1;ctx.textAlign='center';ctx.textBaseline='middle';
@@ -975,7 +1042,7 @@
     byId('arabicVerticalOffset').addEventListener('input',e=>{state.arabicVerticalOffset=Number(e.target.value);byId('arabicVerticalOffsetValue').textContent=(state.arabicVerticalOffset>0?'+':'')+state.arabicVerticalOffset;draw(0);persist();});
     byId('arabicTextGap').addEventListener('input',e=>{state.arabicTextGap=Number(e.target.value);byId('arabicTextGapValue').textContent=(state.arabicTextGap>0?'+':'')+state.arabicTextGap;draw(0);persist();});
      byId('textMeaningGap').addEventListener('input',e=>{state.textMeaningGap=Number(e.target.value);byId('textMeaningGapValue').textContent=(state.textMeaningGap>0?'+':'')+state.textMeaningGap;draw(0);persist();});
-     byId('animationSelect').addEventListener('change',e=>{state.animation=e.target.value;byId('renderHint').textContent=state.animation==='none'?'Animasi dinonaktifkan':'Animasi lembut aktif saat diputar';draw(0);persist();});
+     byId('animationSelect').addEventListener('change',e=>{state.animation=e.target.value;state.wheelTransitionStart=0;state.transitionStart=0;byId('renderHint').textContent=state.animation==='none'?'Animasi dinonaktifkan':state.animation==='wheel'?'Roda bacaan: teks aktif membesar, tetangganya mengecil dan berputar':'Animasi lembut aktif saat diputar';draw(0);persist();});
     byId('durationInput').addEventListener('input',e=>{state.duration=Number(e.target.value);byId('durationValue').textContent=state.duration;updateCaptions();persist();});
     byId('builtinMusicEnabled').addEventListener('change',e=>{state.builtinMusicEnabled=e.target.checked;syncBuiltinMusic(state.elapsed);persist();});
     byId('builtinMusicMode').addEventListener('change',e=>{state.builtinMusicMode=e.target.value;stopBuiltinMusic();state.builtinMusicPreview=false;byId('builtinMusicTestButton').textContent='Dengarkan contoh audio';syncBuiltinMusic(state.elapsed);draw(0);persist();});
@@ -1002,7 +1069,7 @@
   function init() {
     if(!ctx){notify('Browser tidak mendukung kanvas HTML5.');return;}
     restore();renderNames('');applyControls();
-    byId('renderHint').textContent=state.animation==='none'?'Animasi dinonaktifkan':'Animasi lembut aktif saat diputar';
+    byId('renderHint').textContent=state.animation==='none'?'Animasi dinonaktifkan':state.animation==='wheel'?'Roda bacaan: teks aktif membesar, tetangganya mengecil dan berputar':'Animasi lembut aktif saat diputar';
     bind();
     refreshSpeechVoices();
     byId('speechStatus').textContent = 'Pilih preset suara, lalu tekan Muat model AI. Model akan diunduh otomatis dan disimpan dalam cache browser bila tersedia.';
