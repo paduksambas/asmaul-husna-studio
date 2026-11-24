@@ -17,7 +17,7 @@
     square: [1080,1080,'1:1 · 1080 × 1080']
   };
   const state = { index:0, theme:'emerald', format:'portrait', animation:'float', duration:15, size:100,
-    translation:true, transliteration:true, playing:false, elapsed:0, start:0, image:null, imageUrl:'',
+    translation:true, transliteration:true, arabicTextGap:0, textMeaningGap:0, playing:false, elapsed:0, start:0, image:null, imageUrl:'',
     audioUrl:'', recorder:null, chunks:[], timer:0, audioDestination:null, backgroundAudioSource:null, backgroundAudioGain:null,
     ttsPipeline:null, ttsLoadPromise:null, ttsBackend:'', ttsBusy:false, ttsStop:false, speechAudioContext:null, speechSource:null,
     speechAnimating:false, speechAnimationStart:0, renderLoopActive:false, transitionStart:0, transitionDuration:420,
@@ -41,7 +41,7 @@
       localStorage.setItem('asmaul-husna-studio-v1', JSON.stringify({
         index:state.index,theme:state.theme,format:state.format,animation:state.animation,
         duration:state.duration,size:state.size,translation:state.translation,
-        transliteration:state.transliteration,project:byId('projectName').value
+        transliteration:state.transliteration,arabicTextGap:state.arabicTextGap,textMeaningGap:state.textMeaningGap,project:byId('projectName').value
       }));
       byId('saveStatus').textContent = 'Tersimpan di perangkat';
     } catch (_) { byId('saveStatus').textContent = 'Penyimpanan lokal tidak tersedia'; }
@@ -58,6 +58,8 @@
       if (Number.isFinite(s.size)) state.size = clamp(s.size,70,130);
       if (typeof s.translation === 'boolean') state.translation = s.translation;
       if (typeof s.transliteration === 'boolean') state.transliteration = s.transliteration;
+      if (Number.isFinite(s.arabicTextGap)) state.arabicTextGap = clamp(s.arabicTextGap,-40,40);
+      if (Number.isFinite(s.textMeaningGap)) state.textMeaningGap = clamp(s.textMeaningGap,-40,40);
       if (typeof s.project === 'string') byId('projectName').value = s.project.slice(0,60);
     } catch (_) {}
   }
@@ -94,7 +96,9 @@
     byId('arabicSize').value = state.size; byId('arabicSizeValue').textContent = state.size + '%';
     byId('showTranslation').checked = state.translation;
     byId('showTransliteration').checked = state.transliteration;
-    byId('animationSelect').value = state.animation;
+    byId('arabicTextGap').value = state.arabicTextGap; byId('arabicTextGapValue').textContent = (state.arabicTextGap>0?'+':'')+state.arabicTextGap;
+     byId('textMeaningGap').value = state.textMeaningGap; byId('textMeaningGapValue').textContent = (state.textMeaningGap>0?'+':'')+state.textMeaningGap;
+     byId('animationSelect').value = state.animation;
     byId('durationInput').value = state.duration; byId('durationValue').textContent = state.duration;
     byId('dimensionLabel').textContent = formats[state.format][2];
     const f = formats[state.format]; canvas.width = f[0]; canvas.height = f[1];
@@ -210,8 +214,8 @@
     ctx.fillStyle=arabicFill;ctx.fillText(item[1],0,0,w*.82);ctx.restore();ctx.shadowBlur=0;
     const ly=cy+u*.025;ctx.strokeStyle=c[3]+'aa';ctx.lineWidth=Math.max(1,w*.0014);
     ctx.beginPath();ctx.moveTo(cx-u*.12,ly);ctx.lineTo(cx-u*.035,ly);ctx.moveTo(cx+u*.035,ly);ctx.lineTo(cx+u*.12,ly);ctx.stroke();star(cx,ly,u*.012,c[3]);
-    let ty=cy+u*.10;
-    if(state.transliteration){ctx.fillStyle=c[4]+'dd';ctx.font='600 '+Math.max(18,u*.03)+'px "DM Sans",sans-serif';ctx.fillText(item[0],cx,ty);ty+=u*.055;}
+    let ty=cy+u*(.10+state.arabicTextGap*.001);
+    if(state.transliteration){ctx.fillStyle=c[4]+'dd';ctx.font='600 '+Math.max(18,u*.03)+'px "DM Sans",sans-serif';ctx.fillText(item[0],cx,ty);ty+=u*(.055+state.textMeaningGap*.001);}
     if(state.translation){ctx.fillStyle=c[4];ctx.font='400 '+Math.max(16,u*.024)+'px "DM Sans",sans-serif';ctx.fillText(item[2],cx,ty,w*.8);}
     const py=cy+u*.28,pw=u*.105,ph=u*.034;ctx.strokeStyle=c[3]+'88';ctx.lineWidth=1.3;
     if(ctx.roundRect){ctx.beginPath();ctx.roundRect(cx-pw/2,py-ph/2,pw,ph,ph/2);ctx.stroke();}
@@ -822,7 +826,7 @@
   function reset() {
     stopSpeech(false);
     state.index=0;state.theme='emerald';state.format='portrait';state.animation='float';
-    state.duration=15;state.size=100;state.translation=true;state.transliteration=true;state.elapsed=0;
+    state.duration=15;state.size=100;state.translation=true;state.transliteration=true;state.arabicTextGap=0;state.textMeaningGap=0;state.elapsed=0;
     byId('projectName').value='Asmaul Husna — Video 01';byId('searchInput').value='';
     removeMedia();renderNames('');applyControls();persist();stopPlayback();notify('Pengaturan dikembalikan ke awal.');
   }
@@ -839,7 +843,9 @@
     byId('arabicSize').addEventListener('input',e=>{state.size=Number(e.target.value);byId('arabicSizeValue').textContent=state.size+'%';draw(0);persist();});
     byId('showTranslation').addEventListener('change',e=>{state.translation=e.target.checked;draw(0);persist();});
     byId('showTransliteration').addEventListener('change',e=>{state.transliteration=e.target.checked;draw(0);persist();});
-    byId('animationSelect').addEventListener('change',e=>{state.animation=e.target.value;byId('renderHint').textContent=state.animation==='none'?'Animasi dinonaktifkan':'Animasi lembut aktif saat diputar';draw(0);persist();});
+    byId('arabicTextGap').addEventListener('input',e=>{state.arabicTextGap=Number(e.target.value);byId('arabicTextGapValue').textContent=(state.arabicTextGap>0?'+':'')+state.arabicTextGap;draw(0);persist();});
+     byId('textMeaningGap').addEventListener('input',e=>{state.textMeaningGap=Number(e.target.value);byId('textMeaningGapValue').textContent=(state.textMeaningGap>0?'+':'')+state.textMeaningGap;draw(0);persist();});
+     byId('animationSelect').addEventListener('change',e=>{state.animation=e.target.value;byId('renderHint').textContent=state.animation==='none'?'Animasi dinonaktifkan':'Animasi lembut aktif saat diputar';draw(0);persist();});
     byId('durationInput').addEventListener('input',e=>{state.duration=Number(e.target.value);byId('durationValue').textContent=state.duration;updateCaptions();persist();});
     byId('projectName').addEventListener('input',persist);
     byId('playButton').addEventListener('click',()=>{if(state.recorder){notify('Ekspor sedang berlangsung. Gunakan tombol Hentikan ekspor untuk menghentikannya.');return;}if(state.playing){state.playing=false;audio.pause();byId('playIcon').textContent='▶';byId('transportStatus').textContent='Pratinjau dijeda';}else play();});
