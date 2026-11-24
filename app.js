@@ -19,7 +19,8 @@
   const state = { index:0, theme:'emerald', format:'portrait', animation:'float', duration:15, size:100,
     translation:true, transliteration:true, playing:false, elapsed:0, start:0, image:null, imageUrl:'',
     audioUrl:'', recorder:null, chunks:[], timer:0, audioContext:null, audioDestination:null,
-    ttsPipeline:null, ttsLoadPromise:null, ttsBackend:'', ttsBusy:false, ttsStop:false, speechAudioContext:null, speechSource:null };
+    ttsPipeline:null, ttsLoadPromise:null, ttsBackend:'', ttsBusy:false, ttsStop:false, speechAudioContext:null, speechSource:null,
+    speechAnimating:false, speechAnimationStart:0, renderLoopActive:false };
   const clamp = (n,min,max) => Math.min(max,Math.max(min,n));
   const fileSafe = (s) => String(s || 'asmaul-husna').normalize('NFKD').replace(/[^a-z0-9_-]+/gi,'-').replace(/^-+|-+$/g,'').toLowerCase() || 'asmaul-husna';
   const timeText = (n) => {
@@ -108,6 +109,7 @@
   }
   function draw(t) {
     if (!ctx || !data.length) return;
+    const animated = state.playing || state.speechAnimating;
     const w=canvas.width,h=canvas.height,cx=w/2,cy=h/2,u=Math.min(w,h);
     const c=themes[state.theme] || themes.emerald;
     const g=ctx.createLinearGradient(0,0,w,h); g.addColorStop(0,c[0]);g.addColorStop(.55,c[1]);g.addColorStop(1,c[2]);
@@ -122,20 +124,20 @@
     ctx.fillStyle=glow;ctx.fillRect(0,0,w,h);
     ctx.save();ctx.translate(cx,cy);ctx.strokeStyle=c[3]+'38';ctx.lineWidth=Math.max(1,w*.001);
     for(let i=0;i<4;i++){ctx.beginPath();ctx.arc(0,0,u*(.22+i*.035),0,Math.PI*2);ctx.stroke();}
-    const shimmering=state.playing&&state.animation==='shimmer';
+    const shimmering=animated&&state.animation==='shimmer';
     for(let i=0;i<16;i++){ctx.save();ctx.globalAlpha=shimmering?.55+.45*Math.sin(t*3.2+i*1.7):1;ctx.rotate(i*Math.PI/8+(shimmering?t*.18:0));star(0,-u*.34,u*.025,c[3]+'88');ctx.restore();}
     ctx.restore();
     for(let i=0;i<42;i++){
       const x0=((i*173+41)%997)/997*w;
-      const x=x0+(state.playing&&state.animation!=='none'?Math.sin(t*.55+i)*u*.006:0);
+      const x=x0+(animated&&state.animation!=='none'?Math.sin(t*.55+i)*u*.006:0);
       const y0=((i*317+19)%991)/991*h;
-      const y=(y0+(state.playing&&state.animation!=='none'?t*(14+i%4*9):0))%h;
+      const y=(y0+(animated&&state.animation!=='none'?t*(14+i%4*9):0))%h;
       ctx.globalAlpha=.18+(i*7%10)/55;ctx.fillStyle=c[3];ctx.beginPath();ctx.arc(x,y,Math.max(1.5,w*.0015),0,Math.PI*2);ctx.fill();
     }
     ctx.globalAlpha=1;
     const item=data[state.index]||data[0];
-    const floatY=state.playing&&state.animation==='float'?Math.sin(t*1.35)*u*.022:0;
-    const zoom=state.playing&&state.animation==='zoom'?1+Math.sin(t*.8)*.055:1;
+    const floatY=animated&&state.animation==='float'?Math.sin(t*1.35)*u*.022:0;
+    const zoom=animated&&state.animation==='zoom'?1+Math.sin(t*.8)*.055:1;
     ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillStyle=c[3];
     ctx.font='600 '+Math.max(17,u*.019)+'px "DM Sans",sans-serif';ctx.letterSpacing=Math.max(2,u*.003)+'px';
     ctx.fillText('ASMAUL HUSNA',cx,cy-u*.205);ctx.letterSpacing='0px';
@@ -158,6 +160,20 @@
     ctx.fillStyle=c[4]+'b5';ctx.font='500 '+Math.max(10,u*.011)+'px "DM Sans",sans-serif';
     ctx.fillText('REMEMBER THE BEAUTIFUL NAMES',cx,h-Math.max(54,u*.065));
   }
+  function ensureRenderLoop() {
+    if (state.renderLoopActive) return;
+    state.renderLoopActive = true;
+    requestAnimationFrame(loop);
+  }
+  function setSpeechAnimating(active) {
+    state.speechAnimating = active;
+    if (active) {
+      state.speechAnimationStart = performance.now();
+      ensureRenderLoop();
+    } else if (!state.playing) {
+      draw(0);
+    }
+  }
   function stopPlayback() {
     state.playing=false;state.elapsed=0;audio.pause();
     byId('playIcon').textContent='▶';byId('playButton').setAttribute('aria-label','Putar pratinjau');
@@ -171,14 +187,27 @@
     byId('playIcon').textContent='Ⅱ';byId('playButton').setAttribute('aria-label','Jeda pratinjau');
     byId('transportStatus').textContent=state.recorder?'Merekam video…':'Pratinjau berjalan';
     if(state.audioUrl){if(state.elapsed===0)audio.currentTime=0;audio.play().catch(()=>{});}
-    requestAnimationFrame(loop);
+    ensureRenderLoop();
   }
   function loop(now) {
-    if(!state.playing)return;
-    state.elapsed=Math.min(state.duration,(now-state.start)/1000);draw(state.elapsed);
-    byId('timelineFill').style.width=(state.elapsed/state.duration*100)+'%';
-    byId('timeLabel').textContent=timeText(state.elapsed)+' / '+timeText(state.duration);
-    if(state.elapsed>=state.duration&&!state.recorder){stopPlayback();return;}
+    if (!state.playing && !state.speechAnimating) {
+      state.renderLoopActive = false;
+      draw(0);
+      return;
+    }
+    if (state.playing) {
+      state.elapsed = Math.min(state.duration, (now - state.start) / 1000);
+      byId('timelineFill').style.width = (state.elapsed / state.duration * 100) + '%';
+      byId('timeLabel').textContent = timeText(state.elapsed) + ' / ' + timeText(state.duration);
+      if (state.elapsed >= state.duration && !state.recorder) stopPlayback();
+    }
+    if (state.speechAnimating) draw((now - state.speechAnimationStart) / 1000);
+    else if (state.playing) draw(state.elapsed);
+    else {
+      state.renderLoopActive = false;
+      draw(0);
+      return;
+    }
     requestAnimationFrame(loop);
   }
   function snapshot() {
@@ -349,11 +378,15 @@
       source.connect(context.destination);
       state.speechSource = source;
       source.onended = () => {
-        if (state.speechSource === source) state.speechSource = null;
+        if (state.speechSource === source) {
+          state.speechSource = null;
+          setSpeechAnimating(false);
+        }
         resolve(!state.ttsStop);
       };
       try {
         source.start(0);
+        setSpeechAnimating(true);
       } catch (error) {
         state.speechSource = null;
         reject(error);
@@ -362,9 +395,11 @@
   }
   function stopSpeech(showMessage=true) {
     state.ttsStop = true;
-    if (state.speechSource) {
-      try { state.speechSource.stop(); } catch (_) {}
-      state.speechSource = null;
+    const activeSource = state.speechSource;
+    state.speechSource = null;
+    setSpeechAnimating(false);
+    if (activeSource) {
+      try { activeSource.stop(); } catch (_) {}
     }
     if (showMessage) byId('speechStatus').textContent = 'Pembacaan dihentikan.';
   }
