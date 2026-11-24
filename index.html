@@ -89,17 +89,31 @@
         <section class="control-section">
           <div class="section-title"><span class="section-number">03</span><h3>Tipografi & teks</h3></div>
           <div class="text-control-group">
-            <div class="text-control-group-title">Posisi &amp; Jarak Teks</div>
-            <label class="field-label" for="arabicVerticalOffset">Posisi kaligrafi Arab (−: atas, +: bawah) <output id="arabicVerticalOffsetValue">0</output></label>
-            <input class="range-input" id="arabicVerticalOffset" type="range" min="-40" max="40" step="1" value="0" />
-            <label class="field-label field-spaced" for="arabicTextGap">Jarak Arab → transliterasi <output id="arabicTextGapValue">0</output></label>
-            <input class="range-input" id="arabicTextGap" type="range" min="-40" max="40" step="1" value="0" />
-            <label class="field-label field-spaced" for="textMeaningGap">Jarak transliterasi → arti <output id="textMeaningGapValue">0</output></label>
-            <input class="range-input" id="textMeaningGap" type="range" min="-40" max="40" step="1" value="0" />
-            <label class="field-label field-spaced" for="arabicSize">Ukuran kaligrafi <output id="arabicSizeValue">100%</output></label>
-            <input class="range-input" id="arabicSize" type="range" min="70" max="130" value="100" />
-            <div class="duration-row field-spaced"><label class="field-label" for="durationInput">Durasi video</label><strong><span id="durationValue">15</span> detik</strong></div>
-            <input class="range-input" id="durationInput" type="range" min="5" max="60" step="5" value="15" />
+            <div class="text-control-group-heading">
+              <span class="text-control-group-mark">۞</span>
+              <div><div class="text-control-group-title">Posisi &amp; Jarak Teks</div><p>Atur komposisi tulisan pada kanvas</p></div>
+            </div>
+            <div class="text-control-item">
+              <label class="field-label" for="arabicVerticalOffset"><span>Posisi kaligrafi Arab</span><output class="range-value" id="arabicVerticalOffsetValue">0</output></label>
+              <input class="range-input" id="arabicVerticalOffset" type="range" min="-40" max="40" step="1" value="0" />
+              <div class="range-hint"><span>↑ Atas</span><span>Tengah</span><span>Bawah ↓</span></div>
+            </div>
+            <div class="text-control-item">
+              <label class="field-label" for="arabicTextGap"><span>Jarak Arab ke transliterasi</span><output class="range-value" id="arabicTextGapValue">0</output></label>
+              <input class="range-input" id="arabicTextGap" type="range" min="-40" max="40" step="1" value="0" />
+            </div>
+            <div class="text-control-item">
+              <label class="field-label" for="textMeaningGap"><span>Jarak transliterasi ke arti</span><output class="range-value" id="textMeaningGapValue">0</output></label>
+              <input class="range-input" id="textMeaningGap" type="range" min="-40" max="40" step="1" value="0" />
+            </div>
+            <div class="text-control-item">
+              <label class="field-label" for="arabicSize"><span>Ukuran kaligrafi</span><output class="range-value" id="arabicSizeValue">100%</output></label>
+              <input class="range-input" id="arabicSize" type="range" min="70" max="130" value="100" />
+            </div>
+            <div class="text-control-item text-control-duration">
+              <div class="duration-row"><label class="field-label" for="durationInput"><span>Durasi video</span></label><strong><span id="durationValue">15</span><small>detik</small></strong></div>
+              <input class="range-input" id="durationInput" type="range" min="5" max="60" step="5" value="15" />
+            </div>
           </div>
           <label class="field-label field-spaced" for="showTranslation"><span>Tampilkan arti</span><input id="showTranslation" type="checkbox" checked class="toggle-input" /><span class="toggle-ui"></span></label>
           <label class="field-label" for="showTransliteration"><span>Tampilkan transliterasi</span><input id="showTransliteration" type="checkbox" checked class="toggle-input" /><span class="toggle-ui"></span></label>
