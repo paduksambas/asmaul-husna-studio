@@ -111,19 +111,28 @@
           <button class="remove-media" id="removeMediaButton">Hapus media tambahan</button>
         </section>
         <section class="control-section speech-section">
-          <div class="section-title"><span class="section-number">06</span><h3>Pembacaan Arab</h3></div>
-          <p class="speech-description">Menggunakan suara Arab yang tersedia pada sistem operasi atau browser. Tidak perlu mengunduh model AI. Ketersediaan suara dan kualitas pelafalan bergantung pada perangkat. Suara ini diputar langsung dan belum ikut direkam ke video.</p>
-          <label class="field-label" for="speechVoice">Pilih suara Arab perangkat</label>
+          <div class="section-title"><span class="section-number">06</span><h3>Suara AI Arab · Supertonic 3</h3></div>
+          <p class="speech-description">Suara AI dibuat langsung di browser, tanpa paket suara Arab Windows dan tanpa API key. Unduhan model pertama sekitar 200 MB dan akan menggunakan cache browser bila diizinkan. Suara diputar di aplikasi; belum ikut direkam ke video ekspor.</p>
+          <label class="field-label" for="speechVoice">Pilih preset suara AI</label>
           <select id="speechVoice" class="select-input">
-            <option value="">Mendeteksi suara Arab…</option>
+            <option value="M1">Laki-laki · M1</option>
+            <option value="M2">Laki-laki · M2</option>
+            <option value="M3">Laki-laki · M3</option>
+            <option value="M4">Laki-laki · M4</option>
+            <option value="M5">Laki-laki · M5</option>
+            <option value="F1">Perempuan · F1</option>
+            <option value="F2">Perempuan · F2</option>
+            <option value="F3">Perempuan · F3</option>
+            <option value="F4">Perempuan · F4</option>
+            <option value="F5">Perempuan · F5</option>
           </select>
-          <button class="button button-outline speech-load" id="loadSpeechButton">Periksa suara Arab</button>
+          <button class="button button-outline speech-load" id="loadSpeechButton">Muat model suara AI</button>
           <div class="speech-actions">
             <button class="button button-primary" id="speakCurrentButton">Baca nama ini</button>
             <button class="button button-outline" id="speakAllButton">Bacakan 99 nama</button>
             <button class="button button-outline" id="stopSpeechButton">Hentikan suara</button>
           </div>
-          <p class="speech-status" id="speechStatus" role="status" aria-live="polite">Mendeteksi suara Arab yang terpasang di perangkat…</p>
+          <p class="speech-status" id="speechStatus" role="status" aria-live="polite">Pilih preset suara, lalu muat model AI untuk memulai.</p>
         </section>
         <div class="inspector-bottom"><span class="secure-icon">◈</span><span>Proyek tersimpan lokal di browser ini.</span></div>
       </aside>
