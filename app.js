@@ -224,7 +224,7 @@
         if(blob.size){
           const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;
           a.download=fileSafe(byId('projectName').value)+'.'+fileExtension;a.click();setTimeout(()=>URL.revokeObjectURL(url),15000);
-          notify('Video WebM berhasil dibuat dan diunduh.');
+          notify('Video '+fileExtension.toUpperCase()+' berhasil dibuat dan diunduh.');
         }else notify('Rekaman kosong. Coba lagi.');
         state.recorder=null;state.chunks=[];clearTimeout(state.timer);
         byId('exportOverlay').classList.add('hidden');stopPlayback();
