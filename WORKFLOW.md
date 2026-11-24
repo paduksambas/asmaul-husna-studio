@@ -310,3 +310,6 @@ Ikuti urutan ini. Jangan melewati pemeriksaan Preview sebelum perubahan dinyatak
 
 
 **Pengelompokan durasi video — 24 November 2026:** slider durasi video (5–60 detik) dipindahkan dari bagian Gerakan & durasi ke kelompok “Posisi & Jarak Teks”, bersama posisi kaligrafi Arab, jarak antarteks, dan ukuran kaligrafi. Pengaturan gaya animasi tetap berada pada bagian Gerakan & animasi. Nilai durasi tetap memakai state, penyimpanan lokal, pratinjau, dan alur ekspor yang sudah ada. Validator statis ditambah untuk memastikan slider durasi berada dalam kelompok yang sama. Hanya branch Preview yang diubah; `main`/Production tidak disentuh.
+
+
+**Penyelarasan jarak nomor urutan — 24 November 2026:** posisi label nomor urutan (contoh “01 / 99”) diatur ke `cy + u * .43`, mencerminkan posisi judul “ASMAUL HUSNA” di `cy - u * .43`. Dengan demikian jarak vertikal dari tepi lingkaran/ornamen atas dan bawah dibuat simetris berdasarkan sisi terpendek kanvas, konsisten untuk format Landscape, Portrait, dan Square. Validator statis memeriksa kedua koordinat. Hanya branch Preview yang diubah; `main`/Production tidak disentuh.
