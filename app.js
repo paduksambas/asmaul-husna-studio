@@ -57,7 +57,7 @@
       if (Number.isFinite(s.duration)) state.duration = clamp(s.duration,5,60);
       if (typeof s.builtinMusicEnabled === 'boolean') state.builtinMusicEnabled = s.builtinMusicEnabled;
       if (['vocal','instrumental'].includes(s.builtinMusicMode)) state.builtinMusicMode = s.builtinMusicMode;
-      if (Number.isFinite(s.builtinMusicVolume)) state.builtinMusicVolume = clamp(s.builtinMusicVolume,0,40);
+      if (Number.isFinite(s.builtinMusicVolume)) state.builtinMusicVolume = clamp(s.builtinMusicVolume,0,30);
       if (Number.isFinite(s.size)) state.size = clamp(s.size,70,130);
       if (typeof s.translation === 'boolean') state.translation = s.translation;
       if (typeof s.transliteration === 'boolean') state.transliteration = s.transliteration;
@@ -374,12 +374,14 @@
   }
   async function startBuiltinMusic(offset=0) {
     if (!state.builtinMusicEnabled || state.builtinMusicVolume <= 0 || state.builtinMusicSource || state.builtinMusicStarting) return;
+    const requestedMode = state.builtinMusicMode;
     state.builtinMusicStarting = true;
     try {
       const context = ensureSpeechAudioContext();
       // Call resume inside the user gesture path so Safari/iOS can unlock audio playback.
       if (context.state !== 'running') await context.resume();
       const buffer = await loadBuiltinMusicBuffer(context);
+      if (requestedMode !== state.builtinMusicMode) return;
       if (!state.builtinMusicEnabled || state.builtinMusicVolume <= 0 || !(state.playing || state.builtinMusicPreview || state.speechSequenceActive) || state.builtinMusicSource) return;
       const source = context.createBufferSource(), gain = context.createGain();
       source.buffer = buffer; source.loop = true;
@@ -395,6 +397,12 @@
       notify('Audio belum dapat diputar. Coba tekan Dengarkan musik sekali lagi.');
     } finally {
       state.builtinMusicStarting = false;
+      // A mode change during decode must restart the newly selected track, not
+      // accidentally start the old buffer or leave playback silent.
+      if (requestedMode !== state.builtinMusicMode && state.builtinMusicEnabled && state.builtinMusicVolume > 0 &&
+          (state.playing || state.builtinMusicPreview || state.speechSequenceActive) && !state.builtinMusicSource) {
+        startBuiltinMusic(offset);
+      }
     }
   }
   function syncBuiltinMusic(offset=state.elapsed) {
@@ -408,7 +416,7 @@
     if (!state.builtinMusicEnabled || state.builtinMusicVolume <= 0) return;
     const source = context.createBufferSource(), gain = context.createGain();
     source.buffer = state.builtinMusicBuffers[state.builtinMusicMode];
-    if (!source.buffer) throw new Error('Nasheed belum dimuat untuk ekspor.');
+    if (!source.buffer) throw new Error('Musik latar terpilih belum dimuat untuk ekspor.');
     source.loop = true;
     const volume = state.builtinMusicVolume / 100;
     gain.gain.setValueAtTime(0, startAt);
@@ -635,7 +643,7 @@
     state.exportCancelled = false;
     state.ttsBusy = true;
     state.builtinMusicPreview = false;
-    byId('builtinMusicTestButton').textContent = 'Dengarkan nasheed';
+    byId('builtinMusicTestButton').textContent = 'Dengarkan contoh audio';
     stopBuiltinMusic();
     byId('cancelExportButton').disabled = false;
 
@@ -1027,7 +1035,7 @@
   function reset() {
     stopSpeech(false);
     state.index=0;state.theme='emerald';state.format='portrait';state.animation='float';
-    state.duration=15;state.size=100;state.translation=true;state.transliteration=true;state.arabicVerticalOffset=0;state.arabicTextGap=0;state.textMeaningGap=0;state.wheelTransitionStart=0;state.transitionStart=0;state.builtinMusicEnabled=true;state.builtinMusicVolume=10;state.builtinMusicPreview=false;byId('builtinMusicTestButton').textContent='Dengarkan nasheed';state.elapsed=0;
+    state.duration=15;state.size=100;state.translation=true;state.transliteration=true;state.arabicVerticalOffset=0;state.arabicTextGap=0;state.textMeaningGap=0;state.wheelTransitionStart=0;state.transitionStart=0;state.builtinMusicEnabled=true;state.builtinMusicMode='vocal';state.builtinMusicVolume=10;state.builtinMusicPreview=false;byId('builtinMusicTestButton').textContent='Dengarkan contoh audio';state.elapsed=0;
     byId('projectName').value='Asmaul Husna — Video 01';byId('searchInput').value='';
     removeMedia();renderNames('');applyControls();persist();stopPlayback();notify('Pengaturan dikembalikan ke awal.');
   }
