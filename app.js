@@ -124,7 +124,7 @@
       ctx.fillStyle=shade;ctx.fillRect(0,0,w,h);
     }
     const motionActive=animated&&state.animation!=='none';
-    const ambientPulse=motionActive?.5+.5*Math.sin(t*.72):0;
+    const ambientPulse=motionActive ? .5+.5*Math.sin(t*.72) : 0;
     const glow=ctx.createRadialGradient(cx,cy,0,cx,cy,u*(.47+ambientPulse*.025));glow.addColorStop(0,c[5]+(motionActive?'48':'40'));glow.addColorStop(1,'#00000000');
     ctx.fillStyle=glow;ctx.fillRect(0,0,w,h);
     ctx.save();ctx.translate(cx,cy);ctx.strokeStyle=c[3]+'38';ctx.lineWidth=Math.max(1,w*.001);
@@ -134,9 +134,10 @@
     }
     const shimmering=animated&&state.animation==='shimmer';
     for(let i=0;i<16;i++){
-      const starPulse=shimmering?.66+.34*(.5+.5*Math.sin(t*1.12+i*1.43)):1;
+      const starPulse=shimmering ? .66+.34*(.5+.5*Math.sin(t*1.12+i*1.43)) : 1;
+      const starSizePulse=shimmering ? .5+.5*Math.sin(t*.8+i) : 0;
       ctx.save();ctx.globalAlpha=starPulse;ctx.rotate(i*Math.PI/8+(shimmering?t*.105:0));
-      star(0,-u*.34,u*(.024+(.0015*(shimmering?.5+.5*Math.sin(t*.8+i)))),c[3]+'88');ctx.restore();
+      star(0,-u*.34,u*(.024+.0015*starSizePulse),c[3]+'88');ctx.restore();
     }
     ctx.restore();
     for(let i=0;i<42;i++){
@@ -144,7 +145,7 @@
       const x=x0+(motionActive?Math.sin(t*.34+i*1.17)*u*.006:0);
       const y0=((i*317+19)%991)/991*h;
       const y=(y0+(motionActive?t*(10+i%5*2.5):0))%h;
-      const twinkle=motionActive?.78+.22*(.5+.5*Math.sin(t*.82+i*1.91)):1;
+      const twinkle=motionActive ? .78+.22*(.5+.5*Math.sin(t*.82+i*1.91)) : 1;
       ctx.globalAlpha=(.16+(i*7%10)/60)*twinkle;ctx.fillStyle=c[3];ctx.beginPath();ctx.arc(x,y,Math.max(1.5,w*.0015),0,Math.PI*2);ctx.fill();
     }
     ctx.globalAlpha=1;
