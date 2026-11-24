@@ -19,7 +19,7 @@
   const state = { index:0, theme:'emerald', format:'portrait', animation:'float', duration:15, size:100,
     translation:true, transliteration:true, arabicVerticalOffset:0, arabicTextGap:0, textMeaningGap:0, builtinMusicEnabled:true, builtinMusicVolume:10, builtinMusicMode:'vocal', builtinMusicBuffers:{}, builtinMusicLoadPromises:{}, builtinMusicSource:null, builtinMusicGain:null, builtinMusicStarting:false, builtinMusicPreview:false, playing:false, elapsed:0, start:0, image:null, imageUrl:'',
     audioUrl:'', recorder:null, chunks:[], timer:0, audioDestination:null, backgroundAudioSource:null, backgroundAudioGain:null,
-    ttsPipeline:null, ttsLoadPromise:null, ttsBackend:'', ttsBusy:false, ttsStop:false, speechAudioContext:null, speechSource:null,
+    ttsPipeline:null, ttsLoadPromise:null, ttsBackend:'', ttsBusy:false, ttsStop:false, speechSequenceActive:false, speechAudioContext:null, speechSource:null,
     speechAnimating:false, speechAnimationStart:0, renderLoopActive:false, transitionStart:0, transitionDuration:420,
     exportBusy:false, exportPreparing:false, exportCancelled:false, narrationExportActive:false,
     exportDuration:0, exportAudioStart:0, exportTimeline:[], exportSources:[] };
@@ -344,7 +344,7 @@
     }
   }
   function syncBuiltinMusic(offset=state.elapsed) {
-    if (state.builtinMusicEnabled && state.builtinMusicVolume > 0 && (state.playing || state.builtinMusicPreview)) {
+    if (state.builtinMusicEnabled && state.builtinMusicVolume > 0 && (state.playing || state.builtinMusicPreview || state.speechSequenceActive)) {
       startBuiltinMusic(offset);
     } else {
       stopBuiltinMusic();
@@ -876,6 +876,10 @@
       return;
     }
     state.ttsStop = true;
+    if (state.speechSequenceActive) {
+      state.speechSequenceActive = false;
+      syncBuiltinMusic();
+    }
     const activeSource = state.speechSource;
     state.speechSource = null;
     stopSpeechAnimation();
@@ -914,6 +918,10 @@
     try {
       const context = ensureSpeechAudioContext();
       await context.resume();
+      state.speechSequenceActive = true;
+      state.builtinMusicPreview = false;
+      byId('builtinMusicTestButton').textContent = 'Dengarkan contoh audio';
+      syncBuiltinMusic(0);
       const voice = selectedSpeechVoice();
       await loadSpeechModel();
       startSpeechAnimation();
@@ -935,6 +943,8 @@
       console.error('Supertonic 3 sequence failed:', error);
       if (!state.ttsStop) byId('speechStatus').textContent = 'Pembacaan terhenti: ' + (error.message || String(error));
     } finally {
+      state.speechSequenceActive = false;
+      syncBuiltinMusic();
       stopSpeechAnimation();
       state.ttsBusy = false;
     }
