@@ -236,7 +236,11 @@
         rotationProgress = 1 - Math.pow(1 - movementProgress, 3);
         if (rawProgress >= 1) state.wheelTransitionStart = 0;
       }
-      const wheelEntries = [-1, 0, 1].map(offset => {
+      // Keep only the current label and the next label in the direction of travel.
+      // Never draw the already-read label behind the wheel: it would rotate back
+      // into the incoming position and look like a duplicate of the next reading.
+      const wheelOffsets = direction >= 0 ? [0, 1] : [-1, 0];
+      const wheelEntries = wheelOffsets.map(offset => {
         const angle = offset * (Math.PI * 2 / 3) - direction * rotationProgress * (Math.PI * 2 / 3);
         return { index:baseIndex + offset, angle, depth:Math.cos(angle), offset };
       }).filter(entry => entry.index >= 0 && entry.index < data.length);
