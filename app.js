@@ -5,7 +5,6 @@
   const canvas = byId('previewCanvas');
   const ctx = canvas.getContext('2d');
   const audio = byId('backgroundAudio');
-  const speechAudio = byId('speechAudio');
   const themes = {
     emerald: ['#1b382b','#10291f','#091811','#d6b978','#f4eedb','#8ea66c'],
     midnight: ['#26344c','#151f35','#090f1c','#d7c38e','#f0eee5','#748ebc'],
@@ -20,7 +19,7 @@
   const state = { index:0, theme:'emerald', format:'portrait', animation:'float', duration:15, size:100,
     translation:true, transliteration:true, playing:false, elapsed:0, start:0, image:null, imageUrl:'',
     audioUrl:'', recorder:null, chunks:[], timer:0, audioContext:null, audioDestination:null,
-    ttsPipeline:null, ttsBusy:false, ttsStop:false, speechUrl:'' };
+    speechVoices:[], ttsBusy:false, ttsStop:false };
   const clamp = (n,min,max) => Math.min(max,Math.max(min,n));
   const fileSafe = (s) => String(s || 'asmaul-husna').normalize('NFKD').replace(/[^a-z0-9_-]+/gi,'-').replace(/^-+|-+$/g,'').toLowerCase() || 'asmaul-husna';
   const timeText = (n) => {
@@ -242,120 +241,102 @@
       byId('exportOverlay').classList.add('hidden');console.error(err);notify(err.message||'Tidak dapat memulai ekspor.');
     }
   }
-  async function loadSpeechModel() {
-    if(state.ttsPipeline)return state.ttsPipeline;
-    if(state.ttsBusy)return null;
-    state.ttsBusy=true;
-    const loadButton=byId('loadSpeechButton');
-    loadButton.disabled=true;
-    byId('speechStatus').textContent='Mengunduh mesin suara AI (sekitar 200 MB) dan menyiapkannya…';
-    try {
-      const {pipeline,env}=await import('https://esm.sh/@huggingface/transformers@3.8.1');
-      env.allowLocalModels=false;
-      env.useBrowserCache=true;
-      // Ask the browser to retain downloaded model files between visits when supported.
-      // Transformers.js stores remote model responses in the browser Cache API.
-      try {
-        if(navigator.storage && navigator.storage.persist) {
-          const retained=await navigator.storage.persist();
-          byId('speechStatus').textContent=retained
-            ? 'Mengaktifkan penyimpanan model di perangkat…'
-            : 'Menyiapkan cache browser. Browser dapat menghapus cache jika ruang penyimpanan dibutuhkan…';
-        }
-      } catch(cacheError) { console.warn('Persistent storage request unavailable:',cacheError); }
-      const model='open-world-group/Supertonic-3-ONNX';
-      try {
-        byId('speechStatus').textContent='Mencoba akselerasi WebGPU…';
-        state.ttsPipeline=await pipeline('text-to-speech',model,{
-          device:'webgpu',dtype:'fp16',
-          progress_callback:(p)=>{if(p&&p.status==='progress')byId('speechStatus').textContent='Mengunduh model suara: '+Math.round(p.progress||0)+'%';}
-        });
-        byId('speechStatus').textContent='Mesin suara siap (WebGPU). Pilih Uji M1 atau Uji F1.';
-      } catch(webgpuError) {
-        console.warn('WebGPU tidak tersedia, mencoba WASM Q8:',webgpuError);
-        byId('speechStatus').textContent='WebGPU tidak tersedia. Menyiapkan mode kompatibel…';
-        state.ttsPipeline=await pipeline('text-to-speech',model,{
-          device:'wasm',
-          dtype:{text_encoder:'fp32',latent_denoiser:'q8',voice_decoder:'fp32'},
-          progress_callback:(p)=>{if(p&&p.status==='progress')byId('speechStatus').textContent='Menyiapkan model WASM: '+Math.round(p.progress||0)+'%';}
-        });
-        byId('speechStatus').textContent='Mesin suara siap (WASM). Pilih Uji M1 atau Uji F1.';
-      }
-      loadButton.textContent='Mesin suara siap';
-      return state.ttsPipeline;
-    } catch(err) {
-      console.error('TTS load failed:',err);
-      byId('speechStatus').textContent='Gagal memuat mesin suara: '+(err.message||'Periksa koneksi lalu coba lagi.');
-      notify('Mesin suara AI belum berhasil dimuat.');
-      return null;
-    } finally {
-      state.ttsBusy=false;
-      loadButton.disabled=!!state.ttsPipeline;
+  function refreshSpeechVoices() {
+    if (!('speechSynthesis' in window)) {
+      state.speechVoices = [];
+      byId('speechVoice').replaceChildren(new Option('TTS browser tidak tersedia',''));
+      return [];
     }
+    const allVoices = window.speechSynthesis.getVoices();
+    state.speechVoices = allVoices.filter(voice => /^ar([_-]|$)/i.test(voice.lang || ''));
+    const select = byId('speechVoice');
+    const previous = select.value;
+    select.replaceChildren();
+    if (!state.speechVoices.length) {
+      select.add(new Option('Tidak ada suara Arab terpasang',''));
+      byId('speechStatus').textContent = 'Suara Arab belum ditemukan di perangkat. Pasang paket suara Arab pada pengaturan sistem, lalu tekan Periksa suara Arab.';
+      return [];
+    }
+    state.speechVoices.forEach((voice,index) => {
+      const label = voice.name + ' · ' + voice.lang + (voice.default ? ' · default' : '');
+      select.add(new Option(label,String(index)));
+    });
+    if (previous && Number.isInteger(Number(previous)) && Number(previous) < state.speechVoices.length) {
+      select.value = previous;
+    } else {
+      select.value = '0';
+    }
+    return state.speechVoices;
+  }
+  function selectedSpeechVoice() {
+    const index = Number(byId('speechVoice').value);
+    return Number.isInteger(index) ? state.speechVoices[index] || null : null;
+  }
+  function loadSpeechVoices() {
+    if (!('speechSynthesis' in window) || !('SpeechSynthesisUtterance' in window)) {
+      byId('speechStatus').textContent = 'Browser ini tidak menyediakan Web Speech API. Coba Safari, Chrome, atau Edge versi terbaru.';
+      notify('Fitur pembacaan suara tidak tersedia pada browser ini.');
+      return [];
+    }
+    const voices = refreshSpeechVoices();
+    if (voices.length) {
+      byId('speechStatus').textContent = voices.length + ' suara Arab tersedia di perangkat. Pilih suara, lalu tekan Baca nama ini atau Bacakan 99 nama.';
+      byId('loadSpeechButton').textContent = 'Perbarui daftar suara';
+    }
+    return voices;
+  }
+  function speakText(text, voice) {
+    return new Promise((resolve,reject) => {
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = voice ? voice.lang : 'ar-SA';
+      if (voice) utterance.voice = voice;
+      utterance.rate = 0.84;
+      utterance.pitch = 1;
+      utterance.onend = () => resolve(true);
+      utterance.onerror = (event) => {
+        if (state.ttsStop || event.error === 'canceled' || event.error === 'interrupted') resolve(false);
+        else reject(new Error('Suara gagal diputar (' + (event.error || 'unknown') + ').'));
+      };
+      window.speechSynthesis.speak(utterance);
+    });
   }
   function stopSpeech(showMessage=true) {
-    state.ttsStop=true;
-    speechAudio.pause();
-    speechAudio.removeAttribute('src');
-    speechAudio.load();
-    if(state.speechUrl){URL.revokeObjectURL(state.speechUrl);state.speechUrl='';}
+    state.ttsStop = true;
+    if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+    state.ttsBusy = false;
     if(showMessage)byId('speechStatus').textContent='Pembacaan dihentikan.';
-  }
-  function playSpeechBlob(blob) {
-    return new Promise((resolve,reject)=>{
-      if(state.speechUrl)URL.revokeObjectURL(state.speechUrl);
-      state.speechUrl=URL.createObjectURL(blob);
-      speechAudio.src=state.speechUrl;
-      speechAudio.onended=()=>resolve();
-      speechAudio.onerror=()=>reject(new Error('Audio hasil sintesis tidak dapat diputar.'));
-      const p=speechAudio.play();
-      if(p&&p.catch)p.catch(reject);
-    });
-  }
-  async function synthesizeName(index,voice) {
-    if(!state.ttsPipeline)throw new Error('Muat mesin suara terlebih dahulu.');
-    const item=data[index];
-    const speaker='https://huggingface.co/open-world-group/Supertonic-3-ONNX/resolve/main/voices/'+voice+'.bin';
-    const output=await state.ttsPipeline('<ar>'+item[1]+'</ar>',{
-      speaker_embeddings:speaker,num_inference_steps:8,speed:0.92
-    });
-    return output.toBlob();
   }
   async function speakCurrent() {
     if(state.ttsBusy)return;
-    if(!state.ttsPipeline){await loadSpeechModel();return;}
+    const voice=selectedSpeechVoice();
+    if(!voice){loadSpeechVoices();return;}
     state.ttsStop=false;state.ttsBusy=true;
-    const voice=byId('speechVoice').value;
     try {
-      byId('speechStatus').textContent='Membuat suara untuk '+data[state.index][0]+'…';
-      const blob=await synthesizeName(state.index,voice);
-      if(state.ttsStop)return;
-      await playSpeechBlob(blob);
-      byId('speechStatus').textContent='Selesai membaca '+data[state.index][0]+'.';
+      byId('speechStatus').textContent='Membaca '+data[state.index][0]+' menggunakan '+voice.name+'…';
+      await speakText(data[state.index][1],voice);
+      if(!state.ttsStop)byId('speechStatus').textContent='Selesai membaca '+data[state.index][0]+'.';
     } catch(err) {
-      console.error(err);byId('speechStatus').textContent='Gagal membuat audio: '+err.message;
-      notify('Audio AI gagal dibuat. Periksa koneksi atau memori browser.');
+      console.error('Browser speech failed:',err);
+      if(!state.ttsStop)byId('speechStatus').textContent='Gagal memutar suara: '+err.message;
     } finally { state.ttsBusy=false; }
   }
   async function speakAll() {
     if(state.ttsBusy)return;
-    if(!state.ttsPipeline){await loadSpeechModel();return;}
+    const voice=selectedSpeechVoice();
+    if(!voice){loadSpeechVoices();return;}
     state.ttsStop=false;state.ttsBusy=true;
-    const voice=byId('speechVoice').value;
-    for(let i=0;i<data.length;i++) {
-      if(state.ttsStop)break;
-      try {
-        state.index=i;renderNames(byId('searchInput').value);updateCaptions();persist();draw(0);
-        byId('speechStatus').textContent='Membuat audio '+(i+1)+' dari '+data.length+': '+data[i][0]+'…';
-        const blob=await synthesizeName(i,voice);
+    try {
+      for(let i=0;i<data.length;i++) {
         if(state.ttsStop)break;
-        await playSpeechBlob(blob);
-      } catch(err) {
-        console.error(err);byId('speechStatus').textContent='Terhenti pada nama '+(i+1)+': '+err.message;state.ttsBusy=false;return;
+        state.index=i;renderNames(byId('searchInput').value);updateCaptions();persist();draw(0);
+        byId('speechStatus').textContent='Membaca '+(i+1)+' dari '+data.length+': '+data[i][0]+'…';
+        await speakText(data[i][1],voice);
       }
-    }
-    state.ttsBusy=false;
-    if(!state.ttsStop)byId('speechStatus').textContent='Selesai membaca 99 Asmaul Husna.';
+      if(!state.ttsStop)byId('speechStatus').textContent='Selesai membaca 99 Asmaul Husna.';
+    } catch(err) {
+      console.error('Browser speech failed:',err);
+      if(!state.ttsStop)byId('speechStatus').textContent='Pembacaan terhenti: '+err.message;
+    } finally { state.ttsBusy=false; }
   }
   function uploadImage(file) {
     if(!file)return;if(!file.type.startsWith('image/')){notify('Pilih file gambar yang valid.');return;}
@@ -386,7 +367,7 @@
   }
   function bind() {
     byId('searchInput').addEventListener('input',e=>renderNames(e.target.value));
-    byId('loadSpeechButton').addEventListener('click',loadSpeechModel);
+    byId('loadSpeechButton').addEventListener('click',loadSpeechVoices);
     byId('speakCurrentButton').addEventListener('click',speakCurrent);
     byId('speakAllButton').addEventListener('click',speakAll);
     byId('stopSpeechButton').addEventListener('click',()=>stopSpeech(true));
@@ -420,6 +401,11 @@
     restore();renderNames('');applyControls();
     byId('renderHint').textContent=state.animation==='none'?'Animasi dinonaktifkan':'Animasi lembut aktif saat diputar';
     bind();
+    if ('speechSynthesis' in window) {
+      window.speechSynthesis.addEventListener?.('voiceschanged',refreshSpeechVoices);
+      window.speechSynthesis.onvoiceschanged = refreshSpeechVoices;
+      refreshSpeechVoices();
+    }
     let helpSeen=false;
     try { helpSeen=localStorage.getItem('asmaul-husna-help-seen')==='1'; } catch (_) {}
     if(!helpSeen)byId('helpModal').classList.remove('hidden');
