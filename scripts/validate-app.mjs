@@ -75,6 +75,9 @@ assert.match(app, /scheduleBuiltinMusic\(context, audioDestination, state\.expor
 assert.match(app, /stopNarrationSources\(\);[\s\S]*?stopSpeechAnimation\(\); stopPlayback\(\);/, 'narration export cleanup must stop scheduled audio after recording');
 assert.match(app, /gain\.gain\.linearRampToValueAtTime\(0, startAt \+ duration\)/, 'background music must fade out at the end of the downloaded narration');
 assert.match(app, /builtinMusicVolume:10/, 'nasheed volume must default to a quiet narration-friendly level');
+assert.match(app, /clamp\(s\.builtinMusicVolume,0,30\)/, 'restored music volume must stay within the slider maximum');
+assert.match(app, /const requestedMode = state\.builtinMusicMode;[\s\S]*?requestedMode !== state\.builtinMusicMode/, 'music mode changes during asynchronous loading must not start the stale track');
+assert.match(app, /state\.builtinMusicMode='vocal'/, 'reset must restore the default vocal soundtrack');
 assert.match(html, /Alhamdulilah \(Vocal Only Nasheed\)/, 'music panel must identify the vocal-only nasheed');
 assert.match(html, /Instrumental tanpa vokal · Alex Morgan/, 'music panel must offer the instrumental option');
 assert.match(html, /id="builtinMusicMode"/, 'music panel must expose the background audio selector');
