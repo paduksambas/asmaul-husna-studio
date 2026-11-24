@@ -168,3 +168,5 @@ Ikuti urutan ini. Jangan melewati pemeriksaan Preview sebelum perubahan dinyatak
 **Konfirmasi tema dan rasio (24 November 2026):** pengguna mengonfirmasi keempat tema (Emerald, Midnight, Sand, Rose) dan pilihan rasio Landscape, Portrait, Square berfungsi baik pada pengujian laptop.
 
 **Konfirmasi durasi dan reset (24 November 2026):** pengguna mengonfirmasi pengubahan durasi dan fungsi Reset berhasil pada pengujian laptop. Pengujian interaksi utama laptop kini terkonfirmasi; pengujian terpisah di iPad masih perlu dilakukan.
+
+**Konfirmasi pengujian iPad (24 November 2026):** pengguna mengonfirmasi pemilihan nama dan pencarian berfungsi melalui Safari di iPad A17 Pro. Pengujian tema, rasio, durasi, reset, tata letak sentuh, serta alur Codespaces/editor di iPad masih perlu dilakukan.
