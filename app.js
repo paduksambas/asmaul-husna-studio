@@ -320,6 +320,15 @@
     } catch(err) {
       console.error('TTS load failed:',err);
       const detail=(err&&err.message?err.message:String(err)).slice(0,420);
+      // Keep narration usable when a browser cannot initialize the local ONNX model.
+      // Prefer an installed Arabic system voice as a graceful, offline-capable fallback.
+      if('speechSynthesis' in window && 'SpeechSynthesisUtterance' in window) {
+        state.nativeSpeech=true;
+        loadButton.textContent='Suara perangkat siap';
+        byId('speechStatus').textContent='Model AI lokal gagal dimuat ('+detail+'). Menggunakan suara Arab bawaan perangkat; kualitas bergantung pada suara yang tersedia.';
+        notify('Model AI tidak dapat dimuat. Pembacaan dialihkan ke suara perangkat.');
+        return 'native';
+      }
       byId('speechStatus').textContent='Gagal memuat mesin suara: '+detail;
       notify('Gagal memuat suara: '+detail.slice(0,180));
       return null;
