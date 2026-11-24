@@ -253,7 +253,6 @@
     const isAppleMobile = /iPad|iPhone|iPod/.test(navigator.userAgent)
       || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
     try {
-      const {pipeline,env}=await import('https://esm.sh/@huggingface/transformers@3.8.1');
       // iPad Safari can hang while compiling the ONNX Runtime WASM bundle.
       // Use the built-in Arabic speech engine on Apple mobile instead of
       // downloading/initializing a large WASM model.
@@ -263,6 +262,7 @@
         byId('speechStatus').textContent='iPad menggunakan suara Arab bawaan Safari. Tidak perlu mengunduh model WASM.';
         return 'native';
       }
+      const {pipeline,env}=await import('https://esm.sh/@huggingface/transformers@3.8.1');
       env.allowLocalModels=false;
       env.useBrowserCache=true;
       try {
