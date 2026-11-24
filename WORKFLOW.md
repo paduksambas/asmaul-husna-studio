@@ -202,3 +202,13 @@ Ikuti urutan ini. Jangan melewati pemeriksaan Preview sebelum perubahan dinyatak
 
 
 **Verifikasi Release Supertonic 3 (24 November 2026):** GitHub Release `supertonic3-model-v1` telah diperiksa melalui GitHub API. Release berstatus published, bukan draft/prerelease. Dua aset berstatus `uploaded`: `supertonic-3-onnx-model.tar.gz` (597.578.348 byte; SHA-256 `8dba64b6799ffb0d5f6b1f8154446c0ed27d7d4d90c0fda019ebce898ee099f8`) dan `supertonic-3-onnx-model.tar.gz.sha256` (97 byte). Aplikasi diberi tautan langsung ke Release sebagai arsip cadangan. **Batas integrasi runtime:** Transformers.js memuat file model dari repositori model berbentuk direktori, sedangkan GitHub Release menyimpan satu arsip tar.gz; arsip tersebut tidak dapat dipakai langsung sebagai `model` ID/path oleh pipeline. Karena itu runtime tetap mengambil file model dari Hugging Face dan menggunakan cache lokal browser. Mengganti sumber runtime ke arsip Release memerlukan tahap ekstraksi/penyajian file model yang kompatibel; perubahan ini sengaja tidak dilakukan secara semu agar fitur TTS yang ada tidak rusak. Cache tetap terpisah per perangkat.
+
+
+## 8. Catatan perbaikan TTS lintas perangkat — 24 November 2026
+
+- Log browser Windows menunjukkan WebGPU tidak tersedia, ONNX Runtime memberi peringatan constant-folding, lalu permintaan `preprocessor_config.json` ke repositori Supertonic menghasilkan HTTP 404. Peringatan `powerPreference` sendiri bukan penyebab kegagalan.
+- Model card Supertonic-3-ONNX memang mendokumentasikan pemakaian Transformers.js dan konfigurasi WASM Q8, tetapi daftar berkas model yang dipublikasikan tidak mencantumkan `preprocessor_config.json`. Karena itu, 404 tersebut perlu dibedakan dari error fatal pipeline; jangan menyimpulkan hanya dari satu baris konsol.
+- Jalur iPad/iPhone tetap melewati impor ONNX dan memakai `speechSynthesis` bawaan perangkat.
+- Perubahan terbaru: jika pemuatan Supertonic gagal pada browser desktop, aplikasi otomatis beralih ke `speechSynthesis` bawaan perangkat jika tersedia, serta menampilkan rincian kegagalan model dan pemberitahuan fallback. Ketersediaan serta mutu suara Arab mengikuti suara yang terpasang pada perangkat.
+- Commit source: `cb456c446825a21d275ff737359415fe4549215d` (fallback TTS), `7acb4605c23f53d85ccb027e42528b693fbb90d3` (teks antarmuka).
+- Status: deployment Preview harus diperiksa; pengujian audio nyata di Windows dan iPad masih menunggu konfirmasi pengguna. Belum dipromosikan ke Production.
