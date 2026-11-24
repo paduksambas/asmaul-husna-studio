@@ -106,6 +106,12 @@ Ikuti urutan ini. Jangan melewati pemeriksaan Preview sebelum perubahan dinyatak
 - [x] Uji unggah gambar dan audio yang valid serta tampil/fungsinya di pratinjau (dikonfirmasi pengguna).
 - [x] Uji pratinjau media dan sinkronisasi audio dasar (dikonfirmasi pengguna).
 - [ ] Uji penolakan file tidak valid dan penanganan izin browser.
+- [x] Tambahkan panel TTS AI Arab gratis Supertonic 3: pilihan suara M1/F1, pemuatan model lokal, uji nama aktif, pembacaan 99 nama berurutan, dan tombol berhenti.
+- [x] Deployment Production otomatis setelah perubahan TTS berstatus READY pada commit `79ef40d75d1efa8d0c8dd362d05badc872b27925`.
+- [ ] Uji pemuatan model Supertonic 3 dan hasil pelafalan Arab di laptop.
+- [ ] Uji pemuatan model Supertonic 3 dan hasil pelafalan Arab di Safari iPad A17 Pro.
+- [ ] Bandingkan suara M1 dan F1; pilih suara yang paling alami dan jelas.
+- [ ] Integrasikan suara AI yang sudah tervalidasi ke audio video ekspor; jangan tandai selesai sebelum file unduhan diuji.
 - [x] Uji ekspor video, unduhan, dan pemutaran hasil; pengguna mengonfirmasi video berhasil diputar dengan animasi bergerak sempurna (audio dan perangkat/browser masih perlu dicatat terpisah).
 - [x] Uji simpan PNG dan pastikan gambar berhasil disimpan (dikonfirmasi pengguna).
 - [x] Tambahkan konfigurasi `.devcontainer/devcontainer.json` untuk GitHub Codespaces (Ubuntu, Python preview server, port 8000, dan pengaturan editor).
@@ -184,3 +190,6 @@ Ikuti urutan ini. Jangan melewati pemeriksaan Preview sebelum perubahan dinyatak
 **Konfirmasi upload media iPad (24 November 2026):** pengguna mengonfirmasi unggah gambar dan file audio serta pratinjau media berfungsi dengan baik melalui Safari di iPad A17 Pro. Pengujian ekspor video/PNG langsung dari iPad dan verifikasi audio pada hasil ekspor masih perlu dilakukan.
 
 **Konfirmasi ekspor iPad (24 November 2026):** pengguna mengonfirmasi langkah 1–4 berhasil melalui Safari di iPad A17 Pro: PNG tersimpan, animasi dijalankan, video diekspor, dan file video hasil unduhan dibuka dengan animasi bergerak. Keberhasilan audio di dalam video hasil ekspor belum dikonfirmasi secara terpisah.
+
+
+**Pembaruan implementasi TTS (24 November 2026):** hardening kontrol pembacaan ditambahkan pada commit `79ef40d75d1efa8d0c8dd362d05badc872b27925`. Deployment Production terbaru berstatus READY: `dpl_3ZL9PHkAqveQKegUczhrXcF3HB5W`, alias utama `https://asmaul-husna-studio.vercel.app`. Model belum diuji di browser pengguna. Pemrosesan menggunakan Transformers.js dan model `open-world-group/Supertonic-3-ONNX`, voice embeddings M1/F1; pilihan WebGPU fp16 lalu fallback WASM q8. Estimasi download awal sekitar 200 MB; model diambil dari Hugging Face dan disimpan dalam cache browser bila memungkinkan. Sintesis audio masih untuk playback di aplikasi; belum dimasukkan ke rekaman video.
