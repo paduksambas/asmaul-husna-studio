@@ -129,7 +129,7 @@ Ikuti urutan ini. Jangan melewati pemeriksaan Preview sebelum perubahan dinyatak
 - Aplikasi saat ini adalah aplikasi browser statis tanpa backend akun pengguna.
 - Penyimpanan preferensi menggunakan penyimpanan lokal browser.
 - Gambar/audio yang dipilih pengguna diproses di perangkat; tidak otomatis tersedia di perangkat lain.
-- Ekspor video saat ini menggunakan WebM. Ekspor MP4 belum tersedia.
+- Ekspor video memilih MP4 jika browser mendukung MIME MP4 melalui MediaRecorder; jika tidak, aplikasi mencoba WebM. Format akhir bergantung pada dukungan browser/perangkat dan ekstensi unduhan mengikuti format yang dipilih.
 - Daftar transliterasi dan arti Asmaul Husna perlu ditelaah sebelum dipakai sebagai materi pendidikan atau publikasi keagamaan.
 
 ## 7. Catatan sesi terakhir
