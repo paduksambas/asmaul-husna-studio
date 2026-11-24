@@ -19,10 +19,11 @@
   const state = { index:0, theme:'emerald', format:'portrait', animation:'float', duration:15, size:100,
     translation:true, transliteration:true, arabicVerticalOffset:0, arabicTextGap:0, textMeaningGap:0, builtinMusicEnabled:true, builtinMusicVolume:10, builtinMusicMode:'vocal', builtinMusicBuffers:{}, builtinMusicLoadPromises:{}, builtinMusicSource:null, builtinMusicGain:null, builtinMusicStarting:false, builtinMusicPreview:false, playing:false, elapsed:0, start:0, image:null, imageUrl:'',
     audioUrl:'', recorder:null, chunks:[], timer:0, audioDestination:null, backgroundAudioSource:null, backgroundAudioGain:null,
-    ttsPipeline:null, ttsLoadPromise:null, ttsBackend:'', ttsBusy:false, ttsStop:false, speechSequenceActive:false, speechAudioContext:null, speechSource:null, wheelTransitionStart:0, wheelFromIndex:0, wheelToIndex:0, wheelDirection:1,
+    ttsPipeline:null, ttsLoadPromise:null, ttsBackend:'', ttsBusy:false, ttsStop:false, speechSequenceActive:false, speechAudioContext:null, speechSource:null, wheelTransitionStart:0, wheelFromIndex:0, wheelToIndex:0, wheelDirection:1, pendingWheelTransition:null,
     speechAnimating:false, speechAnimationStart:0, renderLoopActive:false, transitionStart:0, transitionDuration:420,
     exportBusy:false, exportPreparing:false, exportCancelled:false, narrationExportActive:false,
     exportDuration:0, exportAudioStart:0, exportTimeline:[], exportSources:[] };
+  const WHEEL_TRANSITION_MS = 520;
   const clamp = (n,min,max) => Math.min(max,Math.max(min,n));
   const fileSafe = (s) => String(s || 'asmaul-husna').normalize('NFKD').replace(/[^a-z0-9_-]+/gi,'-').replace(/^-+|-+$/g,'').toLowerCase() || 'asmaul-husna';
   const timeText = (n) => {
@@ -226,7 +227,7 @@
       if (state.wheelTransitionStart) {
         baseIndex = state.wheelFromIndex;
         direction = state.wheelDirection || 1;
-        const rawProgress = clamp((performance.now() - state.wheelTransitionStart) / 520, 0, 1);
+        const rawProgress = clamp((performance.now() - state.wheelTransitionStart) / WHEEL_TRANSITION_MS, 0, 1);
         rotationProgress = 1 - Math.pow(1 - rawProgress, 3);
         if (rawProgress >= 1) state.wheelTransitionStart = 0;
       }
@@ -454,6 +455,18 @@
     ensureRenderLoop();
   }
   function loop(now) {
+    if (state.pendingWheelTransition && state.speechAudioContext &&
+        state.speechAudioContext.currentTime >= state.pendingWheelTransition.at) {
+      const pending = state.pendingWheelTransition;
+      state.pendingWheelTransition = null;
+      if (!state.ttsStop && state.speechSequenceActive && pending.nextIndex < data.length) {
+        beginNameTransition(pending.nextIndex);
+        state.index = pending.nextIndex;
+        renderNames(byId('searchInput').value);
+        updateCaptions();
+        persist();
+      }
+    }
     if (!state.playing && !state.speechAnimating && !state.wheelTransitionStart) {
       state.renderLoopActive = false;
       draw(0);
@@ -959,6 +972,7 @@
       return;
     }
     state.ttsStop = true;
+    state.pendingWheelTransition = null;
     if (state.speechSequenceActive) {
       state.speechSequenceActive = false;
       syncBuiltinMusic();
@@ -1069,15 +1083,27 @@
         if (!preparedBuffer || state.ttsStop) break;
 
         const played = await playSpeechBuffer(preparedBuffer, () => {
-          // Change the visible wheel item at the exact moment its audio starts,
-          // never while that item is merely waiting in the preparation queue.
-          if (i !== state.index) beginNameTransition(i);
-          state.index = i;
+          // The current name stays centered for its spoken duration. In wheel
+          // mode, schedule the next rotation into the final transition window
+          // of this clip so it lands at center exactly as this audio ends.
+          if (i !== state.index) {
+            if (state.animation !== 'wheel') beginNameTransition(i);
+            else {
+              state.wheelTransitionStart = 0;
+              state.index = i;
+            }
+          }
           playbackStarted = true;
           renderNames(byId('searchInput').value);
           updateCaptions();
           persist();
           draw(state.speechAnimating ? (performance.now() - state.speechAnimationStart) / 1000 : 0);
+          state.pendingWheelTransition = state.animation === 'wheel' && i + 1 < data.length
+            ? {
+                at: context.currentTime + Math.max(0, preparedBuffer.duration - WHEEL_TRANSITION_MS / 1000),
+                nextIndex: i + 1
+              }
+            : null;
           byId('speechStatus').textContent = 'Membacakan ' + (i + 1) + ' dari ' + data.length + ': ' + data[i][0] + ' · preset ' + voice + '…';
           prefetchSpeechBuffers();
         });
@@ -1092,6 +1118,7 @@
     } finally {
       // Wait for an in-flight model call to settle before allowing another run.
       if (prefetchTask) await prefetchTask;
+      state.pendingWheelTransition = null;
       state.speechSequenceActive = false;
       syncBuiltinMusic();
       stopSpeechAnimation();
@@ -1125,7 +1152,7 @@
     }
     stopSpeech(false);
     state.index=0;state.theme='emerald';state.format='portrait';state.animation='float';
-    state.duration=15;state.size=100;state.translation=true;state.transliteration=true;state.arabicVerticalOffset=0;state.arabicTextGap=0;state.textMeaningGap=0;state.wheelTransitionStart=0;state.transitionStart=0;state.builtinMusicEnabled=true;state.builtinMusicMode='vocal';state.builtinMusicVolume=10;state.builtinMusicPreview=false;byId('builtinMusicTestButton').textContent='Dengarkan contoh audio';state.elapsed=0;
+    state.duration=15;state.size=100;state.translation=true;state.transliteration=true;state.arabicVerticalOffset=0;state.arabicTextGap=0;state.textMeaningGap=0;state.wheelTransitionStart=0;state.pendingWheelTransition=null;state.transitionStart=0;state.builtinMusicEnabled=true;state.builtinMusicMode='vocal';state.builtinMusicVolume=10;state.builtinMusicPreview=false;byId('builtinMusicTestButton').textContent='Dengarkan contoh audio';state.elapsed=0;
     byId('projectName').value='Asmaul Husna — Video 01';byId('searchInput').value='';
     removeMedia();renderNames('');applyControls();persist();stopPlayback();notify('Pengaturan dikembalikan ke awal.');
   }
