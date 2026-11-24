@@ -8,12 +8,10 @@
       "onAutoForward": "openBrowser"
     }
   },
-  "postStartCommand": "bash -lc 'if ! pgrep -f "python3 -m http.server 8000" >/dev/null; then nohup python3 -m http.server 8000 --bind 0.0.0.0 >/tmp/asmaul-husna-http.log 2>&1 & fi'",
+  "postStartCommand": "nohup python3 -m http.server 8000 --bind 0.0.0.0 >/tmp/asmaul-husna-http.log 2>&1 &",
   "customizations": {
     "vscode": {
-      "extensions": [
-        "esbenp.prettier-vscode"
-      ],
+      "extensions": ["esbenp.prettier-vscode"],
       "settings": {
         "editor.formatOnSave": true,
         "files.trimTrailingWhitespace": true
