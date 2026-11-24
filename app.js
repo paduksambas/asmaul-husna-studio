@@ -16,7 +16,7 @@
     portrait: [1080,1920,'9:16 · 1080 × 1920'],
     square: [1080,1080,'1:1 · 1080 × 1080']
   };
-  const state = { index:0, theme:'emerald', format:'portrait', template:'classic', animation:'float', tasbihStart:0, duration:15,
+  const state = { index:0, theme:'emerald', format:'portrait', template:'classic', animation:'float', tasbihStart:0, tasbihTransitionStart:0, tasbihFromIndex:0, tasbihToIndex:0, duration:15,
     translation:true, transliteration:true, arabicVerticalOffset:0, arabicTextGap:0, textMeaningGap:0, builtinMusicEnabled:true, builtinMusicVolume:10, builtinMusicMode:'vocal', builtinMusicBuffers:{}, builtinMusicLoadPromises:{}, builtinMusicSource:null, builtinMusicGain:null, builtinMusicStarting:false, builtinMusicPreview:false, playing:false, elapsed:0, start:0, image:null, imageUrl:'',
     audioUrl:'', recorder:null, chunks:[], timer:0, audioDestination:null, backgroundAudioSource:null, backgroundAudioGain:null,
     ttsPipeline:null, ttsLoadPromise:null, ttsBackend:'', ttsBusy:false, ttsStop:false, speechSequenceActive:false, speechAudioContext:null, speechSource:null, wheelTransitionStart:0, wheelFromIndex:0, wheelToIndex:0, wheelDirection:1, pendingWheelTransition:null,
@@ -85,7 +85,7 @@
       b.querySelector('strong').textContent = item[0];
       b.querySelector('small').textContent = item[2];
       b.querySelector('.name-item-arabic').textContent = item[1];
-      b.addEventListener('click',()=>{ stopSpeech(false); if(state.animation==='wheel' && i!==state.index) beginNameTransition(i); state.index=i; renderNames(byId('searchInput').value); updateCaptions(); persist(); draw(0); });
+      b.addEventListener('click',()=>{ stopSpeech(false); if((state.animation==='wheel' || state.template==='tasbih') && i!==state.index) beginNameTransition(i); state.index=i; renderNames(byId('searchInput').value); updateCaptions(); persist(); draw(0); });
       list.appendChild(b);
     });
   }
@@ -131,12 +131,20 @@
   }
   function beginNameTransition(nextIndex) {
     if (nextIndex === state.index) return;
+    const now = performance.now();
+    if (state.template === 'tasbih') {
+      state.tasbihFromIndex = state.index;
+      state.tasbihToIndex = nextIndex;
+      state.tasbihTransitionStart = now;
+      state.transitionStart = now;
+      ensureRenderLoop();
+    }
     // In wheel mode, rotate only the three reading labels around a vertical loop.
     if (state.animation === 'wheel' && Math.abs(nextIndex - state.index) === 1) {
       state.wheelFromIndex = state.index;
       state.wheelToIndex = nextIndex;
       state.wheelDirection = Math.sign(nextIndex - state.index) || 1;
-      state.wheelTransitionStart = performance.now();
+      state.wheelTransitionStart = now;
       state.transitionStart = 0;
       ensureRenderLoop();
       return;
@@ -144,7 +152,7 @@
     state.wheelTransitionStart = 0;
     // Fade only the changing name/text layer; never cover the animated canvas
     // with a frozen full-frame snapshot.
-    state.transitionStart = performance.now();
+    state.transitionStart = now;
   }
   function drawTasbihTemplate(t, item) {
     const w=canvas.width,h=canvas.height,cx=w/2,cy=h/2,u=Math.min(w,h);
@@ -184,6 +192,9 @@
     ctx.restore();
     // The ring has its own 3D ellipse and 99 individually shaded gold beads.
     const ringY=cy+u*.015,spin=elapsed*.105,beads=[];
+    const transitionProgress=state.tasbihTransitionStart?clamp((performance.now()-state.tasbihTransitionStart)/1050,0,1):1;
+    const transitionEase=1-Math.pow(1-transitionProgress,3);
+    const transitionActive=state.tasbihTransitionStart&&transitionProgress<1;
     for(let i=0;i<99;i++){
       const angle=i*Math.PI*2/99+spin-Math.PI/2,depth=.5+.5*Math.sin(angle);
       const rx=u*(.315+.008*depth),ry=u*(.245+.006*depth);
@@ -192,23 +203,49 @@
       const sy=ringY+Math.cos(i*7.233+2.4)*u*(.16+(i%5)*.025);
       const x=sx+(tx-sx)*formation,y=sy+(ty-sy)*formation;
       const active=i===state.index,lit=active||finale;
-      beads.push({x,y,depth,active,lit,r:u*(.0062+depth*.002)*(active?1.85:1)});
+      const forward=active?u*(.022+.012*pulse):0;
+      const radius=u*(.0062+depth*.002)*(active?2.05:1);
+      beads.push({x,y:y+forward,baseY:y,depth:active?.995:depth,angle,active,lit,r:radius});
     }
+    // A travelling ribbon follows the ring from the last reading bead to the new one.
+    if(transitionActive&&opening>=.8){
+      const deltaRaw=state.tasbihToIndex-state.tasbihFromIndex;
+      const delta=deltaRaw>49?deltaRaw-99:deltaRaw< -49?deltaRaw+99:deltaRaw;
+      const fromAngle=state.tasbihFromIndex*Math.PI*2/99+spin-Math.PI/2;
+      const toAngle=fromAngle+delta*Math.PI*2/99*transitionEase;
+      const ribbon=ctx.createLinearGradient(cx-u*.32,ringY-u*.22,cx+u*.32,ringY+u*.22);
+      ribbon.addColorStop(0,'#f5c76a00');ribbon.addColorStop(.5,'#ffe9ae');ribbon.addColorStop(1,'#f5c76a00');
+      ctx.save();ctx.beginPath();ctx.ellipse(cx,ringY,u*.315,u*.245,0,fromAngle,toAngle,delta<0);
+      ctx.strokeStyle=ribbon;ctx.lineWidth=u*.009;ctx.lineCap='round';ctx.shadowColor='#ffd77b';ctx.shadowBlur=u*.025;ctx.globalAlpha=1-transitionProgress*.28;ctx.stroke();ctx.restore();
+    }
+    // A slow moving specular sweep gives the polished gold beads a living surface.
+    const sheenAngle=elapsed*.34;
+    const sheenX=cx+Math.cos(sheenAngle)*u*.31,sheenY=ringY+Math.sin(sheenAngle)*u*.24;
+    const sheen=ctx.createRadialGradient(sheenX,sheenY,0,sheenX,sheenY,u*.09);
+    sheen.addColorStop(0,'#ffe8ae24');sheen.addColorStop(1,'#ffe8ae00');
+    ctx.fillStyle=sheen;ctx.fillRect(cx-u*.43,ringY-u*.34,u*.86,u*.68);
     beads.sort((a,b)=>a.depth-b.depth);
     beads.forEach(b=>{
       const r=b.r;ctx.save();ctx.globalAlpha=.15+.85*formation;
-      if(b.lit){ctx.shadowColor='#ffd77b';ctx.shadowBlur=u*(b.active?.045:.025);}
-      const grad=ctx.createRadialGradient(b.x-r*.38,b.y-r*.42,r*.05,b.x,b.y,r*1.2);
-      grad.addColorStop(0,b.lit?'#fff9df':'#f5dfae');grad.addColorStop(.38,b.lit?'#f3c66e':'#b58a4b');grad.addColorStop(1,b.lit?'#8d5a20':'#49351f');
+      // Soft contact shadow adds separation from the dark scene.
+      ctx.fillStyle='#02050b88';ctx.beginPath();ctx.ellipse(b.x+u*.002,b.y+r*.62,r*.92,r*.43,0,0,Math.PI*2);ctx.fill();
+      if(b.lit){ctx.shadowColor='#ffd77b';ctx.shadowBlur=u*(b.active?.06:.025);}
+      const grad=ctx.createRadialGradient(b.x-r*.38,b.y-r*.46,r*.04,b.x,b.y,r*1.22);
+      grad.addColorStop(0,b.lit?'#fffdf0':'#fff0cb');grad.addColorStop(.22,b.lit?'#ffe8a0':'#e5c17d');grad.addColorStop(.58,b.lit?'#dca64d':'#a87939');grad.addColorStop(1,b.lit?'#704314':'#392817');
       ctx.fillStyle=grad;ctx.beginPath();ctx.arc(b.x,b.y,r,0,Math.PI*2);ctx.fill();
-      ctx.shadowBlur=0;ctx.strokeStyle=b.lit?'#fff0b8':'#dfc28a77';ctx.lineWidth=Math.max(1,u*.0012);ctx.stroke();ctx.restore();
+      ctx.shadowBlur=0;ctx.strokeStyle=b.lit?'#fff4ce':'#dfc28a88';ctx.lineWidth=Math.max(1,u*.0012);ctx.stroke();
+      // Tiny white-gold reflection at the upper-left of each bead.
+      ctx.globalAlpha*=b.active?.9:.52;ctx.fillStyle='#fff7dc';ctx.beginPath();ctx.ellipse(b.x-r*.27,b.y-r*.34,r*.19,r*.1,-.6,0,Math.PI*2);ctx.fill();
+      ctx.restore();
     });
-    // The current bead comes slightly forward, with a short light trail on each reading change.
     const activeBead=beads.find(b=>b.active);
     if(activeBead&&opening>=.8){
-      ctx.save();ctx.globalAlpha=.35+.35*pulse;ctx.strokeStyle='#ffe2a0';ctx.lineWidth=u*.003;ctx.shadowColor='#ffd77b';ctx.shadowBlur=u*.035;
-      ctx.beginPath();ctx.arc(activeBead.x,activeBead.y,activeBead.r*2.2,0,Math.PI*2);ctx.stroke();ctx.restore();
+      const haloPulse=.5+.5*Math.sin(elapsed*2.4);
+      ctx.save();ctx.globalAlpha=.28+.42*haloPulse;ctx.strokeStyle='#ffe8ae';ctx.lineWidth=u*.0028;ctx.shadowColor='#ffd77b';ctx.shadowBlur=u*.045;
+      ctx.beginPath();ctx.arc(activeBead.x,activeBead.y,activeBead.r*(2.1+.22*haloPulse),0,Math.PI*2);ctx.stroke();
+      ctx.globalAlpha=.15+.15*haloPulse;ctx.beginPath();ctx.arc(activeBead.x,activeBead.y,activeBead.r*3.1,0,Math.PI*2);ctx.stroke();ctx.restore();
     }
+    if(state.tasbihTransitionStart&&transitionProgress>=1) state.tasbihTransitionStart=0;
     // Fine inner orbit and central reading panel.
     ctx.save();ctx.strokeStyle='#d8b36b45';ctx.lineWidth=Math.max(1,u*.0014);
     ctx.beginPath();ctx.ellipse(cx,ringY,u*.286,u*.216,0,0,Math.PI*2);ctx.stroke();ctx.restore();
@@ -1276,7 +1313,7 @@
       return;
     }
     stopSpeech(false);
-    state.index=0;state.theme='emerald';state.format='portrait';state.template='classic';state.animation='float';
+    state.index=0;state.theme='emerald';state.format='portrait';state.template='classic';state.animation='float';state.tasbihTransitionStart=0;state.tasbihFromIndex=0;state.tasbihToIndex=0;
     state.duration=15;state.size=100;state.tasbihStart=0;state.translation=true;state.transliteration=true;state.arabicVerticalOffset=0;state.arabicTextGap=0;state.textMeaningGap=0;state.wheelTransitionStart=0;state.pendingWheelTransition=null;state.transitionStart=0;state.builtinMusicEnabled=true;state.builtinMusicMode='vocal';state.builtinMusicVolume=10;state.builtinMusicPreview=false;byId('builtinMusicTestButton').textContent='Dengarkan contoh audio';state.elapsed=0;
     byId('projectName').value='Asmaul Husna — Video 01';byId('searchInput').value='';
     removeMedia();renderNames('');applyControls();persist();stopPlayback();notify('Pengaturan dikembalikan ke awal.');
@@ -1297,7 +1334,7 @@
     byId('arabicVerticalOffset').addEventListener('input',e=>{state.arabicVerticalOffset=Number(e.target.value);byId('arabicVerticalOffsetValue').textContent=(state.arabicVerticalOffset>0?'+':'')+state.arabicVerticalOffset;draw(0);persist();});
     byId('arabicTextGap').addEventListener('input',e=>{state.arabicTextGap=Number(e.target.value);byId('arabicTextGapValue').textContent=(state.arabicTextGap>0?'+':'')+state.arabicTextGap;draw(0);persist();});
      byId('textMeaningGap').addEventListener('input',e=>{state.textMeaningGap=Number(e.target.value);byId('textMeaningGapValue').textContent=(state.textMeaningGap>0?'+':'')+state.textMeaningGap;draw(0);persist();});
-     byId('templateSelect').addEventListener('change',e=>{state.template=e.target.value;state.tasbihStart=performance.now();state.transitionStart=0;if(state.template==='tasbih')ensureRenderLoop();byId('renderHint').textContent=state.template==='tasbih'?'Template Tasbih Emas 99 · latar dan komposisi khusus':'Template klasik · mengikuti tema dan latar editor';draw(0);persist();});
+     byId('templateSelect').addEventListener('change',e=>{state.template=e.target.value;state.tasbihStart=performance.now();state.tasbihTransitionStart=0;state.transitionStart=0;if(state.template==='tasbih')ensureRenderLoop();byId('renderHint').textContent=state.template==='tasbih'?'Template Tasbih Emas 99 · latar dan komposisi khusus':'Template klasik · mengikuti tema dan latar editor';draw(0);persist();});
      byId('animationSelect').addEventListener('change',e=>{state.animation=e.target.value;state.wheelTransitionStart=0;state.transitionStart=0;byId('renderHint').textContent=state.animation==='none'?'Animasi dinonaktifkan':state.animation==='wheel'?'Roda bacaan: teks aktif membesar, tetangganya mengecil dan berputar':'Animasi lembut aktif saat diputar';draw(0);persist();});
     byId('durationInput').addEventListener('input',e=>{state.duration=Number(e.target.value);byId('durationValue').textContent=state.duration;updateCaptions();persist();});
     byId('builtinMusicEnabled').addEventListener('change',e=>{state.builtinMusicEnabled=e.target.checked;syncBuiltinMusic(state.elapsed);persist();});
