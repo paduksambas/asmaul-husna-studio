@@ -326,7 +326,7 @@
       // Call resume inside the user gesture path so Safari/iOS can unlock audio playback.
       if (context.state !== 'running') await context.resume();
       const buffer = await loadBuiltinMusicBuffer(context);
-      if (!state.builtinMusicEnabled || state.builtinMusicVolume <= 0 || !(state.playing || state.builtinMusicPreview) || state.builtinMusicSource) return;
+      if (!state.builtinMusicEnabled || state.builtinMusicVolume <= 0 || !(state.playing || state.builtinMusicPreview || state.speechSequenceActive) || state.builtinMusicSource) return;
       const source = context.createBufferSource(), gain = context.createGain();
       source.buffer = buffer; source.loop = true;
       const now = context.currentTime, volume = state.builtinMusicVolume / 100;
