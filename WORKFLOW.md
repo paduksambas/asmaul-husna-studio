@@ -138,9 +138,10 @@ Ikuti urutan ini. Jangan melewati pemeriksaan Preview sebelum perubahan dinyatak
 **Commit perbaikan ekspor:** `be7d0a6545a2450db146d49a005f735ba259d22d`  
 **Commit panduan ekspor:** `921593e9d5ee7a62a9783ad7b867d05c27134ba0`  
 **Perubahan:** efisiensi loop pratinjau, ketahanan saat localStorage tidak tersedia, dan pencegahan gangguan kontrol selama ekspor.  
-**Status deployment:** Production awal READY; Preview terbaru READY (`dpl_86ix5KEFPtxY37cSnPtbhYmUjmaV`, https://asmaul-husna-studio-hu6xuft8l-paduka-sambas.vercel.app). Preview terbaru dibuat dari empat file aplikasi di branch `main`; build selesai.  
+**Status deployment:** Production awal READY; Preview terbaru READY (`dpl_8qow3ndYtecdmteob2cUbD337CBP`, https://asmaul-husna-studio-fc5v2juwr-paduka-sambas.vercel.app). Preview dibuat dari repository GitHub branch `main`, commit `040fabb49e4c54f42f41adab4c72bd03439f5041`; build Vercel selesai.  
 **Catatan integrasi:** GitHub Integration belum terhubung ke project Vercel. Deployment yang sudah ada dibuat melalui transfer source langsung.  
 **Pemeriksaan source:** 99 data nama terdeteksi; seluruh 88 referensi elemen DOM di `app.js` cocok dengan 45 ID HTML, tanpa ID HTML duplikat. Pemeriksaan ini statis, bukan pengujian browser.  
+**Perbaikan sesi 24 November 2026:** notifikasi ekspor kini menampilkan ekstensi format yang benar (MP4 atau WebM), dan catatan batasan format di WORKFLOW diselaraskan dengan deteksi MIME `MediaRecorder`. Pemeriksaan statis ulang: 99 entri data, 44 referensi DOM unik di `app.js` semuanya tersedia di HTML, tanpa ID HTML duplikat. Pemeriksaan ini belum menggantikan uji interaksi browser, unggah media, dan pemutaran hasil ekspor.
 **Pembaruan jalur perangkat:** iPad A17 Pro ditetapkan sebagai perangkat kerja penuh melalui GitHub Codespaces (Safari), selain laptop. Konfigurasi Codespaces telah ditambahkan pada `.devcontainer/devcontainer.json`; pembuatan/penyalakan Codespace dari akun pengguna dan pengujian langsung di iPad masih perlu dilakukan. **Tahap kerja berikutnya:** uji preview baru di browser, verifikasi ekspor MP4/WebM dan audio, lalu nyalakan Codespace di iPad untuk pengujian fungsi penuh dari kedua perangkat.
 
 ---
