@@ -57,3 +57,10 @@
 
 .music-test-button{width:100%;justify-content:center;margin:0 0 13px;min-height:34px;font-size:9px}
 .music-test-button:active{transform:translateY(1px)}
+
+
+/* Nasheed attribution and publishing credit. */
+.music-credit-note{margin:10px 0 8px;padding:9px 10px;border:1px solid #5f6046;border-radius:8px;background:#1d281f;color:#d6cba8;font-size:8px;line-height:1.65;overflow-wrap:anywhere}
+.music-credit-button{width:100%;justify-content:center;margin:0 0 8px;min-height:32px;font-size:9px}
+.music-credit-source{margin:0;color:#8f9d91;font-size:8px;line-height:1.5}
+.music-credit-source a{color:#d6bd80;text-decoration:underline;text-underline-offset:2px}
