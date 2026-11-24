@@ -199,7 +199,7 @@
     ctx.fillText('أَسْمَاءُ اللَّهِ الْحُسْنَى',cx,cy-u*.39);
     ctx.restore();
 
-    // Only the changing name, transliteration, meaning and sequence fade.
+    // Only the changing name, transliteration and meaning fade.
     ctx.save();
     ctx.globalAlpha = nameFade;
     ctx.textAlign='center';ctx.textBaseline='middle';
@@ -220,7 +220,12 @@
     let ty=cy+u*(.10+state.arabicTextGap*.001);
     if(state.transliteration){ctx.fillStyle=c[4]+'dd';ctx.font='600 '+Math.max(18,u*.03)+'px "DM Sans",sans-serif';ctx.fillText(item[0],cx,ty);ty+=u*(.055+state.textMeaningGap*.001);}
     if(state.translation){ctx.fillStyle=c[4];ctx.font='400 '+Math.max(16,u*.024)+'px "DM Sans",sans-serif';ctx.fillText(item[2],cx,ty,w*.8);}
-    const py=cy+u*.43,pw=u*.105,ph=u*.034;ctx.strokeStyle=c[3]+'88';ctx.lineWidth=1.3;
+    ctx.restore();
+
+    // The sequence counter is persistent UI, not part of the fading name layer.
+    const py=cy+u*.43,pw=u*.105,ph=u*.034;
+    ctx.save();ctx.globalAlpha=1;ctx.textAlign='center';ctx.textBaseline='middle';
+    ctx.strokeStyle=c[3]+'88';ctx.lineWidth=1.3;
     if(ctx.roundRect){ctx.beginPath();ctx.roundRect(cx-pw/2,py-ph/2,pw,ph,ph/2);ctx.stroke();}
     else {ctx.strokeRect(cx-pw/2,py-ph/2,pw,ph);}
     ctx.fillStyle=c[3];ctx.font='500 '+Math.max(12,u*.014)+'px "DM Sans",sans-serif';
