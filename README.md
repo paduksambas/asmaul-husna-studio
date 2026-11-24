@@ -17,7 +17,7 @@ Gunakan [WORKFLOW.md](./WORKFLOW.md) sebagai peta kerja utama. Dokumen tersebut 
 - Unggah gambar latar dan audio sendiri.
 - Ekspor video MP4 atau WebM melalui MediaRecorder (bergantung dukungan browser) serta simpan gambar PNG.
 - Preferensi editor disimpan secara lokal di browser.
-- Pembacaan nama berbahasa Arab memakai suara TTS bawaan sistem/browser yang tersedia, tanpa mengunduh model atau memakai API key. Ketersediaan bergantung pada paket suara Arab di perangkat.
+- Pembacaan nama Arab menggunakan Supertonic 3 melalui Transformers.js di browser, dengan preset suara M1–M5 dan F1–F5. Model diunduh otomatis saat pertama kali digunakan (sekitar 200 MB), tanpa paket suara Arab Windows atau API key; cache browser digunakan bila tersedia.
 
 ## Menjalankan
 
@@ -39,7 +39,7 @@ Lalu buka `http://localhost:8000`.
 
 - Ekspor video menggunakan `canvas.captureStream()` dan `MediaRecorder`. Aplikasi memilih format MP4 jika didukung browser, lalu menggunakan WebM sebagai fallback. Ekstensi file mengikuti format yang benar-benar dipilih oleh MediaRecorder.
 - Audio dan gambar yang diunggah diproses di browser pengguna dan tidak dikirim ke server.
-- Pembacaan Arab memakai Web Speech API (`speechSynthesis`) dan tidak ikut masuk ke file video ekspor. Untuk saat ini, pemuatan Supertonic 3 melalui pipeline Transformers.js dinonaktifkan karena repositori model tidak menyediakan metadata processor yang diminta pipeline (`preprocessor_config.json`) dan format ONNX upstream memerlukan runtime khusus. Arsip model di GitHub Release tetap menjadi salinan cadangan, tetapi tidak digunakan oleh aplikasi.
+- Pembacaan Arab memakai pipeline Transformers.js untuk Supertonic 3: mencoba WebGPU FP16, lalu fallback ke WASM dengan text encoder FP32, latent denoiser Q8, dan voice decoder FP32. Teks Arab dikirim dengan format `<ar>...</ar>` dan preset suara dari folder `voices/`. Browser mengunduh aset model dari Hugging Face pada penggunaan pertama dan menyimpannya dalam cache bila diizinkan. Audio pembacaan saat ini hanya diputar di aplikasi dan belum dimasukkan ke video MP4/WebM yang diekspor.
 - Daftar nama menggunakan satu susunan Asmaul Husna yang umum dipakai. Ejaan transliterasi serta padanan arti singkat dapat berbeda antar-sumber; mohon lakukan telaah sebelum penggunaan untuk materi pembelajaran atau publikasi keagamaan.
 - Font Arab Amiri dan DM Sans dimuat dari Google Fonts. Jika tidak tersedia, browser memakai font fallback.
 
