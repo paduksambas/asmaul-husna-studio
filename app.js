@@ -121,18 +121,20 @@
     ctx.fillStyle=glow;ctx.fillRect(0,0,w,h);
     ctx.save();ctx.translate(cx,cy);ctx.strokeStyle=c[3]+'38';ctx.lineWidth=Math.max(1,w*.001);
     for(let i=0;i<4;i++){ctx.beginPath();ctx.arc(0,0,u*(.22+i*.035),0,Math.PI*2);ctx.stroke();}
-    for(let i=0;i<16;i++){ctx.save();ctx.rotate(i*Math.PI/8+(state.animation==='shimmer'&&state.playing?t*.01:0));star(0,-u*.34,u*.025,c[3]+'55');ctx.restore();}
+    const shimmering=state.playing&&state.animation==='shimmer';
+    for(let i=0;i<16;i++){ctx.save();ctx.globalAlpha=shimmering?.55+.45*Math.sin(t*3.2+i*1.7):1;ctx.rotate(i*Math.PI/8+(shimmering?t*.18:0));star(0,-u*.34,u*.025,c[3]+'88');ctx.restore();}
     ctx.restore();
     for(let i=0;i<42;i++){
-      const x=((i*173+41)%997)/997*w;
+      const x0=((i*173+41)%997)/997*w;
+      const x=x0+(state.playing&&state.animation!=='none'?Math.sin(t*.55+i)*u*.006:0);
       const y0=((i*317+19)%991)/991*h;
-      const y=(y0+(state.playing&&state.animation!=='none'?t*(5+i%4*3):0))%h;
-      ctx.globalAlpha=.12+(i*7%10)/75;ctx.fillStyle=c[3];ctx.beginPath();ctx.arc(x,y,Math.max(1,w*.001),0,Math.PI*2);ctx.fill();
+      const y=(y0+(state.playing&&state.animation!=='none'?t*(14+i%4*9):0))%h;
+      ctx.globalAlpha=.18+(i*7%10)/55;ctx.fillStyle=c[3];ctx.beginPath();ctx.arc(x,y,Math.max(1.5,w*.0015),0,Math.PI*2);ctx.fill();
     }
     ctx.globalAlpha=1;
     const item=data[state.index]||data[0];
-    const floatY=state.playing&&state.animation==='float'?Math.sin(t*.9)*u*.008:0;
-    const zoom=state.playing&&state.animation==='zoom'?1+Math.sin(t*.55)*.018:1;
+    const floatY=state.playing&&state.animation==='float'?Math.sin(t*1.35)*u*.022:0;
+    const zoom=state.playing&&state.animation==='zoom'?1+Math.sin(t*.8)*.055:1;
     ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillStyle=c[3];
     ctx.font='600 '+Math.max(17,u*.019)+'px "DM Sans",sans-serif';ctx.letterSpacing=Math.max(2,u*.003)+'px';
     ctx.fillText('ASMAUL HUSNA',cx,cy-u*.205);ctx.letterSpacing='0px';
