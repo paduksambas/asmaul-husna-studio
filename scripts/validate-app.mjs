@@ -105,7 +105,8 @@ assert.match(html, /<option value="wheel">Roda bacaan · teks berputar<\/option>
 assert.match(app, /state\.wheelFromIndex = state\.index;[\s\S]*?state\.wheelTransitionStart = performance\.now\(\)/, 'adjacent reading items must rotate into focus');
 assert.match(app, /const scale = \.28 \+ \.72 \* depth/, 'the active wheel label must enlarge while rear labels recede');
 assert.match(app, /const depthAlpha = \.08 \+ \.92 \* Math\.pow\(perspective, 2\.2\)/, 'rear wheel labels must fade strongly to prevent visual doubling');
-assert.match(app, /entry\.offset === 0[\s\S]*?rotationProgress - \.05\) \/ \.18/, 'the just-read label must fully disappear early before the incoming label reaches center');
+assert.match(app, /const movementProgress = clamp\(\(rawProgress - \.14\) \/ \.86, 0, 1\)/, 'the incoming label must wait until the outgoing label has disappeared');
+assert.match(app, /entry\.offset === 0[\s\S]*?rawProgress \/ \.14/, 'the just-read label must disappear before the incoming label starts moving');
 assert.match(app, /if \(alpha <= \.015\) return;/, 'fully faded wheel labels must not be painted');
 assert.match(app, /wheelEntries\.sort\(\(a,b\) => a\.depth - b\.depth\)/, 'rear labels must render before the incoming/front label');
 assert.match(app, /state\.transliteration && entry\.depth > -\.15/, 'rear-most labels must hide supporting text until they approach the reading position');
@@ -120,7 +121,7 @@ const speakAllSource = app.slice(app.indexOf('async function speakAll()'), app.i
 assert.ok(speakAllSource.includes('const prefetchAhead = 3;') && speakAllSource.includes('const aheadLimit = playbackStarted ? prefetchAhead : 1;'), 'the narration sequence must maintain a bounded three-clip look-ahead queue after playback starts');
 assert.ok(speakAllSource.includes('prefetchSpeechBuffers();') && speakAllSource.includes('await task;'), 'the next speech clips must be generated in the background and awaited only when needed');
 assert.ok(app.includes('async function playSpeechBuffer(buffer, onStart=()=>{})') && app.includes('source.buffer = buffer;') && app.includes('onStart();') && app.includes('source.start(0);'), 'prepared narration audio must trigger a synchronized on-start callback');
-assert.ok(app.includes('const WHEEL_TRANSITION_MS = 520;'), 'wheel transition duration must remain short and consistent');
+assert.ok(app.includes('const WHEEL_TRANSITION_MS = 420;'), 'wheel transition duration must remain short and consistent');
 assert.ok(app.includes('const WHEEL_TRANSITION_LEAD_MS = WHEEL_TRANSITION_MS + 40;'), 'wheel rotation must finish with a small timing buffer before the next voice starts');
 assert.ok(speakAllSource.includes('preparedBuffer.duration - WHEEL_TRANSITION_LEAD_MS / 1000'), 'the next wheel item must rotate during the tail of the current spoken clip');
 assert.ok(app.includes('state.speechAudioContext.currentTime >= state.pendingWheelTransition.at') && app.includes('beginNameTransition(pending.nextIndex);'), 'wheel transition timing must follow the audio playback clock');
