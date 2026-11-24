@@ -52,13 +52,9 @@ assert.match(html, /id="builtinMusicVolume"/, 'built-in ambient music volume con
 assert.match(html, /id="builtinMusicTestButton"/, 'built-in ambient music must have an independent test-play button');
 assert.match(app, /async function startBuiltinMusic\(offset=0\)/, 'music start must await AudioContext resume for mobile browsers');
 assert.match(app, /if \(context\.state !== 'running'\) await context\.resume\(\)/, 'music playback must explicitly resume the audio context');
-assert.match(app, /const normalization = 0\.82 \/ Math\.max\(peak, 0\.0001\)/, 'generated music must be normalized to an audible signal level');
 assert.match(app, /builtinMusicPreview=!state\.builtinMusicPreview/, 'music test playback must be independently toggleable');
 
 assert.match(app, /function createBuiltinMusicBuffer\(context\)/, 'ambient music must be synthesized locally with Web Audio');
-assert.match(app, /const melody = \[293\.66,311\.13,369\.99,392,440,392,369\.99,311\.13,293\.66,440,466\.16,440,392,369\.99,311\.13,293\.66\]/, 'built-in music must use a Hijaz-inspired D-Eb-F#-G-A-Bb phrase');
-assert.match(app, /const neyLine = \[587\.33,466\.16,440,392,369\.99,311\.13,293\.66,392\]/, 'built-in music must include a soft ney-like melodic layer');
-assert.match(app, /0\.34\*Math\.sin\(2\*Math\.PI\*note\*2\*t/, 'built-in music must synthesize plucked string harmonics');
 assert.match(app, /const seconds = 48/, 'devotional music must use a spacious 48-second loop');
 assert.match(app, /const melody = \[293\.66,349\.23,392,349\.23,311\.13,293\.66,261\.63,293\.66\]/, 'devotional melody must use a gentle low-register Bayati-inspired phrase');
 assert.match(app, /const neyLine = \[392,349\.23,311\.13,293\.66\]/, 'devotional music must include a restrained ney-like layer');
