@@ -301,3 +301,6 @@ Ikuti urutan ini. Jangan melewati pemeriksaan Preview sebelum perubahan dinyatak
 
 
 **Pengelompokan kontrol kaligrafi Arab — 24 November 2026:** slider “Posisi kaligrafi Arab” dan “Jarak Arab → transliterasi” ditempatkan berdampingan dalam satu subbagian visual berjudul “Kaligrafi Arab” pada panel Tipografi & teks. Kontrol ukuran kaligrafi, visibilitas teks, dan jarak transliterasi→arti tetap terpisah. Pemeriksaan statis memastikan kedua slider berada dalam grup yang sama. Hanya branch Preview yang diperbarui; `main`/Production tidak disentuh.
+
+
+**Penggabungan seluruh slider posisi dan jarak teks — 24 November 2026:** ketiga kontrol — posisi kaligrafi Arab, jarak Arab→transliterasi, dan jarak transliterasi→arti — kini berada bersama dalam satu subbagian “Posisi & Jarak Teks” pada panel Tipografi & teks. Kontrol ukuran dan visibilitas teks tetap berada di luar kelompok ini. Pemeriksaan statis memverifikasi ketiga slider berada di dalam satu grup. Hanya branch Preview yang diperbarui; `main`/Production tidak disentuh.
