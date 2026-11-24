@@ -165,14 +165,17 @@
     state.renderLoopActive = true;
     requestAnimationFrame(loop);
   }
-  function setSpeechAnimating(active) {
-    state.speechAnimating = active;
-    if (active) {
+  function startSpeechAnimation(restartPhase=false) {
+    if (!state.speechAnimating || restartPhase) {
+      state.speechAnimating = true;
       state.speechAnimationStart = performance.now();
-      ensureRenderLoop();
-    } else if (!state.playing) {
-      draw(0);
     }
+    ensureRenderLoop();
+  }
+  function stopSpeechAnimation() {
+    if (!state.speechAnimating) return;
+    state.speechAnimating = false;
+    if (!state.playing) draw(0);
   }
   function stopPlayback() {
     state.playing=false;state.elapsed=0;audio.pause();
@@ -378,15 +381,12 @@
       source.connect(context.destination);
       state.speechSource = source;
       source.onended = () => {
-        if (state.speechSource === source) {
-          state.speechSource = null;
-          setSpeechAnimating(false);
-        }
+        if (state.speechSource === source) state.speechSource = null;
         resolve(!state.ttsStop);
       };
       try {
+        startSpeechAnimation(true);
         source.start(0);
-        setSpeechAnimating(true);
       } catch (error) {
         state.speechSource = null;
         reject(error);
@@ -397,7 +397,7 @@
     state.ttsStop = true;
     const activeSource = state.speechSource;
     state.speechSource = null;
-    setSpeechAnimating(false);
+    stopSpeechAnimation();
     if (activeSource) {
       try { activeSource.stop(); } catch (_) {}
     }
@@ -412,6 +412,7 @@
       await context.resume();
       const voice = selectedSpeechVoice();
       await loadSpeechModel();
+      startSpeechAnimation();
       byId('speechStatus').textContent = 'Membuat audio AI untuk ' + data[state.index][0] + ' dengan preset ' + voice + '…';
       const blob = await synthesizeName(state.index, voice);
       if (state.ttsStop) return;
@@ -421,6 +422,7 @@
       console.error('Supertonic 3 synthesis failed:', error);
       if (!state.ttsStop) byId('speechStatus').textContent = 'Gagal membuat audio AI: ' + (error.message || String(error));
     } finally {
+      stopSpeechAnimation();
       state.ttsBusy = false;
     }
   }
@@ -433,13 +435,14 @@
       await context.resume();
       const voice = selectedSpeechVoice();
       await loadSpeechModel();
+      startSpeechAnimation();
       for (let i = 0; i < data.length; i++) {
         if (state.ttsStop) break;
         state.index = i;
         renderNames(byId('searchInput').value);
         updateCaptions();
         persist();
-        draw(0);
+        draw(state.speechAnimating ? (performance.now() - state.speechAnimationStart) / 1000 : 0);
         byId('speechStatus').textContent = 'Membuat audio AI ' + (i + 1) + ' dari ' + data.length + ': ' + data[i][0] + ' · preset ' + voice + '…';
         const blob = await synthesizeName(i, voice);
         if (state.ttsStop) break;
@@ -450,6 +453,7 @@
       console.error('Supertonic 3 sequence failed:', error);
       if (!state.ttsStop) byId('speechStatus').textContent = 'Pembacaan terhenti: ' + (error.message || String(error));
     } finally {
+      stopSpeechAnimation();
       state.ttsBusy = false;
     }
   }
