@@ -313,3 +313,6 @@ Ikuti urutan ini. Jangan melewati pemeriksaan Preview sebelum perubahan dinyatak
 
 
 **Penyelarasan jarak nomor urutan — 24 November 2026:** posisi label nomor urutan (contoh “01 / 99”) diatur ke `cy + u * .43`, mencerminkan posisi judul “ASMAUL HUSNA” di `cy - u * .43`. Dengan demikian jarak vertikal dari tepi lingkaran/ornamen atas dan bawah dibuat simetris berdasarkan sisi terpendek kanvas, konsisten untuk format Landscape, Portrait, dan Square. Validator statis memeriksa kedua koordinat. Hanya branch Preview yang diubah; `main`/Production tidak disentuh.
+
+
+**Peningkatan jangkauan posisi kaligrafi Arab (24 November 2026):** sensitivitas slider posisi vertikal diperbesar 2,5 kali. Rentang kontrol tetap −40 sampai +40, tetapi skala perpindahan pada kanvas berubah dari `0,001u` menjadi `0,0025u` (maksimum sekitar ±10% sisi terpendek kanvas, sebelumnya ±4%). Arah tetap: nilai negatif ke atas dan positif ke bawah. Perubahan hanya pada branch Preview; posisi default 0 dan kontrol jarak teks lain tidak berubah. Validator statis diperbarui untuk memeriksa faktor skala baru.
