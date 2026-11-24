@@ -283,3 +283,6 @@ Ikuti urutan ini. Jangan melewati pemeriksaan Preview sebelum perubahan dinyatak
 
 
 **Koreksi jeda Soft Shimmer saat pergantian narasi — 24 November 2026:** penyebab jeda adalah crossfade sebelumnya menggambar snapshot seluruh kanvas di atas frame animasi aktif. Diperbaiki dengan menghapus snapshot kanvas penuh dan menerapkan fade 420 ms hanya pada lapisan teks/nama yang berubah. Lingkaran, busur Soft Shimmer, bintang, dan partikel tidak lagi tertutup frame statis dan tetap dirender setiap frame. Berlaku untuk pembacaan 99 nama serta pergantian pada timeline ekspor. Hanya branch Preview yang diperbarui; situs utama tidak berubah.
+
+
+**Penataan ulang komposisi kanvas Asmaul Husna (24 November 2026):** pada branch `feature/supertonic-narration-export`, hierarki visual kanvas diatur ulang: identitas “ASMAUL HUSNA” dan tulisan Arab kecil ditempatkan sebagai header statis di bagian atas; kaligrafi nama menjadi fokus di area tengah; transliterasi dan arti ditempatkan di bawahnya dengan ruang lebih lega; nomor urut berada di area bawah. Header dikeluarkan dari lapisan `nameFade`, sehingga tidak ikut memudar ketika nama berganti. Animasi latar/ornamen tetap berjalan. Perubahan hanya menyentuh komposisi gambar kanvas pada `app.js`; belum diverifikasi melalui tangkapan layar/browser pada seluruh rasio, tema, dan perangkat.
