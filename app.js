@@ -17,7 +17,7 @@
     square: [1080,1080,'1:1 · 1080 × 1080']
   };
   const state = { index:0, theme:'emerald', format:'portrait', animation:'float', duration:15, size:100,
-    translation:true, transliteration:true, arabicVerticalOffset:0, arabicTextGap:0, textMeaningGap:0, builtinMusicEnabled:true, builtinMusicVolume:18, builtinMusicBuffer:null, builtinMusicSource:null, builtinMusicGain:null, builtinMusicStarting:false, builtinMusicPreview:false, playing:false, elapsed:0, start:0, image:null, imageUrl:'',
+    translation:true, transliteration:true, arabicVerticalOffset:0, arabicTextGap:0, textMeaningGap:0, builtinMusicEnabled:true, builtinMusicVolume:10, builtinMusicBuffer:null, builtinMusicLoadPromise:null, builtinMusicSource:null, builtinMusicGain:null, builtinMusicStarting:false, builtinMusicPreview:false, playing:false, elapsed:0, start:0, image:null, imageUrl:'',
     audioUrl:'', recorder:null, chunks:[], timer:0, audioDestination:null, backgroundAudioSource:null, backgroundAudioGain:null,
     ttsPipeline:null, ttsLoadPromise:null, ttsBackend:'', ttsBusy:false, ttsStop:false, speechAudioContext:null, speechSource:null,
     speechAnimating:false, speechAnimationStart:0, renderLoopActive:false, transitionStart:0, transitionDuration:420,
@@ -105,6 +105,7 @@
      byId('animationSelect').value = state.animation;
     byId('durationInput').value = state.duration; byId('durationValue').textContent = state.duration;
     byId('builtinMusicEnabled').checked = state.builtinMusicEnabled;
+    byId('builtinMusicTestButton').textContent = state.builtinMusicPreview ? 'Hentikan contoh nasheed' : 'Dengarkan nasheed';
     byId('builtinMusicVolume').value = state.builtinMusicVolume;
     byId('builtinMusicVolumeValue').textContent = state.builtinMusicVolume + '%';
     byId('dimensionLabel').textContent = formats[state.format][2];
@@ -236,6 +237,23 @@
     ctx.fillStyle=c[3];ctx.font='500 '+Math.max(12,u*.014)+'px "DM Sans",sans-serif';
     ctx.fillText(String(state.index+1).padStart(2,'0')+' / 99',cx,py);
     ctx.restore();
+    if (state.builtinMusicEnabled) {
+      const creditText = 'Nasheed: “Alhamdulilah (Vocal Only Nasheed)” — SyedsLife · CC BY 3.0';
+      ctx.save(); ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.font = '600 ' + Math.max(11, u * .013) + 'px "DM Sans",sans-serif';
+      const creditWidth = Math.min(w * .96, ctx.measureText(creditText).width + u * .045);
+      const creditHeight = Math.max(22, u * .034), creditY = h - u * .026;
+      ctx.fillStyle = '#07120edb';
+      if (ctx.roundRect) {
+        ctx.beginPath(); ctx.roundRect(cx - creditWidth / 2, creditY - creditHeight / 2, creditWidth, creditHeight, creditHeight / 2);
+        ctx.fill(); ctx.strokeStyle = c[3] + '66'; ctx.lineWidth = 1; ctx.stroke();
+      } else {
+        ctx.fillRect(cx - creditWidth / 2, creditY - creditHeight / 2, creditWidth, creditHeight);
+        ctx.strokeStyle = c[3] + '66'; ctx.lineWidth = 1; ctx.strokeRect(cx - creditWidth / 2, creditY - creditHeight / 2, creditWidth, creditHeight);
+      }
+      ctx.fillStyle = c[3]; ctx.fillText(creditText, cx, creditY, creditWidth - u * .02);
+      ctx.restore();
+    }
     if (nameFade >= 1) state.transitionStart = 0;
   }
   function ensureRenderLoop() {
@@ -266,51 +284,30 @@
       source.stop(now + 0.22);
     } catch (_) { try { source.stop(); } catch (_) {} }
   }
-  function createBuiltinMusicBuffer(context) {
+  async function loadBuiltinMusicBuffer(context) {
     if (state.builtinMusicBuffer && state.builtinMusicBuffer.sampleRate === context.sampleRate) return state.builtinMusicBuffer;
-    // A slow, spacious Bayati-inspired devotional ambient bed, synthesized locally.
-    // No samples, downloads, external services, API calls, or credits are used.
-    const seconds = 48, sampleRate = context.sampleRate, length = Math.floor(seconds * sampleRate);
-    const buffer = context.createBuffer(1, length, sampleRate), samples = buffer.getChannelData(0);
-    // Warm, consonant open voicings; changes are blended over long phrases.
-    const chords = [
-      [73.416,110,146.832,174.614],       // D minor
-      [58.270,87.307,116.541,146.832],   // Bb
-      [65.406,98,130.813,164.814],       // C
-      [55,82.407,110,146.832]            // G minor
-    ];
-    // Sparse descending/ascending phrase with a gentle Bayati colour; no bright high register.
-    const melody = [293.66,349.23,392,349.23,311.13,293.66,261.63,293.66];
-    const neyLine = [392,349.23,311.13,293.66];
-    const smooth = x => { x = Math.max(0,Math.min(1,x)); return x*x*(3-2*x); };
-    let peak = 0;
-    for (let i=0;i<length;i++) {
-      const t=i/sampleRate, chordPos=t/12, chordIndex=Math.floor(chordPos)%4;
-      const blend=smooth((chordPos-Math.floor(chordPos))*.32);
-      const a=chords[chordIndex], b=chords[(chordIndex+1)%4];
-      let pad=0;
-      for(let n=0;n<4;n++){
-        const f=a[n]+(b[n]-a[n])*blend;
-        const slowBreath=.88+.12*Math.sin(2*Math.PI*t/19+n*.55);
-        pad+=Math.sin(2*Math.PI*f*t+n*.17)*[.13,.075,.042,.018][n]*slowBreath;
+    if (state.builtinMusicLoadPromise) return state.builtinMusicLoadPromise;
+    state.builtinMusicLoadPromise = (async () => {
+      const response = await fetch('./assets/audio/alhamdulillah-jawad-syed.m4a', { cache: 'force-cache' });
+      if (!response.ok) throw new Error('Berkas nasheed tidak dapat dimuat. Periksa aset audio pada server Preview.');
+      const decoded = await context.decodeAudioData(await response.arrayBuffer());
+      if (!decoded || !Number.isFinite(decoded.duration) || decoded.duration <= 0) throw new Error('Berkas nasheed tidak menghasilkan audio yang valid.');
+      // Crossfade the ending into the opening so the short excerpt loops gently.
+      const fadeSamples = Math.min(Math.floor(context.sampleRate * 1.8), Math.floor(decoded.length / 6));
+      const middleLength = decoded.length - fadeSamples * 2;
+      const loop = context.createBuffer(decoded.numberOfChannels, decoded.length - fadeSamples, decoded.sampleRate);
+      for (let channel = 0; channel < decoded.numberOfChannels; channel++) {
+        const input = decoded.getChannelData(channel), output = loop.getChannelData(channel);
+        output.set(input.subarray(fadeSamples, decoded.length - fadeSamples), 0);
+        for (let i = 0; i < fadeSamples; i++) {
+          const mix = fadeSamples > 1 ? i / (fadeSamples - 1) : 1;
+          output[middleLength + i] = input[decoded.length - fadeSamples + i] * Math.cos(mix * Math.PI / 2) + input[i] * Math.sin(mix * Math.PI / 2);
+        }
       }
-      // One very soft, rounded pluck every six seconds, with no rhythmic percussion.
-      const pluckStep=Math.floor(t/6), pluckLocal=t-pluckStep*6, note=melody[pluckStep%melody.length];
-      const attack=Math.min(1,pluckLocal/.12), decay=Math.exp(-pluckLocal*.72);
-      const pluck=(Math.sin(2*Math.PI*note*t)+.12*Math.sin(2*Math.PI*note*2*t+.2))*attack*decay*.045;
-      // Long, breath-like ney tones enter only once per twelve-second phrase.
-      const neyStep=Math.floor(t/12), neyLocal=t-neyStep*12, neyNote=neyLine[neyStep%neyLine.length];
-      const neyEnv=smooth(neyLocal/2.2)*(1-smooth((neyLocal-7.2)/3.2));
-      const vibrato=1+.0012*Math.sin(2*Math.PI*.18*t);
-      const ney=(Math.sin(2*Math.PI*neyNote*vibrato*t)+.06*Math.sin(2*Math.PI*neyNote*2*vibrato*t))*neyEnv*.025;
-      const edge=smooth(t/.9)*(1-smooth((seconds-t)/.9));
-      samples[i]=(pad+pluck+ney)*edge;
-      peak=Math.max(peak,Math.abs(samples[i]));
-    }
-    const normalization=.72/Math.max(peak,.0001);
-    for(let i=0;i<length;i++)samples[i]*=normalization;
-    state.builtinMusicBuffer=buffer;
-    return buffer;
+      state.builtinMusicBuffer = loop;
+      return loop;
+    })().finally(() => { state.builtinMusicLoadPromise = null; });
+    return state.builtinMusicLoadPromise;
   }
   async function startBuiltinMusic(offset=0) {
     if (!state.builtinMusicEnabled || state.builtinMusicVolume <= 0 || state.builtinMusicSource || state.builtinMusicStarting) return;
@@ -319,16 +316,17 @@
       const context = ensureSpeechAudioContext();
       // Call resume inside the user gesture path so Safari/iOS can unlock audio playback.
       if (context.state !== 'running') await context.resume();
+      const buffer = await loadBuiltinMusicBuffer(context);
       if (!state.builtinMusicEnabled || state.builtinMusicVolume <= 0 || !(state.playing || state.builtinMusicPreview) || state.builtinMusicSource) return;
       const source = context.createBufferSource(), gain = context.createGain();
-      source.buffer = createBuiltinMusicBuffer(context); source.loop = true;
+      source.buffer = buffer; source.loop = true;
       const now = context.currentTime, volume = state.builtinMusicVolume / 100;
       gain.gain.setValueAtTime(0, now); gain.gain.linearRampToValueAtTime(volume, now + 0.22);
       source.connect(gain); gain.connect(context.destination);
       if (state.audioDestination) gain.connect(state.audioDestination);
       source.onended = () => { if (state.builtinMusicSource === source) { state.builtinMusicSource = null; state.builtinMusicGain = null; } };
       state.builtinMusicSource = source; state.builtinMusicGain = gain;
-      source.start(now, Math.max(0, offset) % source.buffer.duration);
+      source.start(now, Math.max(0, offset) % buffer.duration);
     } catch (error) {
       console.warn('Built-in ambient music could not start:', error);
       notify('Audio belum dapat diputar. Coba tekan Dengarkan musik sekali lagi.');
@@ -343,11 +341,19 @@
       stopBuiltinMusic();
     }
   }
-  function scheduleBuiltinMusic(context, audioDestination, startAt) {
+  function scheduleBuiltinMusic(context, audioDestination, startAt, duration=0) {
     if (!state.builtinMusicEnabled || state.builtinMusicVolume <= 0) return;
     const source = context.createBufferSource(), gain = context.createGain();
-    source.buffer = createBuiltinMusicBuffer(context); source.loop = true;
-    gain.gain.value = state.builtinMusicVolume / 100;
+    source.buffer = state.builtinMusicBuffer;
+    if (!source.buffer) throw new Error('Nasheed belum dimuat untuk ekspor.');
+    source.loop = true;
+    const volume = state.builtinMusicVolume / 100;
+    gain.gain.setValueAtTime(0, startAt);
+    gain.gain.linearRampToValueAtTime(volume, startAt + 0.6);
+    if (duration > 1.2) {
+      gain.gain.setValueAtTime(volume, startAt + duration - 1.2);
+      gain.gain.linearRampToValueAtTime(0, startAt + duration);
+    }
     source.connect(gain); gain.connect(context.destination); gain.connect(audioDestination);
     state.exportSources.push({ source, gain });
     source.start(startAt);
@@ -511,6 +517,8 @@
         const context = ensureSpeechAudioContext();
         const audioDestination = ensureAudioMixDestination();
         await context.resume();
+        if (state.builtinMusicEnabled) await loadBuiltinMusicBuffer(context);
+        if (state.builtinMusicGain) state.builtinMusicGain.connect(audioDestination);
         attachAudioMixTrack(stream, audioDestination);
       }
       state.chunks = [];
@@ -562,6 +570,9 @@
     state.exportPreparing = true;
     state.exportCancelled = false;
     state.ttsBusy = true;
+    state.builtinMusicPreview = false;
+    byId('builtinMusicTestButton').textContent = 'Dengarkan nasheed';
+    stopBuiltinMusic();
     byId('cancelExportButton').disabled = false;
 
     try {
@@ -595,7 +606,10 @@
       });
       const totalDuration = cursor;
       const audioDestination = ensureAudioMixDestination();
-      createBuiltinMusicBuffer(context);
+      if (state.builtinMusicEnabled) {
+        byId('exportMessage').textContent = 'Menyiapkan nasheed vokal-only untuk latar video…';
+        await loadBuiltinMusicBuffer(context);
+      }
       let backgroundBuffer = null;
       if (state.audioUrl) {
         byId('exportMessage').textContent = 'Menyiapkan audio latar untuk dicampur dengan narasi…';
@@ -672,7 +686,7 @@
       state.exportAudioStart = context.currentTime + 0.25;
       audio.pause();
       scheduleBackgroundAudio(context, audioDestination, backgroundBuffer, state.exportAudioStart);
-      scheduleBuiltinMusic(context, audioDestination, state.exportAudioStart);
+      scheduleBuiltinMusic(context, audioDestination, state.exportAudioStart, totalDuration);
       startSpeechAnimation(true);
       updateCaptions();
       draw(0);
@@ -939,7 +953,7 @@
   function reset() {
     stopSpeech(false);
     state.index=0;state.theme='emerald';state.format='portrait';state.animation='float';
-    state.duration=15;state.size=100;state.translation=true;state.transliteration=true;state.arabicVerticalOffset=0;state.arabicTextGap=0;state.textMeaningGap=0;state.builtinMusicEnabled=true;state.builtinMusicVolume=18;state.builtinMusicPreview=false;byId('builtinMusicTestButton').textContent='Dengarkan musik';state.elapsed=0;
+    state.duration=15;state.size=100;state.translation=true;state.transliteration=true;state.arabicVerticalOffset=0;state.arabicTextGap=0;state.textMeaningGap=0;state.builtinMusicEnabled=true;state.builtinMusicVolume=10;state.builtinMusicPreview=false;byId('builtinMusicTestButton').textContent='Dengarkan nasheed';state.elapsed=0;
     byId('projectName').value='Asmaul Husna — Video 01';byId('searchInput').value='';
     removeMedia();renderNames('');applyControls();persist();stopPlayback();notify('Pengaturan dikembalikan ke awal.');
   }
@@ -962,8 +976,9 @@
      byId('animationSelect').addEventListener('change',e=>{state.animation=e.target.value;byId('renderHint').textContent=state.animation==='none'?'Animasi dinonaktifkan':'Animasi lembut aktif saat diputar';draw(0);persist();});
     byId('durationInput').addEventListener('input',e=>{state.duration=Number(e.target.value);byId('durationValue').textContent=state.duration;updateCaptions();persist();});
     byId('builtinMusicEnabled').addEventListener('change',e=>{state.builtinMusicEnabled=e.target.checked;syncBuiltinMusic(state.elapsed);persist();});
-    byId('builtinMusicTestButton').addEventListener('click',()=>{state.builtinMusicPreview=!state.builtinMusicPreview;if(state.builtinMusicPreview){state.builtinMusicEnabled=true;byId('builtinMusicEnabled').checked=true;}byId('builtinMusicTestButton').textContent=state.builtinMusicPreview?'Hentikan contoh musik':'Dengarkan musik';syncBuiltinMusic(0);persist();});
+    byId('builtinMusicTestButton').addEventListener('click',()=>{state.builtinMusicPreview=!state.builtinMusicPreview;if(state.builtinMusicPreview){state.builtinMusicEnabled=true;byId('builtinMusicEnabled').checked=true;}byId('builtinMusicTestButton').textContent=state.builtinMusicPreview?'Hentikan contoh nasheed':'Dengarkan nasheed';syncBuiltinMusic(0);persist();});
     byId('builtinMusicVolume').addEventListener('input',e=>{state.builtinMusicVolume=Number(e.target.value);byId('builtinMusicVolumeValue').textContent=state.builtinMusicVolume+'%';if(state.builtinMusicGain)state.builtinMusicGain.gain.setTargetAtTime(state.builtinMusicVolume/100,state.speechAudioContext.currentTime,0.08);persist();});
+    byId('builtinMusicCreditButton').addEventListener('click',async()=>{try{if(!navigator.clipboard||!navigator.clipboard.writeText)throw new Error('Clipboard tidak tersedia');await navigator.clipboard.writeText("Audio: “Alhamdulilah (Vocal Only Nasheed)” — SyedsLife. Source: https://commons.wikimedia.org/wiki/File:Jawad_Syed_-_Alhamdulilah_(Vocal_Only_Nasheed).flac License: https://creativecommons.org/licenses/by/3.0/. Edited: 46-second excerpt, looped with a 1.8-second crossfade.");notify('Atribusi nasheed berhasil disalin untuk caption.');}catch(_){notify('Salin atribusi yang tertulis pada panel lisensi di bawah musik.');}});
     byId('projectName').addEventListener('input',persist);
     byId('playButton').addEventListener('click',()=>{if(state.recorder){notify('Ekspor sedang berlangsung. Gunakan tombol Hentikan ekspor untuk menghentikannya.');return;}if(state.playing){state.playing=false;audio.pause();syncBuiltinMusic();byId('playIcon').textContent='▶';byId('transportStatus').textContent='Pratinjau dijeda';}else play();});
     byId('snapshotButton').addEventListener('click',snapshot);
