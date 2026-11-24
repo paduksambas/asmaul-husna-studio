@@ -55,14 +55,20 @@ assert.match(app, /if \(context\.state !== 'running'\) await context\.resume\(\)
 assert.match(app, /builtinMusicPreview=!state\.builtinMusicPreview/, 'music test playback must be independently toggleable');
 
 assert.match(app, /async function loadBuiltinMusicBuffer\(context\)/, 'licensed vocal nasheed must load from the bundled audio asset');
-assert.match(app, /fetch\('\.\/assets\/audio\/alhamdulillah-jawad-syed\.m4a'/, 'nasheed audio must load from the app origin');
+assert.match(app, /'\.\/assets\/audio\/alhamdulillah-jawad-syed\.m4a'/, 'vocal nasheed audio must load from the app origin');
+assert.match(app, /'\.\/assets\/audio\/ramadan-music-dark-reflective\.mp3'/, 'instrumental audio must load from the app origin');
+assert.match(app, /builtinMusicMode:'vocal'/, 'vocal nasheed remains the default background option');
+assert.match(app, /builtinMusicBuffers\[state\.builtinMusicMode\]/, 'video export must use the selected audio buffer');
 assert.match(app, /const fadeSamples = Math\.min\(Math\.floor\(context\.sampleRate \* 1\.8\)/, 'nasheed loop must use a short crossfade');
-assert.match(app, /source\.buffer = state\.builtinMusicBuffer/, 'video export must use the loaded vocal nasheed buffer');
+assert.match(app, /source\.buffer = state\.builtinMusicBuffers\[state\.builtinMusicMode\]/, 'video export must use the selected loaded audio buffer');
 assert.match(app, /async function startBuiltinMusic\(offset=0\)/, 'nasheed preview must await local audio loading and AudioContext resume');
 assert.match(app, /await loadBuiltinMusicBuffer\(context\)/, 'export paths must prepare the bundled nasheed before recording');
 assert.match(app, /function scheduleBuiltinMusic\(context, audioDestination, startAt, duration=0\)/, 'narrated export must schedule background nasheed on the shared timeline');
 assert.match(app, /builtinMusicVolume:10/, 'nasheed volume must default to a quiet narration-friendly level');
 assert.match(html, /Alhamdulilah \(Vocal Only Nasheed\)/, 'music panel must identify the vocal-only nasheed');
+assert.match(html, /Instrumental tanpa vokal · Alex Morgan/, 'music panel must offer the instrumental option');
+assert.match(html, /id="builtinMusicMode"/, 'music panel must expose the background audio selector');
+assert.match(html, /Ramadan Music With Dark Reflective Tone/, 'music panel must identify the instrumental track');
 assert.match(html, /CC BY 3\.0/, 'music panel must disclose the audio license');
 assert.match(html, /id="builtinMusicCreditButton"/, 'music panel must provide an attribution copy control');
 assert.match(app, /CC BY 3\.0/, 'exported video must display the nasheed attribution');
