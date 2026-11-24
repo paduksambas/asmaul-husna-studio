@@ -111,10 +111,11 @@ assert.match(app, /const arabicY = -u \* \(\.12 - state\.arabicVerticalOffset \*
 assert.match(app, /const transliterationY = u \* \(\.10 \+ state\.arabicTextGap \* \.001\)/, 'Arabic-to-transliteration spacing control must affect wheel mode');
 assert.match(app, /state\.textMeaningGap \* \.001/, 'transliteration-to-meaning spacing control must affect wheel mode');
 assert.match(app, /else if \(state\.wheelTransitionStart\) draw\(/, 'manual wheel transitions must continue rendering even when speech is not active');
-assert.ok(app.includes('async function prepareSpeechBuffer(index, voice)') && app.includes('return decodeSpeechBlob(blob);'), 'the next narration clip must be synthesized and decoded ahead of playback');
+assert.ok(app.includes('async function prepareSpeechBuffer(index, voice)') && app.includes('return decodeSpeechBlob(blob);'), 'speech queue entries must be synthesized and decoded before playback');
 const speakAllSource = app.slice(app.indexOf('async function speakAll()'), app.indexOf('function uploadImage(file)'));
-assert.ok(speakAllSource.indexOf('prepareSpeechBuffer(i + 1, voice)') >= 0 && speakAllSource.indexOf('prepareSpeechBuffer(i + 1, voice)') < speakAllSource.indexOf('playSpeechBuffer(preparedBuffer)'), 'the following clip must be prefetched while the current clip plays');
-assert.ok(app.includes('async function playSpeechBuffer(buffer)') && app.includes('source.buffer = buffer;') && app.includes('source.start(0);'), 'prepared narration audio must play directly from a decoded AudioBuffer');
+assert.ok(speakAllSource.includes('const prefetchAhead = 3;') && speakAllSource.includes('const aheadLimit = playbackStarted ? prefetchAhead : 1;'), 'the narration sequence must maintain a bounded three-clip look-ahead queue after playback starts');
+assert.ok(speakAllSource.includes('prefetchSpeechBuffers();') && speakAllSource.includes('await task;'), 'the next speech clips must be generated in the background and awaited only when needed');
+assert.ok(app.includes('async function playSpeechBuffer(buffer, onStart=()=>{})') && app.includes('source.buffer = buffer;') && app.includes('onStart();') && app.includes('source.start(0);'), 'prepared narration audio must trigger a synchronized on-start callback');
 assert.ok(app.includes('(performance.now() - state.wheelTransitionStart) / 520'), 'wheel transitions must use the quicker 520 ms duration');
 
 assert.match(app, /state\.wheelTransitionStart = performance\.now\(\);\s*state\.transitionStart = 0;\s*ensureRenderLoop\(\)/, 'manual selection must start a render loop for the wheel transition');
