@@ -314,7 +314,7 @@
   async function speakCurrent() {
     if(state.ttsBusy)return;
     if(!state.ttsPipeline){await loadSpeechModel();return;}
-    state.ttsStop=false;
+    state.ttsStop=false;state.ttsBusy=true;
     const voice=byId('speechVoice').value;
     try {
       byId('speechStatus').textContent='Membuat suara untuk '+data[state.index][0]+'…';
@@ -325,12 +325,12 @@
     } catch(err) {
       console.error(err);byId('speechStatus').textContent='Gagal membuat audio: '+err.message;
       notify('Audio AI gagal dibuat. Periksa koneksi atau memori browser.');
-    }
+    } finally { state.ttsBusy=false; }
   }
   async function speakAll() {
     if(state.ttsBusy)return;
     if(!state.ttsPipeline){await loadSpeechModel();return;}
-    state.ttsStop=false;
+    state.ttsStop=false;state.ttsBusy=true;
     const voice=byId('speechVoice').value;
     for(let i=0;i<data.length;i++) {
       if(state.ttsStop)break;
@@ -341,9 +341,10 @@
         if(state.ttsStop)break;
         await playSpeechBlob(blob);
       } catch(err) {
-        console.error(err);byId('speechStatus').textContent='Terhenti pada nama '+(i+1)+': '+err.message;return;
+        console.error(err);byId('speechStatus').textContent='Terhenti pada nama '+(i+1)+': '+err.message;state.ttsBusy=false;return;
       }
     }
+    state.ttsBusy=false;
     if(!state.ttsStop)byId('speechStatus').textContent='Selesai membaca 99 Asmaul Husna.';
   }
   function uploadImage(file) {
