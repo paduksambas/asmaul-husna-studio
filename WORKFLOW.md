@@ -106,11 +106,11 @@ Ikuti urutan ini. Jangan melewati pemeriksaan Preview sebelum perubahan dinyatak
 - [x] Uji unggah gambar dan audio yang valid serta tampil/fungsinya di pratinjau (dikonfirmasi pengguna).
 - [x] Uji pratinjau media dan sinkronisasi audio dasar (dikonfirmasi pengguna).
 - [ ] Uji penolakan file tidak valid dan penanganan izin browser.
-- [x] Tambahkan panel TTS AI Arab gratis Supertonic 3: pilihan suara M1/F1, pemuatan model lokal, uji nama aktif, pembacaan 99 nama berurutan, dan tombol berhenti.
+- [x] Tambahkan panel pembacaan Arab memakai Web Speech API: deteksi suara Arab yang tersedia, baca nama aktif, baca 99 nama berurutan, dan tombol berhenti.
 - [x] Deployment Production otomatis setelah perubahan TTS berstatus READY pada commit `79ef40d75d1efa8d0c8dd362d05badc872b27925`.
-- [ ] Uji pemuatan model Supertonic 3 dan hasil pelafalan Arab di laptop.
-- [ ] Uji pemuatan model Supertonic 3 dan hasil pelafalan Arab di Safari iPad A17 Pro.
-- [ ] Bandingkan suara M1 dan F1; pilih suara yang paling alami dan jelas.
+- [ ] Uji suara Arab bawaan browser dan hasil pelafalan Arab di laptop.
+- [ ] Uji suara Arab bawaan Safari/iPad dan hasil pelafalan Arab di iPad A17 Pro.
+- [ ] Bandingkan suara Arab yang tersedia pada perangkat; pilih suara yang paling alami dan jelas.
 - [ ] Integrasikan suara AI yang sudah tervalidasi ke audio video ekspor; jangan tandai selesai sebelum file unduhan diuji.
 - [x] Uji ekspor video, unduhan, dan pemutaran hasil; pengguna mengonfirmasi video berhasil diputar dengan animasi bergerak sempurna (audio dan perangkat/browser masih perlu dicatat terpisah).
 - [x] Uji simpan PNG dan pastikan gambar berhasil disimpan (dikonfirmasi pengguna).
@@ -202,3 +202,6 @@ Ikuti urutan ini. Jangan melewati pemeriksaan Preview sebelum perubahan dinyatak
 
 
 **Verifikasi Release Supertonic 3 (24 November 2026):** GitHub Release `supertonic3-model-v1` telah diperiksa melalui GitHub API. Release berstatus published, bukan draft/prerelease. Dua aset berstatus `uploaded`: `supertonic-3-onnx-model.tar.gz` (597.578.348 byte; SHA-256 `8dba64b6799ffb0d5f6b1f8154446c0ed27d7d4d90c0fda019ebce898ee099f8`) dan `supertonic-3-onnx-model.tar.gz.sha256` (97 byte). Aplikasi diberi tautan langsung ke Release sebagai arsip cadangan. **Batas integrasi runtime:** Transformers.js memuat file model dari repositori model berbentuk direktori, sedangkan GitHub Release menyimpan satu arsip tar.gz; arsip tersebut tidak dapat dipakai langsung sebagai `model` ID/path oleh pipeline. Karena itu runtime tetap mengambil file model dari Hugging Face dan menggunakan cache lokal browser. Mengganti sumber runtime ke arsip Release memerlukan tahap ekstraksi/penyajian file model yang kompatibel; perubahan ini sengaja tidak dilakukan secara semu agar fitur TTS yang ada tidak rusak. Cache tetap terpisah per perangkat.
+
+
+**Perbaikan TTS setelah laporan error browser (24 November 2026):** log pengguna memperlihatkan permintaan `preprocessor_config.json` ke `open-world-group/Supertonic-3-ONNX` menghasilkan 404, lalu fallback WASM gagal. Peringatan `Unable to determine content-length` (respons tanpa header panjang konten), `powerPreference ... ignored` (opsi adapter yang diabaikan Chrome Windows), dan ONNX constant-folding bukan penyebab utama. Runtime lama mengirim model ONNX Supertonic ke pipeline text-to-speech standar Transformers.js; jalur tersebut tidak cocok dengan struktur model upstream. Untuk menghilangkan permintaan file metadata yang tidak ada dan error ONNX berulang, implementasi browser kini memakai Web Speech API (`speechSynthesis`) dan mendeteksi suara berbahasa Arab yang benar-benar tersedia di perangkat. Tidak ada lagi import Transformers.js, unduhan model, WebGPU, atau WASM saat membuka fitur ini. Ini merupakan fallback suara sistem, **bukan Supertonic/AI voice**, dan suara hasil playback belum direkam ke video. Arsip Supertonic 3 pada GitHub Release tetap disimpan sebagai cadangan tetapi tidak dipakai oleh runtime. **Perlu pengujian pengguna:** pastikan daftar suara Arab muncul dan bunyi pelafalan benar di Windows serta Safari iPad. Bila tidak ada suara Arab yang terpasang, instal paket speech/voice Arab di OS terlebih dahulu.
