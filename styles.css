@@ -13,3 +13,9 @@
 .speech-mirror{margin:0 0 10px;font-size:9px;line-height:1.5}.speech-mirror a{color:#dfc18b;text-decoration:underline;text-underline-offset:2px}.speech-mirror a:hover{color:#fff0c9}
 
 .narration-export-button{width:100%;margin-top:10px;white-space:normal;line-height:1.45;min-height:38px}
+
+/* Keep Arabic calligraphy position and its following text gap together. */
+.text-control-group{margin:10px 0 12px;padding:9px 10px 7px;background:#141c17;border:1px solid #354238;border-radius:9px}
+.text-control-group-title{margin:0 0 8px;color:#d1b176;font-size:9px;font-weight:700;letter-spacing:.9px;text-transform:uppercase}
+.text-control-group .field-label{margin:7px 0}
+.text-control-group .range-input{margin:7px 0 4px}
