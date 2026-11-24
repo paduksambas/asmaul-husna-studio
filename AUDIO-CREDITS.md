@@ -20,3 +20,12 @@ Source: https://commons.wikimedia.org/wiki/File:Jawad_Syed_-_Alhamdulilah_(Vocal
 Changes: 46-second excerpt; looped with a 1.8-second crossfade.
 
 Cantumkan atribusi ini pada caption/deskripsi publikasi. Aplikasi menampilkan kredit singkat di bagian bawah video ketika nasheed aktif dan menyediakan tombol untuk menyalin teks atribusi lengkap.
+
+
+## Instrumental background music
+
+- “Ramadan Music With Dark Reflective Tone” — Alex Morgan, 2:54.
+- Source: https://freemusicarchive.org/music/alex-morgan/world-celebration-vol-1/ramadan-music-with-dark-reflective-tone
+- License: Creative Commons Attribution 4.0 International (CC BY 4.0): https://creativecommons.org/licenses/by/4.0/
+- FMA identifies this track as instrumental and notes that it is partly AI-generated.
+- Attribution: Music: “Ramadan Music With Dark Reflective Tone” — Alex Morgan. Licensed under CC BY 4.0.
