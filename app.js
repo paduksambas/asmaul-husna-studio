@@ -192,35 +192,46 @@
     ctx.restore();
     // The ring has its own 3D ellipse and 99 individually shaded gold beads.
     const ringY=cy+u*.015,spin=elapsed*.105,beads=[];
+    // Lightweight 3D projection: yaw rotates the ring in depth while pitch tilts its plane.
+    const yaw=spin, pitch=.48+Math.sin(elapsed*.22)*.025, focal=u*2.15;
+    const projectTasbihPoint=(angle,scale=1,zBoost=0)=>{
+      const lx=Math.cos(angle)*u*.315*scale,ly=Math.sin(angle)*u*.245*scale;
+      const tiltedY=ly*Math.cos(pitch),tiltedZ=ly*Math.sin(pitch);
+      const rotatedX=lx*Math.cos(yaw)+tiltedZ*Math.sin(yaw);
+      const rotatedZ=-lx*Math.sin(yaw)+tiltedZ*Math.cos(yaw)+zBoost;
+      const perspective=focal/Math.max(focal*.72,focal-rotatedZ);
+      return {x:cx+rotatedX*perspective,y:ringY+tiltedY*perspective,z:rotatedZ,perspective};
+    };
     const transitionProgress=state.tasbihTransitionStart?clamp((performance.now()-state.tasbihTransitionStart)/1050,0,1):1;
     const transitionEase=1-Math.pow(1-transitionProgress,3);
     const transitionActive=state.tasbihTransitionStart&&transitionProgress<1;
     for(let i=0;i<99;i++){
-      const angle=i*Math.PI*2/99+spin-Math.PI/2,depth=.5+.5*Math.sin(angle);
-      const rx=u*(.315+.008*depth),ry=u*(.245+.006*depth);
-      const tx=cx+Math.cos(angle)*rx,ty=ringY+Math.sin(angle)*ry;
+      const angle=i*Math.PI*2/99-Math.PI/2;
+      const active=i===state.index,lit=active||finale;
+      const point=projectTasbihPoint(angle,1,active?u*(.045+.012*pulse):0);
+      const depth=clamp(.5+point.z/(u*.55),0,1);
       const sx=cx+Math.sin(i*12.9898+1.7)*u*(.17+(i%7)*.024);
       const sy=ringY+Math.cos(i*7.233+2.4)*u*(.16+(i%5)*.025);
-      const x=sx+(tx-sx)*formation,y=sy+(ty-sy)*formation;
-      const active=i===state.index,lit=active||finale;
-      const forward=active?u*(.022+.012*pulse):0;
-      const radius=u*(.0062+depth*.002)*(active?2.05:1);
-      beads.push({x,y:y+forward,baseY:y,depth:active?.995:depth,angle,active,lit,r:radius});
+      const x=sx+(point.x-sx)*formation,y=sy+(point.y-sy)*formation;
+      const radius=u*(.0062+depth*.002)*(active?2.05:1)*point.perspective;
+      beads.push({x,y,baseY:y,depth:active?1.1:depth,angle,active,lit,r:radius});
     }
     // A travelling ribbon follows the ring from the last reading bead to the new one.
     if(transitionActive&&opening>=.8){
       const deltaRaw=state.tasbihToIndex-state.tasbihFromIndex;
       const delta=deltaRaw>49?deltaRaw-99:deltaRaw< -49?deltaRaw+99:deltaRaw;
-      const fromAngle=state.tasbihFromIndex*Math.PI*2/99+spin-Math.PI/2;
+      const fromAngle=state.tasbihFromIndex*Math.PI*2/99-Math.PI/2;
       const toAngle=fromAngle+delta*Math.PI*2/99*transitionEase;
       const ribbon=ctx.createLinearGradient(cx-u*.32,ringY-u*.22,cx+u*.32,ringY+u*.22);
       ribbon.addColorStop(0,'#f5c76a00');ribbon.addColorStop(.5,'#ffe9ae');ribbon.addColorStop(1,'#f5c76a00');
-      ctx.save();ctx.beginPath();ctx.ellipse(cx,ringY,u*.315,u*.245,0,fromAngle,toAngle,delta<0);
+      ctx.save();ctx.beginPath();
+      for(let step=0;step<=48;step++){const a=fromAngle+(toAngle-fromAngle)*step/48,p=projectTasbihPoint(a,1,u*.012);if(step===0)ctx.moveTo(p.x,p.y);else ctx.lineTo(p.x,p.y);}
       ctx.strokeStyle=ribbon;ctx.lineWidth=u*.009;ctx.lineCap='round';ctx.shadowColor='#ffd77b';ctx.shadowBlur=u*.025;ctx.globalAlpha=1-transitionProgress*.28;ctx.stroke();ctx.restore();
     }
     // A slow moving specular sweep gives the polished gold beads a living surface.
     const sheenAngle=elapsed*.34;
-    const sheenX=cx+Math.cos(sheenAngle)*u*.31,sheenY=ringY+Math.sin(sheenAngle)*u*.24;
+    const sheenPoint=projectTasbihPoint(sheenAngle,1.04);
+    const sheenX=sheenPoint.x,sheenY=sheenPoint.y;
     const sheen=ctx.createRadialGradient(sheenX,sheenY,0,sheenX,sheenY,u*.09);
     sheen.addColorStop(0,'#ffe8ae24');sheen.addColorStop(1,'#ffe8ae00');
     ctx.fillStyle=sheen;ctx.fillRect(cx-u*.43,ringY-u*.34,u*.86,u*.68);
@@ -248,7 +259,9 @@
     if(state.tasbihTransitionStart&&transitionProgress>=1) state.tasbihTransitionStart=0;
     // Fine inner orbit and central reading panel.
     ctx.save();ctx.strokeStyle='#d8b36b45';ctx.lineWidth=Math.max(1,u*.0014);
-    ctx.beginPath();ctx.ellipse(cx,ringY,u*.286,u*.216,0,0,Math.PI*2);ctx.stroke();ctx.restore();
+    ctx.beginPath();
+    for(let step=0;step<=120;step++){const p=projectTasbihPoint(step/120*Math.PI*2,.91);if(step===0)ctx.moveTo(p.x,p.y);else ctx.lineTo(p.x,p.y);}
+    ctx.closePath();ctx.stroke();ctx.restore();
     const panelW=u*.49,panelH=u*.31,py=ringY;
     const panel=ctx.createLinearGradient(cx-panelW/2,py-panelH/2,cx+panelW/2,py+panelH/2);
     panel.addColorStop(0,'#0c1423dd');panel.addColorStop(.5,'#111a2add');panel.addColorStop(1,'#0a1220dd');
