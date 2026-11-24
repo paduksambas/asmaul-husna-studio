@@ -252,3 +252,16 @@ Ikuti urutan ini. Jangan melewati pemeriksaan Preview sebelum perubahan dinyatak
 **Status deployment:** Preview yang tersedia (`dpl_8wo1BC6Xcab5GaBEAdzCJFVgn3wo`) berasal dari commit lama `7504a13f3ec0facf77768bf269e711068e0284b7`, bukan source final `fd31a39`. Permintaan Preview baru untuk source branch terbaru ditolak Vercel HTTP 402 `api-deployments-free-per-day`, `retryAfter=86400` (24 jam). Production tetap pada commit utama `176b2d233115841d4bf5133540df1d4f6d5aefd0`. **Jangan merge atau rilis ke Production sebelum Preview final tersedia dan MP4/WebM unduhan diuji untuk suara AI, sinkronisasi 99 adegan, serta audio latar.**
 
 **Penguatan pemeriksaan audio latar (24 November 2026):** `scripts/validate-app.mjs` sekarang juga mensyaratkan implementasi decode audio unggahan, penjadwalan buffer audio latar berulang, gain 0,18, dan start pada waktu yang sama dengan narasi. GitHub Actions run `45372018569` pada commit `3d27aa2f0b39e1c16c7cec85cb2ec5ff91ae0003` selesai `completed/success`; pemeriksaan sintaks dan seluruh assertion aplikasi/audio lulus.
+
+
+## 11. Otomatisasi Cloudflare Pages (24 November 2026)
+
+- [x] Tambahkan workflow `.github/workflows/cloudflare-pages.yml` pada branch `feature/supertonic-narration-export`.
+- Workflow menyiapkan folder statis `dist/` dari `index.html`, `styles.css`, `asmaul-husna.js`, dan `app.js`; tidak memerlukan proses build aplikasi.
+- Workflow membuat proyek Pages bernama `asmaul-husna-studio` bila proyek belum ada, dengan `main` sebagai production branch, lalu menerbitkan branch pemicu sebagai deployment production atau preview.
+- Pemicu: push ke `main` atau `feature/supertonic-narration-export`, serta `workflow_dispatch`.
+- [ ] Pengguna menambahkan GitHub Actions repository secrets `CLOUDFLARE_API_TOKEN` dan `CLOUDFLARE_ACCOUNT_ID`. Token hanya perlu izin Account → Cloudflare Pages → Edit; jangan masukkan token ke source atau chat.
+- [ ] Jalankan workflow setelah kedua secret tersedia; periksa URL deployment Preview branch fitur dan uji aplikasi serta file ekspor video/narasi di browser.
+- [ ] Setelah pengujian Preview lulus, gabungkan branch fitur ke `main`; push ke `main` akan menerbitkan Production Cloudflare Pages.
+- Status pada catatan ini: workflow sudah di-commit, tetapi deployment belum dapat dimulai karena kredensial Cloudflare belum ditambahkan dan belum ada hasil deployment yang diverifikasi.
+- Commit workflow awal: `c736a6c44a4ffc7a31e2828a98596c62f3f97b86`; penyesuaian workflow: `9178615a8cc3c9e452b402fc8a484e350cfc7339`.
