@@ -84,7 +84,7 @@ jobs:
             exit 1
           fi
 
-      - name: Deploy to Cloudflare Pages
+      - name: Set up Node.js for Wrangler
         if: steps.credentials.outputs.ready == 'true'
         uses: actions/setup-node@v4
         with:
@@ -100,7 +100,7 @@ jobs:
           SOURCE_BRANCH: ${{ github.ref_name }}
         run: |
           set -euo pipefail
-          CF_BRANCH="$(printf '%s' "$SOURCE_BRANCH" | tr '[:upper:]' '[:lower:]' | sed 's#[^a-z0-9-]#-#g' | sed 's/--*/-/g' | cut -c1-28)"
+          CF_BRANCH="$(printf '%s' "$SOURCE_BRANCH" | tr '[:upper:]' '[:lower:]' | sed 's#[^a-z0-9-]#-#g' | sed 's/--*/-/g' | cut -c1-63)"
           if [[ -z "$CF_BRANCH" ]]; then
             echo "Could not derive a Cloudflare Pages branch name." >&2
             exit 1
