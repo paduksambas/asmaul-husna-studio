@@ -306,7 +306,7 @@
       ctx.globalAlpha=(.16+(i*7%10)/60)*twinkle;ctx.fillStyle=c[3];ctx.beginPath();ctx.arc(x,y,Math.max(1.5,w*.0015),0,Math.PI*2);ctx.fill();
     }
     ctx.globalAlpha=1;
-    const item=data[state.index]||data[0];
+
     const floatY=animated&&state.animation==='float'?Math.sin(t*.72)*u*.018:0;
     const zoom=animated&&state.animation==='zoom'?1+Math.sin(t*.52)*.032:1;
     const floatScale=animated&&state.animation==='float'?1+Math.sin(t*.72+Math.PI/2)*.006:1;
