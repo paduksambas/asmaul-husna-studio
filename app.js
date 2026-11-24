@@ -23,7 +23,8 @@
     speechAnimating:false, speechAnimationStart:0, renderLoopActive:false, transitionStart:0, transitionDuration:420,
     exportBusy:false, exportPreparing:false, exportCancelled:false, narrationExportActive:false,
     exportDuration:0, exportAudioStart:0, exportTimeline:[], exportSources:[] };
-  const WHEEL_TRANSITION_MS = 520;
+  // Keep the wheel move shorter, with a small lead before the spoken clip ends.
+  const WHEEL_TRANSITION_MS = 420;
   const WHEEL_TRANSITION_LEAD_MS = WHEEL_TRANSITION_MS + 40;
   const clamp = (n,min,max) => Math.min(max,Math.max(min,n));
   const fileSafe = (s) => String(s || 'asmaul-husna').normalize('NFKD').replace(/[^a-z0-9_-]+/gi,'-').replace(/^-+|-+$/g,'').toLowerCase() || 'asmaul-husna';
@@ -224,12 +225,15 @@
     if (state.animation === 'wheel') {
       let baseIndex = state.index;
       let rotationProgress = 0;
+      let rawProgress = 0;
       let direction = 1;
       if (state.wheelTransitionStart) {
         baseIndex = state.wheelFromIndex;
         direction = state.wheelDirection || 1;
-        const rawProgress = clamp((performance.now() - state.wheelTransitionStart) / WHEEL_TRANSITION_MS, 0, 1);
-        rotationProgress = 1 - Math.pow(1 - rawProgress, 3);
+        rawProgress = clamp((performance.now() - state.wheelTransitionStart) / WHEEL_TRANSITION_MS, 0, 1);
+        // First clear the just-read label; only then let the next label move in.
+        const movementProgress = clamp((rawProgress - .14) / .86, 0, 1);
+        rotationProgress = 1 - Math.pow(1 - movementProgress, 3);
         if (rawProgress >= 1) state.wheelTransitionStart = 0;
       }
       const wheelEntries = [-1, 0, 1].map(offset => {
@@ -249,7 +253,7 @@
         // The just-read/current label must disappear early in the rotation.
         // Do not let it travel visually into the incoming label's approach path.
         const outgoingFade = state.wheelTransitionStart && entry.offset === 0
-          ? 1 - clamp((rotationProgress - .05) / .18, 0, 1)
+          ? 1 - clamp(rawProgress / .14, 0, 1)
           : 1;
         const alpha = depthAlpha * outgoingFade;
         if (alpha <= .015) return;
