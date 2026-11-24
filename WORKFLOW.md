@@ -319,3 +319,6 @@ Ikuti urutan ini. Jangan melewati pemeriksaan Preview sebelum perubahan dinyatak
 
 
 **Penyegaran desain pengaturan tipografi (24 November 2026):** kelompok “Posisi & Jarak Teks” ditata ulang menjadi panel bertingkat dengan header ornamen bernuansa emas, permukaan hijau zamrud gelap, tiap slider pada baris terpisah, nilai dalam pill, petunjuk arah untuk posisi kaligrafi, serta tampilan durasi yang serasi. Semua ID input, rentang, dan event handler dipertahankan agar perilaku simpan/reset/pratinjau/ekspor tidak berubah. Hanya branch Preview yang diubah; perlu pemeriksaan CI dan tampilan responsif di browser.
+
+
+**Nomor urutan tetap saat transisi nama (24 November 2026):** label `01 / 99` dipindahkan keluar dari lapisan teks yang menjalani fade. Saat pergantian nama, hanya kaligrafi Arab, transliterasi, dan arti yang memudar; nomor urutan tetap dirender dengan opasitas penuh dan ikut berubah langsung ke indeks aktif. Validator statis ditambah untuk memastikan penghitung dirender independen setelah lapisan fade. Hanya branch `feature/supertonic-narration-export` yang diubah; `main`/Production tidak disentuh. Menunggu CI dan deployment Preview.
