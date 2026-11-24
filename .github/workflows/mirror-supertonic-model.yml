@@ -1,0 +1,38 @@
+name: Mirror Supertonic 3 model to GitHub Release
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/mirror-supertonic-model.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  mirror-model:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - name: Download model repository
+        run: |
+          python -m pip install --upgrade huggingface_hub
+          hf download open-world-group/Supertonic-3-ONNX --repo-type model --local-dir model-bundle
+      - name: Package model files
+        run: |
+          tar -czf supertonic-3-onnx-model.tar.gz -C model-bundle .
+          ls -lh supertonic-3-onnx-model.tar.gz
+          test "$(stat -c%s supertonic-3-onnx-model.tar.gz)" -lt 2147483648
+      - name: Publish GitHub Release asset
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TAG="supertonic3-model-v1"
+          if gh release view "$TAG" --repo "${{ github.repository }}" >/dev/null 2>&1; then
+            gh release upload "$TAG" supertonic-3-onnx-model.tar.gz --clobber --repo "${{ github.repository }}"
+          else
+            gh release create "$TAG" supertonic-3-onnx-model.tar.gz \
+              --title "Supertonic 3 ONNX model bundle" \
+              --notes "Model mirror for Asmaul Husna Studio. Source: open-world-group/Supertonic-3-ONNX. Includes upstream model files and license. Model use remains subject to the included OpenRAIL-M license." \
+              --repo "${{ github.repository }}"
+          fi
