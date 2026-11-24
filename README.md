@@ -2,6 +2,10 @@
 
 Studio video berbasis browser untuk membuat komposisi visual Asmaul Husna. Aplikasi ini sengaja dibuat tanpa framework atau proses build agar mudah dijalankan dan di-host sebagai situs statis.
 
+## Jalur kerja proyek
+
+Gunakan [WORKFLOW.md](./WORKFLOW.md) sebagai peta kerja utama. Dokumen tersebut berisi struktur file, cara melanjutkan dari laptop dan iPad, urutan pengembangan, checklist pengujian, serta status deployment terakhir. Baca dokumen itu sebelum melanjutkan perubahan agar pekerjaan tetap berurutan.
+
 ## Fitur awal
 
 - Perpustakaan 99 nama Asmaul Husna dengan pencarian nama dan arti.
