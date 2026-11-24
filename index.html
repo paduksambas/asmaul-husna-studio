@@ -112,7 +112,7 @@
         </section>
         <section class="control-section speech-section">
           <div class="section-title"><span class="section-number">06</span><h3>Suara AI Arab · Supertonic 3</h3></div>
-          <p class="speech-description">Suara AI dibuat langsung di browser, tanpa paket suara Arab Windows dan tanpa API key. Unduhan model pertama sekitar 200 MB dan akan menggunakan cache browser bila diizinkan. Suara diputar di aplikasi; belum ikut direkam ke video ekspor.</p>
+          <p class="speech-description">Suara AI dibuat langsung di browser dengan Supertonic 3. Unduhan model pertama sekitar 200 MB dan akan menggunakan cache browser bila diizinkan. Gunakan tombol ekspor narasi untuk membuat video lengkap berisi bacaan 99 nama; audio latar tambahan tetap dapat disertakan dengan volume lebih lembut.</p>
           <label class="field-label" for="speechVoice">Pilih preset suara AI</label>
           <select id="speechVoice" class="select-input">
             <option value="M1">Laki-laki · M1</option>
@@ -133,6 +133,7 @@
             <button class="button button-outline" id="stopSpeechButton">Hentikan suara</button>
           </div>
           <p class="speech-status" id="speechStatus" role="status" aria-live="polite">Pilih preset suara, lalu muat model AI untuk memulai.</p>
+          <button class="button button-primary narration-export-button" id="exportNarrationButton">Ekspor video + narasi 99 nama</button>
         </section>
         <div class="inspector-bottom"><span class="secure-icon">◈</span><span>Proyek tersimpan lokal di browser ini.</span></div>
       </aside>
