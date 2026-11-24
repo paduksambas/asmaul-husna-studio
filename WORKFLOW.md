@@ -274,3 +274,6 @@ Ikuti urutan ini. Jangan melewati pemeriksaan Preview sebelum perubahan dinyatak
 
 
 **Perbaikan Soft Shimmer — 24 November 2026:** rotasi ornamen lingkaran di mode Soft Shimmer diperjelas dengan tiga jalur busur melingkar yang bergerak pada kecepatan konstan. Fase rotasi dan kilau memakai jam monotonik `performance.now()` agar tidak ikut reset saat waktu pratinjau berubah atau kanvas digambar ulang. Perubahan hanya pada branch Preview; situs utama tidak disentuh. Pemeriksaan statis memastikan blok animasi lama diganti dan seluruh jalur busur memakai fase waktu yang sama. **Status:** source diperbarui; menunggu validasi GitHub Actions dan uji visual pengguna di Preview.
+
+
+**Penghapusan penanda sudut kanvas — 24 November 2026:** dua garis siku dekoratif di overlay pratinjau (kiri atas dan kanan bawah) dihapus dari markup dan CSS. Tidak mengubah elemen gambar/kanvas atau ekspor video. Perubahan hanya pada branch Preview; situs utama tidak disentuh.
