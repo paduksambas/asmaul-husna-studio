@@ -316,3 +316,6 @@ Ikuti urutan ini. Jangan melewati pemeriksaan Preview sebelum perubahan dinyatak
 
 
 **Peningkatan jangkauan posisi kaligrafi Arab (24 November 2026):** sensitivitas slider posisi vertikal diperbesar 2,5 kali. Rentang kontrol tetap −40 sampai +40, tetapi skala perpindahan pada kanvas berubah dari `0,001u` menjadi `0,0025u` (maksimum sekitar ±10% sisi terpendek kanvas, sebelumnya ±4%). Arah tetap: nilai negatif ke atas dan positif ke bawah. Perubahan hanya pada branch Preview; posisi default 0 dan kontrol jarak teks lain tidak berubah. Validator statis diperbarui untuk memeriksa faktor skala baru.
+
+
+**Penyegaran desain pengaturan tipografi (24 November 2026):** kelompok “Posisi & Jarak Teks” ditata ulang menjadi panel bertingkat dengan header ornamen bernuansa emas, permukaan hijau zamrud gelap, tiap slider pada baris terpisah, nilai dalam pill, petunjuk arah untuk posisi kaligrafi, serta tampilan durasi yang serasi. Semua ID input, rentang, dan event handler dipertahankan agar perilaku simpan/reset/pratinjau/ekspor tidak berubah. Hanya branch Preview yang diubah; perlu pemeriksaan CI dan tampilan responsif di browser.
