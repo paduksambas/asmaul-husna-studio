@@ -117,7 +117,7 @@ assert.match(app, /const projectTasbihPoint=\(angle,scale=1,zBoost=0\)=>/, 'Tasb
 assert.match(app, /const yaw=spin, pitch=\.48\+Math\.sin\(elapsed\*\.22\)\*\.025, focal=u\*2\.15/, 'Tasbih camera must animate yaw and subtle pitch');
 assert.match(app, /focal\/Math\.max\(focal\*\.72,focal-rotatedZ\)/, 'Tasbih bead size and position must respond to camera depth');
 assert.match(app, /active\?u\*\(\.045\+\.012\*pulse\):0/, 'the active Tasbih bead must move toward the camera');
-assert.match(app, /const ribbon=ctx\.createLinearGradient[\s\S]*?ctx\.ellipse\(cx,ringY,u\*\.315,u\*\.245,0,fromAngle,toAngle,delta<0\)/, 'a travelling light ribbon must follow the ring between selected beads');
+assert.match(app, /const ribbon=ctx\.createLinearGradient[\s\S]*?projectTasbihPoint\(a,1,u\*\.012\)/, 'a travelling light ribbon must follow the projected 3D ring between selected beads');
 assert.match(app, /const sheenAngle=elapsed\*\.34/, 'polished beads must receive a moving specular highlight');
 assert.match(app, /Tiny white-gold reflection at the upper-left of each bead/, 'gold beads must render a distinct material highlight');
 assert.match(app, /if\(\(state\.animation==='wheel' \|\| state\.template==='tasbih'\) && i!==state\.index\) beginNameTransition\(i\)/, 'manual bead selection must animate in Tasbih mode');
