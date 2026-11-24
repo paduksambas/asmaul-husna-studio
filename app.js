@@ -189,6 +189,7 @@
       ? clamp((performance.now() - state.transitionStart) / state.transitionDuration, 0, 1)
       : 1;
     // Static identity header: it stays fixed and never joins the name transition.
+    // The Arabic vertical offset is independent of the two text-spacing controls.
     ctx.save();
     ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillStyle=c[3];
     ctx.font='600 '+Math.max(17,u*.019)+'px "DM Sans",sans-serif';ctx.letterSpacing=Math.max(2,u*.003)+'px';
