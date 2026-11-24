@@ -175,3 +175,5 @@ Ikuti urutan ini. Jangan melewati pemeriksaan Preview sebelum perubahan dinyatak
 **Konfirmasi tema dan rasio iPad (24 November 2026):** pengguna mengonfirmasi seluruh tema Emerald, Midnight, Sand, Rose serta rasio Landscape, Portrait, Square berfungsi sempurna melalui Safari di iPad A17 Pro.
 
 **Konfirmasi durasi dan Reset iPad (24 November 2026):** pengguna mengonfirmasi perubahan durasi dan tombol Reset berfungsi baik melalui Safari di iPad A17 Pro. Pengujian interaksi utama pada laptop dan iPad kini terkonfirmasi. Pengujian tata letak sentuh lintas orientasi, upload media, ekspor dari iPad, dan alur Codespaces/editor tetap dilanjutkan.
+
+**Konfirmasi upload media iPad (24 November 2026):** pengguna mengonfirmasi unggah gambar dan file audio serta pratinjau media berfungsi dengan baik melalui Safari di iPad A17 Pro. Pengujian ekspor video/PNG langsung dari iPad dan verifikasi audio pada hasil ekspor masih perlu dilakukan.
