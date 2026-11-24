@@ -268,3 +268,6 @@ Ikuti urutan ini. Jangan melewati pemeriksaan Preview sebelum perubahan dinyatak
 
 
 **Kredensial Cloudflare ditambahkan pengguna (24 November 2026):** pengguna mengonfirmasi bahwa repository secrets `CLOUDFLARE_API_TOKEN` dan `CLOUDFLARE_ACCOUNT_ID` sudah dibuat. Commit catatan ini memicu ulang workflow Cloudflare Pages melalui push pada branch fitur. Hasil deployment dan URL Preview harus diverifikasi dari GitHub Actions sebelum dinyatakan berhasil.
+
+
+**Penyempurnaan animasi (24 November 2026):** pada branch `feature/supertonic-narration-export`, gerakan latar kini memakai drift dan twinkle yang lebih lembut, cincin dekoratif serta glow berdenyut perlahan, mode float memakai pergeseran vertikal dan scale breathing yang lebih halus, mode zoom diperlambat dan amplitudonya dikurangi, serta mode shimmer menyapu kilau melintasi kaligrafi Arab. Fase animasi tidak lagi direset setiap kali nama berganti pada ekspor narasi 99 nama sehingga transisi antaradegan tetap kontinu. Perubahan hanya menyentuh `app.js` dan pemeriksaan statis `scripts/validate-app.mjs`; belum dipromosikan ke `main`. **Status:** menunggu hasil GitHub Actions (validasi statis dan deploy Cloudflare Preview) serta konfirmasi visual dari pengguna pada laptop/iPad. Rendering masih memakai canvas 1080p/30fps untuk ekspor; kelancaran akhir tetap bergantung pada performa browser/perangkat.
