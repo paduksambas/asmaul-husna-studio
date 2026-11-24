@@ -44,13 +44,15 @@ jobs:
           set -euo pipefail
           mkdir -p dist/assets/audio
           cp index.html styles.css asmaul-husna.js app.js dist/
+          cp "Alex Morgan - Ramadan Music With Dark Reflective Tone.mp3" dist/assets/audio/ramadan-music-dark-reflective.mp3
           curl --fail --location --retry 3 --retry-delay 2 \
             "https://raw.githubusercontent.com/mohammedfirdouss/MindfulVerse/e1f90102ff17b4cc6a8ea442ddfcb81719d5cbb5/apps/promo/public/audio/alhamdulillah-jawad-syed.m4a" \
             --output dist/assets/audio/alhamdulillah-jawad-syed.m4a
           test -s dist/index.html
           test -s dist/app.js
           test -s dist/assets/audio/alhamdulillah-jawad-syed.m4a
-          echo "Prepared $(find dist -type f | wc -l) static files including the licensed nasheed."
+          test -s dist/assets/audio/ramadan-music-dark-reflective.mp3
+          echo "Prepared $(find dist -type f | wc -l) static files including both licensed background audio options."
 
       - name: Ensure Cloudflare Pages project exists
         if: steps.credentials.outputs.ready == 'true'
