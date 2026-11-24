@@ -4,7 +4,8 @@ import assert from 'node:assert/strict';
 const [app, html, names] = await Promise.all([
   readFile(new URL('../app.js', import.meta.url), 'utf8'),
   readFile(new URL('../index.html', import.meta.url), 'utf8'),
-  readFile(new URL('../asmaul-husna.js', import.meta.url), 'utf8')
+  readFile(new URL('../asmaul-husna.js', import.meta.url), 'utf8'),
+  readFile(new URL('../styles.css', import.meta.url), 'utf8')
 ]);
 
 const htmlIds = [...html.matchAll(/\bid="([^"]+)"/g)].map(match => match[1]);
@@ -16,6 +17,9 @@ const missingIds = [...new Set(appIds)].filter(id => !uniqueHtmlIds.has(id));
 assert.deepEqual(missingIds, [], 'app.js references IDs missing from index.html');
 
 const nameRows = names.match(/^\s*\["[^"]+",\s*"[^"]+",\s*"[^"]+"\],?$/gm) || [];
+const cssBraceBalance = (styles.match(/{/g) || []).length - (styles.match(/}/g) || []).length;
+assert.equal(cssBraceBalance, 0, 'styles.css contains unbalanced rule braces');
+assert.match(html, /href="\.\/styles\.css"/, 'index.html must load the project stylesheet');
 assert.equal(nameRows.length, 99, 'Asmaul Husna data must contain exactly 99 three-field rows');
 
 const arabicGroupStart = html.indexOf('<div class="text-control-group">');
@@ -76,7 +80,7 @@ assert.match(app, /stopNarrationSources\(\);[\s\S]*?stopSpeechAnimation\(\); sto
 assert.match(app, /gain\.gain\.linearRampToValueAtTime\(0, startAt \+ duration\)/, 'background music must fade out at the end of the downloaded narration');
 assert.match(app, /builtinMusicVolume:10/, 'nasheed volume must default to a quiet narration-friendly level');
 assert.match(app, /clamp\(s\.builtinMusicVolume,0,30\)/, 'restored music volume must stay within the slider maximum');
-assert.match(app, /const requestedMode = state\.builtinMusicMode;[\s\S]*?requestedMode !== state\.builtinMusicMode/, 'music mode changes during asynchronous loading must not start the stale track');
+assert.match(app, /let loadingMode = state\.builtinMusicMode;[\s\S]*?loadingMode = state\.builtinMusicMode;[\s\S]*?loadingMode !== state\.builtinMusicMode/, 'music mode changes during asynchronous loading must not start the stale track');
 assert.match(app, /state\.builtinMusicMode='vocal'/, 'reset must restore the default vocal soundtrack');
 assert.match(html, /Alhamdulilah \(Vocal Only Nasheed\)/, 'music panel must identify the vocal-only nasheed');
 assert.match(html, /Instrumental tanpa vokal · Alex Morgan/, 'music panel must offer the instrumental option');
