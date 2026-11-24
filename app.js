@@ -282,14 +282,14 @@
     ctx.strokeStyle='#f8dfa0';ctx.lineWidth=u*.0014;ctx.stroke();ctx.shadowBlur=0;
     // Tassel cap and multiple fine hanging silk strands.
     const capY=imam.y-imamR*1.85,capW=imamR*.78;
-    ctx.fillStyle='#c39245';ctx.beginPath();ctx.roundRect(imam.x-capW/2,capY-imamR*.38,capW,imamR*.72,imamR*.18);ctx.fill();
+    ctx.fillStyle='#c39245';ctx.fillRect(imam.x-capW/2,capY-imamR*.38,capW,imamR*.72);
     ctx.strokeStyle='#e5c078';ctx.lineWidth=u*.0015;ctx.stroke();
     ctx.strokeStyle='#c69a50';ctx.lineWidth=Math.max(1,u*.0018);
     for(let strand=0;strand<13;strand++){
       const offset=(strand-6)*imamR*.105;
       const sway=Math.sin(elapsed*1.15+strand*.55)*imamR*.12;
       ctx.beginPath();ctx.moveTo(imam.x+offset*.35,capY);
-      ctx.bezierCurveTo(imam.x+offset+sway,capY+imamR*.7,imam.x+offset*.8-sway,capY+imamR*1.35,imam.x+offset*.72,capY+imamR*(2.05+(strand%3)*.12));
+      ctx.bezierCurveTo(imam.x+offset+sway,capY-imamR*.7,imam.x+offset*.8-sway,capY-imamR*1.35,imam.x+offset*.72,capY-imamR*(2.05+(strand%3)*.12));
       ctx.stroke();
     }
     ctx.restore();
