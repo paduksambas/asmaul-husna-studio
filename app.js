@@ -920,9 +920,10 @@
     const blob = await synthesizeName(index, voice);
     return decodeSpeechBlob(blob);
   }
-  function playSpeechBuffer(buffer) {
+  async function playSpeechBuffer(buffer) {
     const context = ensureSpeechAudioContext();
-    if (state.ttsStop) return Promise.resolve(false);
+    if (context.state !== 'running') await context.resume();
+    if (state.ttsStop) return false;
     return new Promise((resolve, reject) => {
       const source = context.createBufferSource();
       source.buffer = buffer;
@@ -996,6 +997,7 @@
     if (state.ttsBusy || state.exportBusy) return;
     state.ttsStop = false;
     state.ttsBusy = true;
+    let pendingBufferPromise = null;
     try {
       const context = ensureSpeechAudioContext();
       await context.resume();
@@ -1020,20 +1022,21 @@
         persist();
         draw(state.speechAnimating ? (performance.now() - state.speechAnimationStart) / 1000 : 0);
 
-        const nextBufferPromise = i + 1 < data.length
+        pendingBufferPromise = i + 1 < data.length
           ? prepareSpeechBuffer(i + 1, voice).then(
               buffer => ({ buffer }),
               error => ({ error })
             )
           : null;
         byId('speechStatus').textContent = 'Membacakan ' + (i + 1) + ' dari ' + data.length + ': ' + data[i][0]
-          + (nextBufferPromise ? ' · menyiapkan audio nama berikutnya…' : ' · preset ' + voice + '…');
+          + (pendingBufferPromise ? ' · menyiapkan audio nama berikutnya…' : ' · preset ' + voice + '…');
 
         const played = await playSpeechBuffer(preparedBuffer);
         if (!played || state.ttsStop) break;
-        if (nextBufferPromise) {
+        if (pendingBufferPromise) {
           byId('speechStatus').textContent = 'Menyiapkan audio AI ' + (i + 2) + ' dari ' + data.length + '…';
-          const nextResult = await nextBufferPromise;
+          const nextResult = await pendingBufferPromise;
+          pendingBufferPromise = null;
           if (state.ttsStop) break;
           if (nextResult.error) throw nextResult.error;
           preparedBuffer = nextResult.buffer;
@@ -1044,6 +1047,9 @@
       console.error('Supertonic 3 sequence failed:', error);
       if (!state.ttsStop) byId('speechStatus').textContent = 'Pembacaan terhenti: ' + (error.message || String(error));
     } finally {
+      // Do not allow a second TTS pipeline call to overlap an in-flight prefetch
+      // when the user stops in the middle of the current spoken clip.
+      if (pendingBufferPromise) await pendingBufferPromise;
       state.speechSequenceActive = false;
       syncBuiltinMusic();
       stopSpeechAnimation();
