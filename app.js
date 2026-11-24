@@ -20,7 +20,7 @@
   const state = { index:0, theme:'emerald', format:'portrait', animation:'float', duration:15, size:100,
     translation:true, transliteration:true, playing:false, elapsed:0, start:0, image:null, imageUrl:'',
     audioUrl:'', recorder:null, chunks:[], timer:0, audioContext:null, audioDestination:null,
-    ttsPipeline:null, ttsBusy:false, ttsStop:false, speechUrl:'' };
+    ttsPipeline:null, nativeSpeech:false, ttsBusy:false, ttsStop:false, speechUrl:'' };
   const clamp = (n,min,max) => Math.min(max,Math.max(min,n));
   const fileSafe = (s) => String(s || 'asmaul-husna').normalize('NFKD').replace(/[^a-z0-9_-]+/gi,'-').replace(/^-+|-+$/g,'').toLowerCase() || 'asmaul-husna';
   const timeText = (n) => {
@@ -250,12 +250,21 @@
     loadButton.disabled=true;
     byId('speechStatus').textContent='Menyiapkan mesin suara AI…';
     let webgpuError=null;
+    const isAppleMobile = /iPad|iPhone|iPod/.test(navigator.userAgent)
+      || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
     try {
       const {pipeline,env}=await import('https://esm.sh/@huggingface/transformers@3.8.1');
+      // iPad Safari can hang while compiling the ONNX Runtime WASM bundle.
+      // Use the built-in Arabic speech engine on Apple mobile instead of
+      // downloading/initializing a large WASM model.
+      if(isAppleMobile && 'speechSynthesis' in window && 'SpeechSynthesisUtterance' in window) {
+        state.nativeSpeech=true;
+        loadButton.textContent='Suara perangkat siap';
+        byId('speechStatus').textContent='iPad menggunakan suara Arab bawaan Safari. Tidak perlu mengunduh model WASM.';
+        return 'native';
+      }
       env.allowLocalModels=false;
       env.useBrowserCache=true;
-      const isAppleMobile = /iPad|iPhone|iPod/.test(navigator.userAgent)
-        || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
       try {
         if(navigator.storage && navigator.storage.persist) await navigator.storage.persist();
       } catch(cacheError) { console.warn('Persistent storage request unavailable:',cacheError); }
@@ -316,12 +325,13 @@
       return null;
     } finally {
       state.ttsBusy=false;
-      loadButton.disabled=!!state.ttsPipeline;
+      loadButton.disabled=!!state.ttsPipeline || state.nativeSpeech;
     }
   }
   function stopSpeech(showMessage=true) {
     state.ttsStop=true;
     speechAudio.pause();
+    if('speechSynthesis' in window) window.speechSynthesis.cancel();
     speechAudio.removeAttribute('src');
     speechAudio.load();
     if(state.speechUrl){URL.revokeObjectURL(state.speechUrl);state.speechUrl='';}
@@ -347,16 +357,35 @@
     });
     return output.toBlob();
   }
+  function speakNativeName(index) {
+    return new Promise((resolve,reject)=>{
+      if(!('speechSynthesis' in window) || !('SpeechSynthesisUtterance' in window)) {
+        reject(new Error('Suara bawaan perangkat tidak didukung browser ini.'));
+        return;
+      }
+      const utterance=new SpeechSynthesisUtterance(data[index][1]);
+      utterance.lang='ar-SA';utterance.rate=0.88;utterance.pitch=1;
+      const voices=window.speechSynthesis.getVoices();
+      const arabicVoice=voices.find(v=>/^ar(-|$)/i.test(v.lang));
+      if(arabicVoice)utterance.voice=arabicVoice;
+      utterance.onend=()=>resolve();
+      utterance.onerror=e=>reject(new Error(e.error||'Suara Arab perangkat gagal diputar.'));
+      window.speechSynthesis.cancel();
+      window.speechSynthesis.speak(utterance);
+    });
+  }
   async function speakCurrent() {
     if(state.ttsBusy)return;
-    if(!state.ttsPipeline){await loadSpeechModel();return;}
+    if(!state.ttsPipeline&&!state.nativeSpeech) {
+      await loadSpeechModel();
+      if(!state.ttsPipeline&&!state.nativeSpeech)return;
+    }
     state.ttsStop=false;state.ttsBusy=true;
     const voice=byId('speechVoice').value;
     try {
       byId('speechStatus').textContent='Membuat suara untuk '+data[state.index][0]+'…';
-      const blob=await synthesizeName(state.index,voice);
-      if(state.ttsStop)return;
-      await playSpeechBlob(blob);
+      if(state.nativeSpeech) await speakNativeName(state.index);
+      else { const blob=await synthesizeName(state.index,voice); if(state.ttsStop)return; await playSpeechBlob(blob); }
       byId('speechStatus').textContent='Selesai membaca '+data[state.index][0]+'.';
     } catch(err) {
       console.error(err);byId('speechStatus').textContent='Gagal membuat audio: '+err.message;
@@ -365,7 +394,10 @@
   }
   async function speakAll() {
     if(state.ttsBusy)return;
-    if(!state.ttsPipeline){await loadSpeechModel();return;}
+    if(!state.ttsPipeline&&!state.nativeSpeech) {
+      await loadSpeechModel();
+      if(!state.ttsPipeline&&!state.nativeSpeech)return;
+    }
     state.ttsStop=false;state.ttsBusy=true;
     const voice=byId('speechVoice').value;
     for(let i=0;i<data.length;i++) {
@@ -373,9 +405,8 @@
       try {
         state.index=i;renderNames(byId('searchInput').value);updateCaptions();persist();draw(0);
         byId('speechStatus').textContent='Membuat audio '+(i+1)+' dari '+data.length+': '+data[i][0]+'…';
-        const blob=await synthesizeName(i,voice);
-        if(state.ttsStop)break;
-        await playSpeechBlob(blob);
+        if(state.nativeSpeech) await speakNativeName(i);
+        else { const blob=await synthesizeName(i,voice); if(state.ttsStop)break; await playSpeechBlob(blob); }
       } catch(err) {
         console.error(err);byId('speechStatus').textContent='Terhenti pada nama '+(i+1)+': '+err.message;state.ttsBusy=false;return;
       }
