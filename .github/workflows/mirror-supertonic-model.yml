@@ -69,6 +69,11 @@ jobs:
           import onnx
 
           root = Path("model-bundle")
+          readme = root / "README.md"
+          if readme.exists():
+              print("=== UPSTREAM MODEL README ===")
+              print(readme.read_text(encoding="utf-8")[:20000])
+
           print("=== SNAPSHOT FILE INVENTORY ===")
           for path in sorted(p for p in root.rglob("*") if p.is_file()):
               print(f"{path.relative_to(root)}\t{path.stat().st_size}")
