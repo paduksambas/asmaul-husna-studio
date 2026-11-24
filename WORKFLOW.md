@@ -265,3 +265,6 @@ Ikuti urutan ini. Jangan melewati pemeriksaan Preview sebelum perubahan dinyatak
 - [ ] Setelah pengujian Preview lulus, gabungkan branch fitur ke `main`; push ke `main` akan menerbitkan Production Cloudflare Pages.
 - Status pada catatan ini: workflow sudah di-commit, tetapi deployment belum dapat dimulai karena kredensial Cloudflare belum ditambahkan dan belum ada hasil deployment yang diverifikasi.
 - Commit workflow awal: `c736a6c44a4ffc7a31e2828a98596c62f3f97b86`; penyesuaian workflow: `9178615a8cc3c9e452b402fc8a484e350cfc7339`.
+
+
+**Kredensial Cloudflare ditambahkan pengguna (24 November 2026):** pengguna mengonfirmasi bahwa repository secrets `CLOUDFLARE_API_TOKEN` dan `CLOUDFLARE_ACCOUNT_ID` sudah dibuat. Commit catatan ini memicu ulang workflow Cloudflare Pages melalui push pada branch fitur. Hasil deployment dan URL Preview harus diverifikasi dari GitHub Actions sebelum dinyatakan berhasil.
