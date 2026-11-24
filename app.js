@@ -16,7 +16,7 @@
     portrait: [1080,1920,'9:16 · 1080 × 1920'],
     square: [1080,1080,'1:1 · 1080 × 1080']
   };
-  const state = { index:0, theme:'emerald', format:'portrait', animation:'float', tasbihStart:0, duration:15, size:100,
+  const state = { index:0, theme:'emerald', format:'portrait', template:'classic', animation:'float', tasbihStart:0, duration:15,
     translation:true, transliteration:true, arabicVerticalOffset:0, arabicTextGap:0, textMeaningGap:0, builtinMusicEnabled:true, builtinMusicVolume:10, builtinMusicMode:'vocal', builtinMusicBuffers:{}, builtinMusicLoadPromises:{}, builtinMusicSource:null, builtinMusicGain:null, builtinMusicStarting:false, builtinMusicPreview:false, playing:false, elapsed:0, start:0, image:null, imageUrl:'',
     audioUrl:'', recorder:null, chunks:[], timer:0, audioDestination:null, backgroundAudioSource:null, backgroundAudioGain:null,
     ttsPipeline:null, ttsLoadPromise:null, ttsBackend:'', ttsBusy:false, ttsStop:false, speechSequenceActive:false, speechAudioContext:null, speechSource:null, wheelTransitionStart:0, wheelFromIndex:0, wheelToIndex:0, wheelDirection:1, pendingWheelTransition:null,
@@ -42,7 +42,7 @@
   function persist() {
     try {
       localStorage.setItem('asmaul-husna-studio-v1', JSON.stringify({
-        index:state.index,theme:state.theme,format:state.format,animation:state.animation,
+        index:state.index,theme:state.theme,format:state.format,template:state.template,animation:state.animation,
         duration:state.duration,size:state.size,translation:state.translation,builtinMusicEnabled:state.builtinMusicEnabled,builtinMusicVolume:state.builtinMusicVolume,builtinMusicMode:state.builtinMusicMode,
         transliteration:state.transliteration,arabicVerticalOffset:state.arabicVerticalOffset,arabicTextGap:state.arabicTextGap,textMeaningGap:state.textMeaningGap,project:byId('projectName').value
       }));
@@ -56,7 +56,8 @@
       if (Number.isInteger(s.index)) state.index = clamp(s.index,0,data.length-1);
       if (themes[s.theme]) state.theme = s.theme;
       if (formats[s.format]) state.format = s.format;
-      if (['float','zoom','shimmer','none','wheel','tasbih'].includes(s.animation)) state.animation = s.animation;
+      if (s.template === 'tasbih' || s.animation === 'tasbih') state.template = 'tasbih';
+      if (['float','zoom','shimmer','none','wheel'].includes(s.animation)) state.animation = s.animation;
       if (Number.isFinite(s.duration)) state.duration = clamp(s.duration,5,60);
       if (typeof s.builtinMusicEnabled === 'boolean') state.builtinMusicEnabled = s.builtinMusicEnabled;
       if (['vocal','instrumental'].includes(s.builtinMusicMode)) state.builtinMusicMode = s.builtinMusicMode;
@@ -107,6 +108,7 @@
     byId('arabicTextGap').value = state.arabicTextGap; byId('arabicTextGapValue').textContent = (state.arabicTextGap>0?'+':'')+state.arabicTextGap;
      byId('textMeaningGap').value = state.textMeaningGap; byId('textMeaningGapValue').textContent = (state.textMeaningGap>0?'+':'')+state.textMeaningGap;
      byId('animationSelect').value = state.animation;
+    byId('templateSelect').value = state.template;
     byId('durationInput').value = state.duration; byId('durationValue').textContent = state.duration;
     byId('builtinMusicEnabled').checked = state.builtinMusicEnabled;
     byId('builtinMusicMode').value = state.builtinMusicMode;
@@ -144,10 +146,111 @@
     // with a frozen full-frame snapshot.
     state.transitionStart = performance.now();
   }
+  function drawTasbihTemplate(t, item) {
+    const w=canvas.width,h=canvas.height,cx=w/2,cy=h/2,u=Math.min(w,h);
+    const elapsed=Math.max(0,(performance.now()-state.tasbihStart)/1000);
+    const opening=clamp(elapsed/2.4,0,1),formation=1-Math.pow(1-opening,3);
+    const finale=state.index===98&&!state.speechSequenceActive&&!state.ttsBusy;
+    const pulse=.5+.5*Math.sin(elapsed*1.35);
+    const bg=ctx.createLinearGradient(0,0,w,h);
+    bg.addColorStop(0,'#080f1c');bg.addColorStop(.48,'#111827');bg.addColorStop(1,'#070b14');
+    ctx.fillStyle=bg;ctx.fillRect(0,0,w,h);
+    const aura=ctx.createRadialGradient(cx,cy,u*.025,cx,cy,u*.58);
+    aura.addColorStop(0,'#b9853828');aura.addColorStop(.52,'#6f4b2020');aura.addColorStop(1,'#05091400');
+    ctx.fillStyle=aura;ctx.fillRect(0,0,w,h);
+    // Dedicated celestial arch and fine ornamental frame, independent of editor themes/background uploads.
+    ctx.save();ctx.strokeStyle='#d7b36b55';ctx.lineWidth=Math.max(2,u*.002);
+    const inset=u*.055, top=h*.075, bottom=h*.925;
+    ctx.beginPath();ctx.moveTo(inset,bottom);ctx.lineTo(inset,top+u*.16);
+    ctx.quadraticCurveTo(inset,top,inset+u*.16,top);
+    ctx.lineTo(w-inset-u*.16,top);ctx.quadraticCurveTo(w-inset,top,w-inset,top+u*.16);
+    ctx.lineTo(w-inset,bottom);ctx.stroke();
+    ctx.strokeStyle='#d7b36b28';ctx.lineWidth=Math.max(1,u*.001);
+    ctx.strokeRect(inset+u*.018,top+u*.02,w-2*(inset+u*.018),bottom-top-u*.04);
+    ctx.restore();
+    // Sparse stars and floating gold dust.
+    for(let i=0;i<72;i++){
+      const x=((i*193+31)%997)/997*w,y=((i*317+67)%991)/991*h;
+      const twinkle=.35+.65*(.5+.5*Math.sin(elapsed*(.7+i%4*.18)+i*1.7));
+      ctx.save();ctx.globalAlpha=twinkle*(i%5===0?.8:.35);ctx.fillStyle=i%7===0?'#fff0c4':'#d8b36c';
+      ctx.beginPath();ctx.arc(x,y,Math.max(1,u*(i%9===0?.0024:.0011)),0,Math.PI*2);ctx.fill();ctx.restore();
+    }
+    // Header and title belong to this template rather than the generic frame.
+    ctx.save();ctx.textAlign='center';ctx.textBaseline='middle';
+    ctx.fillStyle='#e8c982';ctx.font='600 '+Math.max(18,u*.021)+'px "DM Sans",sans-serif';ctx.letterSpacing=Math.max(2,u*.004)+'px';
+    ctx.fillText('THE 99 BEAUTIFUL NAMES',cx,h*.125);ctx.letterSpacing='0px';
+    ctx.fillStyle='#f4e7c7';ctx.font='400 '+Math.max(25,u*.036)+'px "Amiri",serif';ctx.fillText('أَسْمَاءُ اللَّهِ الْحُسْنَى',cx,h*.165);
+    ctx.fillStyle='#bda36f';ctx.font='400 '+Math.max(12,u*.013)+'px "DM Sans",sans-serif';ctx.fillText('A CIRCLE OF LIGHT · A JOURNEY OF REMEMBRANCE',cx,h*.205);
+    ctx.restore();
+    // The ring has its own 3D ellipse and 99 individually shaded gold beads.
+    const ringY=cy+u*.015,spin=elapsed*.105,beads=[];
+    for(let i=0;i<99;i++){
+      const angle=i*Math.PI*2/99+spin-Math.PI/2,depth=.5+.5*Math.sin(angle);
+      const rx=u*(.315+.008*depth),ry=u*(.245+.006*depth);
+      const tx=cx+Math.cos(angle)*rx,ty=ringY+Math.sin(angle)*ry;
+      const sx=cx+Math.sin(i*12.9898+1.7)*u*(.17+(i%7)*.024);
+      const sy=ringY+Math.cos(i*7.233+2.4)*u*(.16+(i%5)*.025);
+      const x=sx+(tx-sx)*formation,y=sy+(ty-sy)*formation;
+      const active=i===state.index,lit=active||finale;
+      beads.push({x,y,depth,active,lit,r:u*(.0062+depth*.002)*(active?1.85:1)});
+    }
+    beads.sort((a,b)=>a.depth-b.depth);
+    beads.forEach(b=>{
+      const r=b.r;ctx.save();ctx.globalAlpha=.15+.85*formation;
+      if(b.lit){ctx.shadowColor='#ffd77b';ctx.shadowBlur=u*(b.active?.045:.025);}
+      const grad=ctx.createRadialGradient(b.x-r*.38,b.y-r*.42,r*.05,b.x,b.y,r*1.2);
+      grad.addColorStop(0,b.lit?'#fff9df':'#f5dfae');grad.addColorStop(.38,b.lit?'#f3c66e':'#b58a4b');grad.addColorStop(1,b.lit?'#8d5a20':'#49351f');
+      ctx.fillStyle=grad;ctx.beginPath();ctx.arc(b.x,b.y,r,0,Math.PI*2);ctx.fill();
+      ctx.shadowBlur=0;ctx.strokeStyle=b.lit?'#fff0b8':'#dfc28a77';ctx.lineWidth=Math.max(1,u*.0012);ctx.stroke();ctx.restore();
+    });
+    // The current bead comes slightly forward, with a short light trail on each reading change.
+    const activeBead=beads.find(b=>b.active);
+    if(activeBead&&opening>=.8){
+      ctx.save();ctx.globalAlpha=.35+.35*pulse;ctx.strokeStyle='#ffe2a0';ctx.lineWidth=u*.003;ctx.shadowColor='#ffd77b';ctx.shadowBlur=u*.035;
+      ctx.beginPath();ctx.arc(activeBead.x,activeBead.y,activeBead.r*2.2,0,Math.PI*2);ctx.stroke();ctx.restore();
+    }
+    // Fine inner orbit and central reading panel.
+    ctx.save();ctx.strokeStyle='#d8b36b45';ctx.lineWidth=Math.max(1,u*.0014);
+    ctx.beginPath();ctx.ellipse(cx,ringY,u*.286,u*.216,0,0,Math.PI*2);ctx.stroke();ctx.restore();
+    const panelW=u*.49,panelH=u*.31,py=ringY;
+    const panel=ctx.createLinearGradient(cx-panelW/2,py-panelH/2,cx+panelW/2,py+panelH/2);
+    panel.addColorStop(0,'#0c1423dd');panel.addColorStop(.5,'#111a2add');panel.addColorStop(1,'#0a1220dd');
+    ctx.save();ctx.fillStyle=panel;ctx.strokeStyle='#d6b36d77';ctx.lineWidth=Math.max(1,u*.0015);
+    if(ctx.roundRect){ctx.beginPath();ctx.roundRect(cx-panelW/2,py-panelH/2,panelW,panelH,u*.018);ctx.fill();ctx.stroke();}
+    else{ctx.fillRect(cx-panelW/2,py-panelH/2,panelW,panelH);ctx.strokeRect(cx-panelW/2,py-panelH/2,panelW,panelH);}
+    const fade=state.transitionStart?clamp((performance.now()-state.transitionStart)/state.transitionDuration,0,1):1;
+    ctx.globalAlpha=fade;ctx.textAlign='center';ctx.textBaseline='middle';
+    let arabicSize=u*.092*(state.size/100);ctx.font='700 '+arabicSize+'px "Amiri",serif';
+    while(ctx.measureText(item[1]).width>panelW*.88&&arabicSize>u*.045){arabicSize*=.94;ctx.font='700 '+arabicSize+'px "Amiri",serif';}
+    ctx.shadowColor='#f4c96f88';ctx.shadowBlur=u*.018;ctx.fillStyle='#fff0ca';ctx.fillText(item[1],cx,py-u*.067,panelW*.9);ctx.shadowBlur=0;
+    if(state.transliteration){ctx.fillStyle='#e9d4a4';ctx.font='600 '+Math.max(16,u*.027)+'px "DM Sans",sans-serif';ctx.fillText(item[0],cx,py+u*.018,panelW*.9);}
+    if(state.translation){ctx.fillStyle='#c9b58c';ctx.font='400 '+Math.max(14,u*.022)+'px "DM Sans",sans-serif';ctx.fillText(item[2],cx,py+u*.073,panelW*.9);}
+    ctx.restore();
+    // Footer ornament and counter.
+    ctx.save();ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillStyle='#d9bd80';
+    ctx.font='500 '+Math.max(15,u*.018)+'px "DM Sans",sans-serif';ctx.fillText(String(state.index+1).padStart(2,'0')+'  /  99',cx,h*.835);
+    ctx.fillStyle='#9e8c6b';ctx.font='400 '+Math.max(12,u*.013)+'px "DM Sans",sans-serif';ctx.fillText('REMEMBER · REFLECT · RECONNECT',cx,h*.865);
+    ctx.restore();
+    if(opening<1){
+      for(let i=0;i<55;i++){const a=i*2.399+elapsed*1.7,rad=u*(.05+(i%13)*.019)*(1-opening);
+        const x=cx+Math.cos(a)*rad,y=ringY+Math.sin(a)*rad;
+        ctx.save();ctx.globalAlpha=(1-opening)*(.2+.6*(.5+.5*Math.sin(elapsed*5+i)));
+        ctx.fillStyle='#ffe4a4';ctx.shadowColor='#f2c66e';ctx.shadowBlur=u*.012;
+        ctx.beginPath();ctx.arc(x,y,u*.002,0,Math.PI*2);ctx.fill();ctx.restore();}
+    }
+    if(finale){
+      const halo=ctx.createRadialGradient(cx,ringY,u*.12,cx,ringY,u*.43);
+      halo.addColorStop(0,'#ffe4a42b');halo.addColorStop(1,'#ffe4a400');
+      ctx.save();ctx.globalAlpha=.65+.35*pulse;ctx.fillStyle=halo;ctx.fillRect(cx-u*.45,ringY-u*.45,u*.9,u*.9);ctx.restore();
+    }
+  }
   function draw(t) {
     if (!ctx || !data.length) return;
-    const animated = state.playing || state.speechAnimating || state.animation === 'tasbih';
     const w=canvas.width,h=canvas.height,cx=w/2,cy=h/2,u=Math.min(w,h);
+    const item=data[state.index]||data[0];
+    if(state.template==='tasbih'){drawTasbihTemplate(t,item);return;}
+    const animated = state.playing || state.speechAnimating;
+
     const c=themes[state.theme] || themes.emerald;
     const g=ctx.createLinearGradient(0,0,w,h); g.addColorStop(0,c[0]);g.addColorStop(.55,c[1]);g.addColorStop(1,c[2]);
     ctx.fillStyle=g;ctx.fillRect(0,0,w,h);
@@ -220,34 +323,6 @@
     ctx.fillStyle=c[3]+'bb';ctx.font='400 '+Math.max(13,u*.013)+'px "Amiri",serif';
     ctx.fillText('أَسْمَاءُ اللَّهِ الْحُسْنَى',cx,cy-u*.39);
     ctx.restore();
-
-    // Tasbih Emas 99: a softly rotating 3D ring of 99 luminous beads.
-    if (state.animation === 'tasbih') {
-      const tasbihTime = animated ? Math.max(0, (performance.now() - state.tasbihStart) / 1000) : 0;
-      const opening = clamp(tasbihTime / 2.1, 0, 1), formation = 1 - Math.pow(1 - opening, 3);
-      const finale = state.index === 98 && !state.speechSequenceActive && !state.ttsBusy;
-      const spin = tasbihTime * .115, beadPositions = [];
-      for (let i=0;i<99;i++) {
-        const angle=i*Math.PI*2/99+spin-Math.PI/2, depth=.5+.5*Math.sin(angle);
-        const radius=u*(.315+depth*.012), targetX=cx+Math.cos(angle)*radius, targetY=cy+Math.sin(angle)*radius*.72;
-        const scatterX=cx+Math.sin(i*12.9898+1.7)*u*(.18+(i%7)*.025), scatterY=cy+Math.cos(i*7.233+2.4)*u*(.22+(i%5)*.025);
-        const x=scatterX+(targetX-scatterX)*formation, y=scatterY+(targetY-scatterY)*formation;
-        const active=i===state.index, lit=finale||active, beadRadius=u*(.0052+depth*.0022)*(active?1.55:1);
-        beadPositions.push({x,y,depth,active,lit,beadRadius});
-      }
-      beadPositions.sort((a,b)=>a.depth-b.depth);
-      beadPositions.forEach(bead=>{
-        const r=bead.beadRadius;ctx.save();ctx.globalAlpha=.12+.88*formation;
-        if(bead.lit){ctx.shadowColor='#ffe6a0';ctx.shadowBlur=u*(bead.active?.035:.018);}
-        const sphere=ctx.createRadialGradient(bead.x-r*.38,bead.y-r*.42,r*.08,bead.x,bead.y,r*1.25);
-        sphere.addColorStop(0,bead.lit?'#fff9df':'#f8e3ad');sphere.addColorStop(.35,bead.lit?'#f5cf78':'#b58a45');sphere.addColorStop(1,bead.lit?'#9b6827':'#49351f');
-        ctx.fillStyle=sphere;ctx.beginPath();ctx.arc(bead.x,bead.y,r,0,Math.PI*2);ctx.fill();ctx.shadowBlur=0;
-        ctx.strokeStyle=bead.lit?'#fff0b8':'#e2c58c88';ctx.lineWidth=Math.max(1,u*.0011);ctx.stroke();ctx.restore();
-      });
-      ctx.save();ctx.globalAlpha=.24*formation;ctx.strokeStyle=c[3];ctx.lineWidth=Math.max(1,u*.0015);ctx.beginPath();ctx.ellipse(cx,cy,u*.326,u*.237,0,0,Math.PI*2);ctx.stroke();ctx.restore();
-      if(opening<1)beadPositions.forEach((p,i)=>{ctx.save();ctx.globalAlpha=(1-opening)*(.25+.55*(.5+.5*Math.sin(tasbihTime*7+i)));ctx.fillStyle='#ffe7a8';ctx.shadowColor='#ffd77d';ctx.shadowBlur=u*.012;ctx.beginPath();ctx.arc(p.x,p.y,u*.0028,0,Math.PI*2);ctx.fill();ctx.restore();});
-      if(finale){const halo=ctx.createRadialGradient(cx,cy,u*.12,cx,cy,u*.39);halo.addColorStop(0,'#ffe6a022');halo.addColorStop(1,'#ffe6a000');ctx.save();ctx.globalAlpha=.72+.28*Math.sin(tasbihTime*2.2);ctx.fillStyle=halo;ctx.fillRect(cx-u*.4,cy-u*.3,u*.8,u*.6);ctx.restore();}
-    }
 
     // Roda bacaan affects only the names/text: the frame, ornaments and background stay still.
     if (state.animation === 'wheel') {
@@ -516,7 +591,7 @@
         persist();
       }
     }
-    if (!state.playing && !state.speechAnimating && !state.wheelTransitionStart && state.animation !== 'tasbih') {
+    if (!state.playing && !state.speechAnimating && !state.wheelTransitionStart && state.template !== 'tasbih') {
       state.renderLoopActive = false;
       draw(0);
       return;
@@ -548,7 +623,7 @@
     if (state.speechAnimating) draw((now - state.speechAnimationStart) / 1000);
     else if (state.playing) draw(state.elapsed);
     else if (state.wheelTransitionStart) draw((now - state.wheelTransitionStart) / 1000);
-    else if (state.animation === 'tasbih') draw((now - state.tasbihStart) / 1000);
+    else if (state.template === 'tasbih') draw((now - state.tasbihStart) / 1000);
     else {
       state.renderLoopActive = false;
       draw(0);
@@ -1201,7 +1276,7 @@
       return;
     }
     stopSpeech(false);
-    state.index=0;state.theme='emerald';state.format='portrait';state.animation='float';
+    state.index=0;state.theme='emerald';state.format='portrait';state.template='classic';state.animation='float';
     state.duration=15;state.size=100;state.tasbihStart=0;state.translation=true;state.transliteration=true;state.arabicVerticalOffset=0;state.arabicTextGap=0;state.textMeaningGap=0;state.wheelTransitionStart=0;state.pendingWheelTransition=null;state.transitionStart=0;state.builtinMusicEnabled=true;state.builtinMusicMode='vocal';state.builtinMusicVolume=10;state.builtinMusicPreview=false;byId('builtinMusicTestButton').textContent='Dengarkan contoh audio';state.elapsed=0;
     byId('projectName').value='Asmaul Husna — Video 01';byId('searchInput').value='';
     removeMedia();renderNames('');applyControls();persist();stopPlayback();notify('Pengaturan dikembalikan ke awal.');
@@ -1222,7 +1297,8 @@
     byId('arabicVerticalOffset').addEventListener('input',e=>{state.arabicVerticalOffset=Number(e.target.value);byId('arabicVerticalOffsetValue').textContent=(state.arabicVerticalOffset>0?'+':'')+state.arabicVerticalOffset;draw(0);persist();});
     byId('arabicTextGap').addEventListener('input',e=>{state.arabicTextGap=Number(e.target.value);byId('arabicTextGapValue').textContent=(state.arabicTextGap>0?'+':'')+state.arabicTextGap;draw(0);persist();});
      byId('textMeaningGap').addEventListener('input',e=>{state.textMeaningGap=Number(e.target.value);byId('textMeaningGapValue').textContent=(state.textMeaningGap>0?'+':'')+state.textMeaningGap;draw(0);persist();});
-     byId('animationSelect').addEventListener('change',e=>{state.animation=e.target.value;state.wheelTransitionStart=0;state.transitionStart=0;if(state.animation==='tasbih'){state.tasbihStart=performance.now();ensureRenderLoop();}byId('renderHint').textContent=state.animation==='none'?'Animasi dinonaktifkan':state.animation==='wheel'?'Roda bacaan: teks aktif membesar, tetangganya mengecil dan berputar':state.animation==='tasbih'?'Tasbih Emas 99: 99 butir berputar 3D dan menyala mengikuti bacaan':'Animasi lembut aktif saat diputar';draw(0);persist();});
+     byId('templateSelect').addEventListener('change',e=>{state.template=e.target.value;state.tasbihStart=performance.now();state.transitionStart=0;if(state.template==='tasbih')ensureRenderLoop();byId('renderHint').textContent=state.template==='tasbih'?'Template Tasbih Emas 99 · latar dan komposisi khusus':'Template klasik · mengikuti tema dan latar editor';draw(0);persist();});
+     byId('animationSelect').addEventListener('change',e=>{state.animation=e.target.value;state.wheelTransitionStart=0;state.transitionStart=0;byId('renderHint').textContent=state.animation==='none'?'Animasi dinonaktifkan':state.animation==='wheel'?'Roda bacaan: teks aktif membesar, tetangganya mengecil dan berputar':'Animasi lembut aktif saat diputar';draw(0);persist();});
     byId('durationInput').addEventListener('input',e=>{state.duration=Number(e.target.value);byId('durationValue').textContent=state.duration;updateCaptions();persist();});
     byId('builtinMusicEnabled').addEventListener('change',e=>{state.builtinMusicEnabled=e.target.checked;syncBuiltinMusic(state.elapsed);persist();});
     byId('builtinMusicMode').addEventListener('change',e=>{state.builtinMusicMode=e.target.value;stopBuiltinMusic();state.builtinMusicPreview=false;byId('builtinMusicTestButton').textContent='Dengarkan contoh audio';syncBuiltinMusic(state.elapsed);draw(0);persist();});
@@ -1249,7 +1325,7 @@
   function init() {
     if(!ctx){notify('Browser tidak mendukung kanvas HTML5.');return;}
     restore();renderNames('');applyControls();
-    byId('renderHint').textContent=state.animation==='none'?'Animasi dinonaktifkan':state.animation==='wheel'?'Roda bacaan: teks aktif membesar, tetangganya mengecil dan berputar':state.animation==='tasbih'?'Tasbih Emas 99: 99 butir berputar 3D dan menyala mengikuti bacaan':'Animasi lembut aktif saat diputar';if(state.animation==='tasbih'){state.tasbihStart=performance.now();ensureRenderLoop();}
+    byId('renderHint').textContent=state.template==='tasbih'?'Template Tasbih Emas 99 · latar dan komposisi khusus':state.animation==='none'?'Animasi dinonaktifkan':state.animation==='wheel'?'Roda bacaan: teks aktif membesar, tetangganya mengecil dan berputar':'Animasi lembut aktif saat diputar';if(state.template==='tasbih'){state.tasbihStart=performance.now();ensureRenderLoop();}
     bind();
     refreshSpeechVoices();
     byId('speechStatus').textContent = 'Pilih preset suara, lalu tekan Muat model AI. Model akan diunduh otomatis dan disimpan dalam cache browser bila tersedia.';
