@@ -26,6 +26,40 @@ jobs:
           test "$(find model-bundle -type f | wc -l)" -gt 0
           du -sh model-bundle
 
+      - name: Validate ONNX and voice assets are real files, not Git LFS pointers
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import sys
+
+          root = Path("model-bundle")
+          pointer_prefix = b"version https://git-lfs.github.com/spec/v1"
+          files = [p for p in root.rglob("*") if p.is_file()]
+          onnx_files = [p for p in files if p.suffix.lower() == ".onnx"]
+
+          if not onnx_files:
+              sys.exit("ERROR: no .onnx model files found in downloaded snapshot")
+
+          pointer_files = []
+          for path in files:
+              if path.suffix.lower() not in {".onnx", ".bin", ".json"}:
+                  continue
+              with path.open("rb") as f:
+                  header = f.read(256)
+              if header.startswith(pointer_prefix):
+                  pointer_files.append(path)
+
+          if pointer_files:
+              for path in pointer_files:
+                  print(f"Git LFS pointer detected: {path} ({path.stat().st_size} bytes)")
+              sys.exit("ERROR: model snapshot contains Git LFS pointer text instead of asset data")
+
+          print(f"Validated {len(onnx_files)} ONNX files:")
+          for path in onnx_files:
+              print(f"  {path.relative_to(root)} — {path.stat().st_size:,} bytes")
+          print(f"Total snapshot files: {len(files)}")
+          PY
+
       - name: Package model and generate checksum
         run: |
           tar -czf supertonic-3-onnx-model.tar.gz -C model-bundle .
