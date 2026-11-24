@@ -277,3 +277,6 @@ Ikuti urutan ini. Jangan melewati pemeriksaan Preview sebelum perubahan dinyatak
 
 
 **Penghapusan penanda sudut kanvas — 24 November 2026:** dua garis siku dekoratif di overlay pratinjau (kiri atas dan kanan bawah) dihapus dari markup dan CSS. Tidak mengubah elemen gambar/kanvas atau ekspor video. Perubahan hanya pada branch Preview; situs utama tidak disentuh.
+
+
+**Transisi antar-Asmaul Husna saat narasi — 24 November 2026:** saat urutan pembacaan 99 nama berpindah ke nama berikutnya, frame sebelumnya disimpan sebagai snapshot lalu memudar selama 680 ms di atas tampilan baru. Diterapkan pada pembacaan seluruh nama dan timeline ekspor narasi. Pemanggilan animasi per klip tidak lagi mereset fase animasi, sehingga gerak dekoratif tetap berkesinambungan selama audio. Pemeriksaan statis memverifikasi helper snapshot, durasi crossfade, kedua jalur pergantian indeks, dan kontinuitas fase. Hanya branch Preview yang diubah; situs utama tetap.
