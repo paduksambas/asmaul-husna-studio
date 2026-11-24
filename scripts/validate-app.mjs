@@ -59,7 +59,10 @@ assert.match(app, /function createBuiltinMusicBuffer\(context\)/, 'ambient music
 assert.match(app, /const melody = \[293\.66,311\.13,369\.99,392,440,392,369\.99,311\.13,293\.66,440,466\.16,440,392,369\.99,311\.13,293\.66\]/, 'built-in music must use a Hijaz-inspired D-Eb-F#-G-A-Bb phrase');
 assert.match(app, /const neyLine = \[587\.33,466\.16,440,392,369\.99,311\.13,293\.66,392\]/, 'built-in music must include a soft ney-like melodic layer');
 assert.match(app, /0\.34\*Math\.sin\(2\*Math\.PI\*note\*2\*t/, 'built-in music must synthesize plucked string harmonics');
-assert.match(html, /maqam Hijaz/i, 'music controls must describe the Hijaz-inspired spiritual style');
+assert.match(app, /const seconds = 48/, 'devotional music must use a spacious 48-second loop');
+assert.match(app, /const melody = \[293\.66,349\.23,392,349\.23,311\.13,293\.66,261\.63,293\.66\]/, 'devotional melody must use a gentle low-register Bayati-inspired phrase');
+assert.match(app, /const neyLine = \[392,349\.23,311\.13,293\.66\]/, 'devotional music must include a restrained ney-like layer');
+assert.match(html, /maqam Bayati/i, 'music controls must describe the calm Bayati-inspired style');
 assert.match(app, /function startBuiltinMusic\(offset=0\)/, 'built-in music must play in the live preview');
 assert.match(app, /function scheduleBuiltinMusic\(context, audioDestination, startAt\)/, 'built-in music must be scheduled into video exports');
 assert.match(app, /scheduleBuiltinMusic\(context, audioDestination, state\.exportAudioStart\)/, 'built-in music must align with the narrated export timeline');
