@@ -182,14 +182,20 @@
     const nameFade = state.transitionStart
       ? clamp((performance.now() - state.transitionStart) / state.transitionDuration, 0, 1)
       : 1;
+    // Static identity header: it stays fixed and never joins the name transition.
     ctx.save();
-    ctx.globalAlpha = nameFade;
     ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillStyle=c[3];
     ctx.font='600 '+Math.max(17,u*.019)+'px "DM Sans",sans-serif';ctx.letterSpacing=Math.max(2,u*.003)+'px';
-    ctx.fillText('ASMAUL HUSNA',cx,cy-u*.205);ctx.letterSpacing='0px';
+    ctx.fillText('ASMAUL HUSNA',cx,h*.135);ctx.letterSpacing='0px';
     ctx.fillStyle=c[3]+'bb';ctx.font='400 '+Math.max(13,u*.013)+'px "Amiri",serif';
-    ctx.fillText('أَسْمَاءُ اللَّهِ الْحُسْنَى',cx,cy-u*.165);
-    ctx.save();ctx.translate(cx,cy+floatY-u*.008);ctx.scale(zoom*floatScale,zoom*floatScale);
+    ctx.fillText('أَسْمَاءُ اللَّهِ الْحُسْنَى',cx,h*.175);
+    ctx.restore();
+
+    // Only the changing name, transliteration, meaning and sequence fade.
+    ctx.save();
+    ctx.globalAlpha = nameFade;
+    ctx.textAlign='center';ctx.textBaseline='middle';
+    ctx.save();ctx.translate(cx,h*.405+floatY);ctx.scale(zoom*floatScale,zoom*floatScale);
     let font=u*.126*(state.size/100);ctx.font='700 '+font+'px "Amiri",serif';
     while(ctx.measureText(item[1]).width>w*.82&&font>u*.065){font*=.94;ctx.font='700 '+font+'px "Amiri",serif';}
     ctx.shadowColor=c[3]+'55';ctx.shadowBlur=u*(.022+(motionActive?ambientPulse*.004:0));
@@ -201,12 +207,12 @@
       arabicFill=sheen;
     }
     ctx.fillStyle=arabicFill;ctx.fillText(item[1],0,0,w*.82);ctx.restore();ctx.shadowBlur=0;
-    const ly=cy+u*.105;ctx.strokeStyle=c[3]+'aa';ctx.lineWidth=Math.max(1,w*.0014);
+    const ly=h*.545;ctx.strokeStyle=c[3]+'aa';ctx.lineWidth=Math.max(1,w*.0014);
     ctx.beginPath();ctx.moveTo(cx-u*.12,ly);ctx.lineTo(cx-u*.035,ly);ctx.moveTo(cx+u*.035,ly);ctx.lineTo(cx+u*.12,ly);ctx.stroke();star(cx,ly,u*.012,c[3]);
-    let ty=ly+u*.065;
-    if(state.transliteration){ctx.fillStyle=c[4]+'dd';ctx.font='600 '+Math.max(18,u*.03)+'px "DM Sans",sans-serif';ctx.fillText(item[0],cx,ty);ty+=u*.055;}
+    let ty=h*.60;
+    if(state.transliteration){ctx.fillStyle=c[4]+'dd';ctx.font='600 '+Math.max(18,u*.03)+'px "DM Sans",sans-serif';ctx.fillText(item[0],cx,ty);ty+=h*.052;}
     if(state.translation){ctx.fillStyle=c[4];ctx.font='400 '+Math.max(16,u*.024)+'px "DM Sans",sans-serif';ctx.fillText(item[2],cx,ty,w*.8);}
-    const py=cy+u*.255,pw=u*.105,ph=u*.034;ctx.strokeStyle=c[3]+'88';ctx.lineWidth=1.3;
+    const py=h*.775,pw=u*.105,ph=u*.034;ctx.strokeStyle=c[3]+'88';ctx.lineWidth=1.3;
     if(ctx.roundRect){ctx.beginPath();ctx.roundRect(cx-pw/2,py-ph/2,pw,ph,ph/2);ctx.stroke();}
     else {ctx.strokeRect(cx-pw/2,py-ph/2,pw,ph);}
     ctx.fillStyle=c[3];ctx.font='500 '+Math.max(12,u*.014)+'px "DM Sans",sans-serif';
