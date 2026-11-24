@@ -199,8 +199,9 @@
   async function exportVideo() {
     if(state.recorder)return;
     if(!canvas.captureStream||!window.MediaRecorder){notify('Ekspor video memerlukan browser Chrome atau Edge modern.');return;}
-    const mime=['video/webm;codecs=vp9,opus','video/webm;codecs=vp8,opus','video/webm'].find(x=>MediaRecorder.isTypeSupported(x));
-    if(!mime){notify('Format WebM tidak didukung browser ini.');return;}
+    const mime=['video/mp4;codecs=avc1.42E01E,mp4a.40.2','video/mp4','video/webm;codecs=vp9,opus','video/webm;codecs=vp8,opus','video/webm'].find(x=>MediaRecorder.isTypeSupported(x));
+    if(!mime){notify('Browser ini belum mendukung ekspor MP4 atau WebM.');return;}
+    const fileExtension=mime.includes('mp4')?'mp4':'webm';
     let stream;
     try{
       stream=canvas.captureStream(30);
@@ -222,7 +223,7 @@
         const blob=new Blob(state.chunks,{type:mime});stream.getTracks().forEach(t=>t.stop());
         if(blob.size){
           const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;
-          a.download=fileSafe(byId('projectName').value)+'.webm';a.click();setTimeout(()=>URL.revokeObjectURL(url),15000);
+          a.download=fileSafe(byId('projectName').value)+'.'+fileExtension;a.click();setTimeout(()=>URL.revokeObjectURL(url),15000);
           notify('Video WebM berhasil dibuat dan diunduh.');
         }else notify('Rekaman kosong. Coba lagi.');
         state.recorder=null;state.chunks=[];clearTimeout(state.timer);
