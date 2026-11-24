@@ -5,9 +5,9 @@ const MODEL = 'open-world-group/Supertonic-3-ONNX';
 const VOICE = 'https://huggingface.co/open-world-group/Supertonic-3-ONNX/resolve/main/voices/M1.bin';
 const OUTPUT = 'supertonic-smoke-test.wav';
 
-console.log('Loading Supertonic 3 with the documented Transformers.js WASM configuration...');
+console.log('Loading Supertonic 3 with the Node.js CPU execution provider...');
 const tts = await pipeline('text-to-speech', MODEL, {
-  device: 'wasm',
+  device: 'cpu',
   dtype: {
     text_encoder: 'fp32',
     latent_denoiser: 'q8',
