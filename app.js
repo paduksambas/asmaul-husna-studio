@@ -245,7 +245,14 @@
         // visually doubling with the incoming name during the hand-off.
         const perspective = clamp((entry.depth + 1) / 2, 0, 1);
         const scale = .28 + .72 * depth;
-        const alpha = .08 + .92 * Math.pow(perspective, 2.2);
+        const depthAlpha = .08 + .92 * Math.pow(perspective, 2.2);
+        // The just-read/current label must disappear early in the rotation.
+        // Do not let it travel visually into the incoming label's approach path.
+        const outgoingFade = state.wheelTransitionStart && entry.offset === 0
+          ? 1 - clamp((rotationProgress - .05) / .18, 0, 1)
+          : 1;
+        const alpha = depthAlpha * outgoingFade;
+        if (alpha <= .015) return;
         const x = cx + Math.sin(entry.angle) * u * .075;
         const y = cy - u * .025 + Math.sin(entry.angle) * u * .235;
         const arabicY = -u * (.12 - state.arabicVerticalOffset * .0025);
