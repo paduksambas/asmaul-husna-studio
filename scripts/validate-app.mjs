@@ -45,6 +45,17 @@ assert.match(app, /function scheduleBackgroundAudio\(context, audioDestination, 
 assert.match(app, /source\.loop = true/, 'background audio must loop for the full narration');
 assert.match(app, /gain\.gain\.value = 0\.18/, 'background audio must be mixed below the AI narration');
 assert.match(app, /scheduleBackgroundAudio\(context, audioDestination, backgroundBuffer, state\.exportAudioStart\)/, 'background audio must start with the narration');
+
+assert.match(html, /id="builtinMusicEnabled"/, 'built-in ambient music toggle must exist');
+assert.match(html, /id="builtinMusicVolume"/, 'built-in ambient music volume control must exist');
+assert.match(app, /function createBuiltinMusicBuffer\(context\)/, 'ambient music must be synthesized locally with Web Audio');
+assert.match(app, /const melody = \[330,392,440,392,330,294,330,220\]/, 'built-in music must include a gentle melodic phrase');
+assert.match(app, /function startBuiltinMusic\(offset=0\)/, 'built-in music must play in the live preview');
+assert.match(app, /function scheduleBuiltinMusic\(context, audioDestination, startAt\)/, 'built-in music must be scheduled into video exports');
+assert.match(app, /scheduleBuiltinMusic\(context, audioDestination, state\.exportAudioStart\)/, 'built-in music must align with the narrated export timeline');
+assert.match(app, /state\.builtinMusicVolume \/ 100/, 'built-in music volume must be adjustable');
+assert.match(app, /state\.builtinMusicEnabled:true|builtinMusicEnabled:true/, 'built-in music must default to enabled');
+
 assert.match(app, /source\.start\(state\.exportAudioStart \+ timeline\[index\]\)/, 'all speech clips must be scheduled on the shared timeline');
 assert.match(app, /state\.exportCancelled/, 'narration export must support cancellation');
 assert.match(app, /totalDuration \+ 1/, 'recording duration must follow the generated narration');
