@@ -81,7 +81,9 @@ assert.match(html, /id="builtinMusicMode"/, 'music panel must expose the backgro
 assert.match(html, /Ramadan Music With Dark Reflective Tone/, 'music panel must identify the instrumental track');
 assert.match(html, /CC BY 3\.0/, 'music panel must disclose the audio license');
 assert.match(html, /id="builtinMusicCreditButton"/, 'music panel must provide an attribution copy control');
-assert.match(app, /CC BY 3\.0/, 'exported video must display the nasheed attribution');
+assert.doesNotMatch(app, /ctx\.fillText\(creditText/, 'video canvas must not draw an audio-credit overlay');
+assert.match(html, /music-credit-note[\s\S]*?CC BY 4\.0/, 'music license attribution must remain visible in the settings panel');
+assert.match(html, /id="builtinMusicCreditButton"/, 'caption attribution copy control must remain available');
 assert.match(html, /id="builtinMusicVolume"[^>]*value="10"/, 'nasheed slider must default to 10 percent');
 
 assert.match(app, /source\.start\(state\.exportAudioStart \+ timeline\[index\]\)/, 'all speech clips must be scheduled on the shared timeline');
