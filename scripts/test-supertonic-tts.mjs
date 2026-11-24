@@ -39,4 +39,4 @@ if (file.size < 1024) {
 }
 
 console.log(`SUCCESS: generated ${OUTPUT} (${file.size} bytes)`);
-console.log('The smoke test confirms model loading and Arabic synthesis in the WASM runtime.');
+console.log('The smoke test confirms model loading and Arabic synthesis with the Node.js CPU execution provider.');
