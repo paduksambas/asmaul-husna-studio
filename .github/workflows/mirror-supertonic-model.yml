@@ -60,6 +60,50 @@ jobs:
           print(f"Total snapshot files: {len(files)}")
           PY
 
+      - name: Inspect official model configs and ONNX graph interfaces
+        run: |
+          python -m pip install --upgrade onnx
+          python - <<'PY'
+          from pathlib import Path
+          import json
+          import onnx
+
+          root = Path("model-bundle")
+          print("=== SNAPSHOT FILE INVENTORY ===")
+          for path in sorted(p for p in root.rglob("*") if p.is_file()):
+              print(f"{path.relative_to(root)}\t{path.stat().st_size}")
+
+          print("\\n=== JSON CONFIGURATION FILES ===")
+          for path in sorted(root.rglob("*.json")):
+              try:
+                  value = json.loads(path.read_text(encoding="utf-8"))
+                  print(f"--- {path.relative_to(root)} ---")
+                  print(json.dumps(value, ensure_ascii=False, indent=2)[:12000])
+              except Exception as exc:
+                  print(f"Could not parse {path}: {exc}")
+
+          def shape(value):
+              dims = []
+              for dim in value.type.tensor_type.shape.dim:
+                  dims.append(dim.dim_param or dim.dim_value or "?")
+              return dims
+
+          print("\\n=== ONNX MODEL INTERFACES ===")
+          for path in sorted(root.rglob("*.onnx")):
+              model = onnx.load(str(path), load_external_data=False)
+              print(f"--- {path.relative_to(root)} ---")
+              print(f"producer={model.producer_name} version={model.producer_version}")
+              print("inputs:", json.dumps([
+                  {"name": x.name, "shape": shape(x), "type": x.type.tensor_type.elem_type}
+                  for x in model.graph.input
+              ]))
+              print("outputs:", json.dumps([
+                  {"name": x.name, "shape": shape(x), "type": x.type.tensor_type.elem_type}
+                  for x in model.graph.output
+              ]))
+              print(f"nodes={len(model.graph.node)} opsets={[(x.domain, x.version) for x in model.opset_import]}")
+          PY
+
       - name: Package model and generate checksum
         run: |
           tar -czf supertonic-3-onnx-model.tar.gz -C model-bundle .
