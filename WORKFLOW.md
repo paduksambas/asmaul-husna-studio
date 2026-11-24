@@ -289,3 +289,6 @@ Ikuti urutan ini. Jangan melewati pemeriksaan Preview sebelum perubahan dinyatak
 
 
 **Konsistensi tata letak lintas rasio — 24 November 2026:** koordinat header, kaligrafi utama, pemisah, transliterasi/arti, dan nomor urut kini dihitung relatif terhadap pusat kanvas dan sisi terpendek (`u`), bukan persentase tinggi kanvas. Ini menjaga skala dan jarak antarelemen lebih konsisten pada Landscape 16:9, Portrait 9:16, dan Square 1:1. Header tetap statis di luar lapisan transisi nama; latar dan ornamen tetap dianimasikan. Perubahan hanya pada branch `feature/supertonic-narration-export`; belum dipromosikan ke `main`. Validasi source dan deployment Preview perlu diperiksa setelah commit.
+
+
+**Penghapusan slogan footer — 24 November 2026:** teks dekoratif bahasa Inggris “REMEMBER THE BEAUTIFUL NAMES” di bagian bawah kanvas dihapus dari fungsi render. Tidak mengganti dengan slogan lain dan tidak mengubah tata letak elemen utama. Perubahan hanya pada branch `feature/supertonic-narration-export`; `main` dan Production tidak disentuh. Menunggu validasi CI dan deployment Preview.
