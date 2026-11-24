@@ -234,15 +234,18 @@
       }
       const wheelEntries = [-1, 0, 1].map(offset => {
         const angle = offset * (Math.PI * 2 / 3) - direction * rotationProgress * (Math.PI * 2 / 3);
-        return { index:baseIndex + offset, angle, depth:Math.cos(angle) };
+        return { index:baseIndex + offset, angle, depth:Math.cos(angle), offset };
       }).filter(entry => entry.index >= 0 && entry.index < data.length);
-      // Draw the rear/smaller labels first; the active name passes in front.
+      // Paint distant/previous names first so the incoming name is never covered.
       wheelEntries.sort((a,b) => a.depth - b.depth);
       wheelEntries.forEach(entry => {
         const wheelItem = data[entry.index];
         const depth = Math.max(0, entry.depth);
-        const scale = .43 + .57 * depth;
-        const alpha = .2 + .8 * ((entry.depth + 1) / 2);
+        // Rear labels recede strongly: this prevents the just-read name from
+        // visually doubling with the incoming name during the hand-off.
+        const perspective = clamp((entry.depth + 1) / 2, 0, 1);
+        const scale = .28 + .72 * depth;
+        const alpha = .08 + .92 * Math.pow(perspective, 2.2);
         const x = cx + Math.sin(entry.angle) * u * .075;
         const y = cy - u * .025 + Math.sin(entry.angle) * u * .235;
         const arabicY = -u * (.12 - state.arabicVerticalOffset * .0025);
@@ -266,7 +269,9 @@
         ctx.fillStyle = c[4];
         ctx.fillText(wheelItem[1],0,arabicY,w*.78);
         ctx.shadowBlur = 0;
-        if (state.transliteration) {
+        // Keep the rear-most name visually quiet: Arabic calligraphy alone
+        // remains visible in the back; supporting text appears as it approaches.
+        if (state.transliteration && entry.depth > -.15) {
           ctx.shadowBlur = 0;
           ctx.fillStyle = c[4] + (isFocus ? 'ee' : 'bb');
           ctx.font = '600 ' + Math.max(12,u*(isFocus ? .028 : .021)) + 'px "DM Sans",sans-serif';
