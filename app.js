@@ -284,9 +284,10 @@
     byId('resetButton').addEventListener('click',reset);
     byId('fullscreenButton').addEventListener('click',async()=>{try{if(!document.fullscreenElement)await byId('canvasStage').requestFullscreen();else await document.exitFullscreen();}catch(_){notify('Layar penuh tidak tersedia.');}});
     byId('helpButton').addEventListener('click',()=>byId('helpModal').classList.remove('hidden'));
-    byId('closeHelp').addEventListener('click',()=>byId('helpModal').classList.add('hidden'));
-    byId('gotItButton').addEventListener('click',()=>byId('helpModal').classList.add('hidden'));
-    byId('helpModal').addEventListener('click',e=>{if(e.target===byId('helpModal'))byId('helpModal').classList.add('hidden');});
+    const dismissHelp = () => { byId('helpModal').classList.add('hidden'); try { localStorage.setItem('asmaul-husna-help-seen','1'); } catch (_) {} };
+    byId('closeHelp').addEventListener('click',dismissHelp);
+    byId('gotItButton').addEventListener('click',dismissHelp);
+    byId('helpModal').addEventListener('click',e=>{if(e.target===byId('helpModal'))dismissHelp();});
     document.addEventListener('keydown',e=>{if(e.key==='Escape'){byId('helpModal').classList.add('hidden');if(document.fullscreenElement)document.exitFullscreen();}});
   }
   function init() {
