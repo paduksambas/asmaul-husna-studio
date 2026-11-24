@@ -226,7 +226,7 @@
       if (state.wheelTransitionStart) {
         baseIndex = state.wheelFromIndex;
         direction = state.wheelDirection || 1;
-        const rawProgress = clamp((performance.now() - state.wheelTransitionStart) / 720, 0, 1);
+        const rawProgress = clamp((performance.now() - state.wheelTransitionStart) / 520, 0, 1);
         rotationProgress = 1 - Math.pow(1 - rawProgress, 3);
         if (rawProgress >= 1) state.wheelTransitionStart = 0;
       }
@@ -911,12 +911,18 @@
     if (!(blob instanceof Blob) || !blob.size) throw new Error('Model tidak menghasilkan audio yang dapat diputar.');
     return blob;
   }
-  async function playSpeechBlob(blob) {
+  async function decodeSpeechBlob(blob) {
     const context = ensureSpeechAudioContext();
     if (context.state !== 'running') await context.resume();
-    const buffer = await context.decodeAudioData(await blob.arrayBuffer());
-    if (state.ttsStop) return false;
-
+    return context.decodeAudioData(await blob.arrayBuffer());
+  }
+  async function prepareSpeechBuffer(index, voice) {
+    const blob = await synthesizeName(index, voice);
+    return decodeSpeechBlob(blob);
+  }
+  function playSpeechBuffer(buffer) {
+    const context = ensureSpeechAudioContext();
+    if (state.ttsStop) return Promise.resolve(false);
     return new Promise((resolve, reject) => {
       const source = context.createBufferSource();
       source.buffer = buffer;
@@ -934,6 +940,11 @@
         reject(error);
       }
     });
+  }
+  async function playSpeechBlob(blob) {
+    const buffer = await decodeSpeechBlob(blob);
+    if (state.ttsStop) return false;
+    return playSpeechBuffer(buffer);
   }
   function stopSpeech(showMessage=true) {
     if (state.exportPreparing || state.narrationExportActive) {
@@ -995,6 +1006,11 @@
       const voice = selectedSpeechVoice();
       await loadSpeechModel();
       startSpeechAnimation();
+
+      // Prepare the first clip, then synthesize and decode the following clip
+      // while the current clip is already playing.
+      byId('speechStatus').textContent = 'Menyiapkan audio AI 1 dari ' + data.length + ' · preset ' + voice + '…';
+      let preparedBuffer = await prepareSpeechBuffer(0, voice);
       for (let i = 0; i < data.length; i++) {
         if (state.ttsStop) break;
         if (i !== state.index) beginNameTransition(i);
@@ -1003,10 +1019,25 @@
         updateCaptions();
         persist();
         draw(state.speechAnimating ? (performance.now() - state.speechAnimationStart) / 1000 : 0);
-        byId('speechStatus').textContent = 'Membuat audio AI ' + (i + 1) + ' dari ' + data.length + ': ' + data[i][0] + ' · preset ' + voice + '…';
-        const blob = await synthesizeName(i, voice);
-        if (state.ttsStop) break;
-        await playSpeechBlob(blob);
+
+        const nextBufferPromise = i + 1 < data.length
+          ? prepareSpeechBuffer(i + 1, voice).then(
+              buffer => ({ buffer }),
+              error => ({ error })
+            )
+          : null;
+        byId('speechStatus').textContent = 'Membacakan ' + (i + 1) + ' dari ' + data.length + ': ' + data[i][0]
+          + (nextBufferPromise ? ' · menyiapkan audio nama berikutnya…' : ' · preset ' + voice + '…');
+
+        const played = await playSpeechBuffer(preparedBuffer);
+        if (!played || state.ttsStop) break;
+        if (nextBufferPromise) {
+          byId('speechStatus').textContent = 'Menyiapkan audio AI ' + (i + 2) + ' dari ' + data.length + '…';
+          const nextResult = await nextBufferPromise;
+          if (state.ttsStop) break;
+          if (nextResult.error) throw nextResult.error;
+          preparedBuffer = nextResult.buffer;
+        }
       }
       if (!state.ttsStop) byId('speechStatus').textContent = 'Selesai membaca seluruh 99 Asmaul Husna dengan Supertonic 3 ' + state.ttsBackend + '.';
     } catch (error) {
