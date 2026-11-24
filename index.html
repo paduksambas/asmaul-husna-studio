@@ -126,8 +126,16 @@
             <option value="float">Gentle float</option><option value="zoom">Slow zoom</option><option value="shimmer">Soft shimmer</option><option value="none">Tanpa animasi</option>
           </select>
         </section>
+        <section class="control-section builtin-music-section">
+          <div class="section-title"><span class="section-number">05</span><h3>Musik latar bawaan</h3></div>
+          <p class="music-description">Musik ambient sintetis yang dibuat langsung oleh aplikasi. Gratis, tanpa kredit, tanpa impor, dan ikut dalam ekspor video.</p>
+          <label class="field-label music-toggle" for="builtinMusicEnabled"><span>Aktifkan musik ambient</span><input id="builtinMusicEnabled" type="checkbox" checked class="toggle-input" /><span class="toggle-ui"></span></label>
+          <label class="field-label music-volume-label" for="builtinMusicVolume"><span>Volume musik</span><output class="range-value" id="builtinMusicVolumeValue">18%</output></label>
+          <input class="range-input" id="builtinMusicVolume" type="range" min="0" max="40" step="1" value="18" />
+          <p class="music-footnote">Volume rendah agar bacaan Asmaul Husna tetap terdengar jelas.</p>
+        </section>
         <section class="control-section assets-section">
-          <div class="section-title"><span class="section-number">05</span><h3>Media tambahan</h3></div>
+          <div class="section-title"><span class="section-number">06</span><h3>Media tambahan</h3></div>
           <label class="upload-row" for="backgroundInput"><span class="upload-symbol">▧</span><span><b>Gambar latar</b><small id="backgroundFileLabel">Gunakan latar bawaan</small></span><span class="upload-action">Pilih</span></label>
           <input class="visually-hidden" id="backgroundInput" type="file" accept="image/*" />
           <label class="upload-row" for="audioInput"><span class="upload-symbol">♫</span><span><b>Audio / murottal</b><small id="audioFileLabel">Tambahkan audio sendiri</small></span><span class="upload-action">Pilih</span></label>
@@ -135,7 +143,7 @@
           <button class="remove-media" id="removeMediaButton">Hapus media tambahan</button>
         </section>
         <section class="control-section speech-section">
-          <div class="section-title"><span class="section-number">06</span><h3>Suara AI Arab · Supertonic 3</h3></div>
+          <div class="section-title"><span class="section-number">07</span><h3>Suara AI Arab · Supertonic 3</h3></div>
           <p class="speech-description">Suara AI dibuat langsung di browser dengan Supertonic 3. Unduhan model pertama sekitar 200 MB dan akan menggunakan cache browser bila diizinkan. Gunakan tombol ekspor narasi untuk membuat video lengkap berisi bacaan 99 nama; audio latar tambahan tetap dapat disertakan dengan volume lebih lembut.</p>
           <label class="field-label" for="speechVoice">Pilih preset suara AI</label>
           <select id="speechVoice" class="select-input">
@@ -167,7 +175,7 @@
   </div>
 
   <div class="modal-backdrop hidden" id="helpModal" role="dialog" aria-modal="true" aria-labelledby="helpTitle">
-    <div class="help-modal"><button class="modal-close" id="closeHelp" aria-label="Tutup">×</button><p class="eyebrow">MULAI BERKREASI</p><h2 id="helpTitle">Selamat datang di studio.</h2><p>Pilih salah satu nama di perpustakaan, tentukan tema dan format video, lalu tekan putar untuk melihat animasi. Tambahkan gambar latar atau audio milikmu dari panel pengaturan.</p><div class="help-tip"><b>Catatan ekspor</b><span>Video diunduh dalam format MP4 atau WebM, mengikuti dukungan browser. Safari terbaru, Chrome, atau Edge direkomendasikan.</span></div><button class="button button-primary" id="gotItButton">Mulai berkarya</button></div>
+    <div class="help-modal"><button class="modal-close" id="closeHelp" aria-label="Tutup">×</button><p class="eyebrow">MULAI BERKREASI</p><h2 id="helpTitle">Selamat datang di studio.</h2><p>Pilih nama, tentukan tema dan format video, lalu tekan putar. Musik ambient bawaan tersedia tanpa impor; kamu juga dapat menambahkan gambar atau audio sendiri.</p><div class="help-tip"><b>Catatan ekspor</b><span>Video diunduh dalam format MP4 atau WebM, mengikuti dukungan browser. Safari terbaru, Chrome, atau Edge direkomendasikan.</span></div><button class="button button-primary" id="gotItButton">Mulai berkarya</button></div>
   </div>
 
   <div class="export-overlay hidden" id="exportOverlay" role="status" aria-live="polite"><div class="export-card"><div class="export-spinner"></div><strong id="exportTitle">Menyiapkan video...</strong><span id="exportMessage">Jangan tutup tab ini selama proses ekspor.</span><button class="button button-outline button-small hidden" id="cancelExportButton">Hentikan ekspor</button></div></div>
