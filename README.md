@@ -15,7 +15,7 @@ Gunakan [WORKFLOW.md](./WORKFLOW.md) sebagai peta kerja utama. Dokumen tersebut 
 - Animasi gentle float, slow zoom, soft shimmer, atau tanpa animasi.
 - Pengaturan durasi 5–60 detik.
 - Unggah gambar latar dan audio sendiri.
-- Ekspor video WebM melalui MediaRecorder serta simpan gambar PNG.
+- Ekspor video MP4 atau WebM melalui MediaRecorder (bergantung dukungan browser) serta simpan gambar PNG.
 - Preferensi editor disimpan secara lokal di browser.
 
 ## Menjalankan
@@ -36,7 +36,7 @@ Lalu buka `http://localhost:8000`.
 
 ## Catatan teknis
 
-- Ekspor video menggunakan `canvas.captureStream()` dan `MediaRecorder`. Format unduhan adalah WebM; MP4 belum disediakan karena dukungan perekaman MP4 berbeda antar-browser.
+- Ekspor video menggunakan `canvas.captureStream()` dan `MediaRecorder`. Aplikasi memilih format MP4 jika didukung browser, lalu menggunakan WebM sebagai fallback. Ekstensi file mengikuti format yang benar-benar dipilih oleh MediaRecorder.
 - Audio dan gambar yang diunggah diproses di browser pengguna dan tidak dikirim ke server.
 - Daftar nama menggunakan satu susunan Asmaul Husna yang umum dipakai. Ejaan transliterasi serta padanan arti singkat dapat berbeda antar-sumber; mohon lakukan telaah sebelum penggunaan untuk materi pembelajaran atau publikasi keagamaan.
 - Font Arab Amiri dan DM Sans dimuat dari Google Fonts. Jika tidak tersedia, browser memakai font fallback.
