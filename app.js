@@ -168,14 +168,14 @@
     byId('playIcon').textContent='Ⅱ';byId('playButton').setAttribute('aria-label','Jeda pratinjau');
     byId('transportStatus').textContent=state.recorder?'Merekam video…':'Pratinjau berjalan';
     if(state.audioUrl){if(state.elapsed===0)audio.currentTime=0;audio.play().catch(()=>{});}
+    requestAnimationFrame(loop);
   }
   function loop(now) {
-    if(state.playing){
-      state.elapsed=Math.min(state.duration,(now-state.start)/1000);draw(state.elapsed);
-      byId('timelineFill').style.width=(state.elapsed/state.duration*100)+'%';
-      byId('timeLabel').textContent=timeText(state.elapsed)+' / '+timeText(state.duration);
-      if(state.elapsed>=state.duration&&!state.recorder)stopPlayback();
-    }
+    if(!state.playing)return;
+    state.elapsed=Math.min(state.duration,(now-state.start)/1000);draw(state.elapsed);
+    byId('timelineFill').style.width=(state.elapsed/state.duration*100)+'%';
+    byId('timeLabel').textContent=timeText(state.elapsed)+' / '+timeText(state.duration);
+    if(state.elapsed>=state.duration&&!state.recorder){stopPlayback();return;}
     requestAnimationFrame(loop);
   }
   function snapshot() {
@@ -274,7 +274,7 @@
     byId('animationSelect').addEventListener('change',e=>{state.animation=e.target.value;byId('renderHint').textContent=state.animation==='none'?'Animasi dinonaktifkan':'Animasi lembut aktif saat diputar';draw(0);persist();});
     byId('durationInput').addEventListener('input',e=>{state.duration=Number(e.target.value);byId('durationValue').textContent=state.duration;updateCaptions();persist();});
     byId('projectName').addEventListener('input',persist);
-    byId('playButton').addEventListener('click',()=>{if(state.playing){state.playing=false;audio.pause();byId('playIcon').textContent='▶';byId('transportStatus').textContent='Pratinjau dijeda';}else play();});
+    byId('playButton').addEventListener('click',()=>{if(state.recorder){notify('Ekspor sedang berlangsung. Gunakan tombol Hentikan ekspor untuk menghentikannya.');return;}if(state.playing){state.playing=false;audio.pause();byId('playIcon').textContent='▶';byId('transportStatus').textContent='Pratinjau dijeda';}else play();});
     byId('snapshotButton').addEventListener('click',snapshot);
     byId('exportTopButton').addEventListener('click',exportVideo);
     byId('cancelExportButton').addEventListener('click',stopExport);
@@ -294,8 +294,10 @@
     if(!ctx){notify('Browser tidak mendukung kanvas HTML5.');return;}
     restore();renderNames('');applyControls();
     byId('renderHint').textContent=state.animation==='none'?'Animasi dinonaktifkan':'Animasi lembut aktif saat diputar';
-    bind();requestAnimationFrame(loop);
-    if(!localStorage.getItem('asmaul-husna-help-seen'))byId('helpModal').classList.remove('hidden');
+    bind();
+    let helpSeen=false;
+    try { helpSeen=localStorage.getItem('asmaul-husna-help-seen')==='1'; } catch (_) {}
+    if(!helpSeen)byId('helpModal').classList.remove('hidden');
   }
   init();
 })();
