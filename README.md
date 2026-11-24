@@ -15,9 +15,12 @@ Gunakan [WORKFLOW.md](./WORKFLOW.md) sebagai peta kerja utama. Dokumen tersebut 
 - Animasi gentle float, slow zoom, soft shimmer, atau tanpa animasi.
 - Pengaturan durasi 5–60 detik.
 - Unggah gambar latar dan audio sendiri.
+- Nasheed vokal-only “Alhamdulilah” (SyedsLife, CC BY 3.0) sebagai musik latar; kredit tampil pada video dan dapat disalin untuk caption.
 - Ekspor video MP4 atau WebM melalui MediaRecorder (bergantung dukungan browser) serta simpan gambar PNG.
 - Preferensi editor disimpan secara lokal di browser.
 - Pembacaan nama Arab menggunakan Supertonic 3 melalui Transformers.js di browser, dengan preset suara M1–M5 dan F1–F5. Model diunduh otomatis saat pertama kali digunakan (sekitar 200 MB), tanpa paket suara Arab Windows atau API key; cache browser digunakan bila tersedia.
+
+Nasheed disajikan dari aset statis same-origin yang disalin saat workflow Cloudflare Pages menyiapkan Preview/Production.
 
 ## Menjalankan
 
