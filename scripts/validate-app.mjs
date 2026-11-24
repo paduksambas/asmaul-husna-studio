@@ -82,6 +82,9 @@ assert.match(app, /builtinMusicVolume:10/, 'nasheed volume must default to a qui
 assert.match(app, /clamp\(s\.builtinMusicVolume,0,30\)/, 'restored music volume must stay within the slider maximum');
 assert.match(app, /let loadingMode = state\.builtinMusicMode;[\s\S]*?loadingMode = state\.builtinMusicMode;[\s\S]*?loadingMode !== state\.builtinMusicMode/, 'music mode changes during asynchronous loading must not start the stale track');
 assert.match(app, /state\.builtinMusicMode='vocal'/, 'reset must restore the default vocal soundtrack');
+assert.match(app, /\['builtinMusicEnabled','builtinMusicMode','builtinMusicTestButton','builtinMusicVolume'\]\.forEach\(id => \{ byId\(id\)\.disabled = true; \}\)/, 'music controls must be locked while a narrated export is being prepared and recorded');
+assert.match(app, /\['builtinMusicEnabled','builtinMusicMode','builtinMusicTestButton','builtinMusicVolume'\]\.forEach\(id => \{ byId\(id\)\.disabled = false; \}\)/, 'music controls must be restored after narrated export ends');
+assert.match(app, /function reset\(\) \{\s*if \(state\.exportBusy \|\| state\.exportPreparing\)/, 'reset must not mutate the canvas during an active export');
 assert.match(html, /Alhamdulilah \(Vocal Only Nasheed\)/, 'music panel must identify the vocal-only nasheed');
 assert.match(html, /Instrumental tanpa vokal · Alex Morgan/, 'music panel must offer the instrumental option');
 assert.match(html, /id="builtinMusicMode"/, 'music panel must expose the background audio selector');
