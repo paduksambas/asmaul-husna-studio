@@ -36,7 +36,7 @@ assert.match(app, /totalDuration \+ 1/, 'recording duration must follow the gene
 
 assert.ok(app.includes("const motionActive=animated&&state.animation!=='none'"), 'ambient motion must respect the selected animation mode');
 assert.ok(app.includes("const ambientPulse=motionActive ? .5+.5*Math.sin(t*.72) : 0;"), 'ambient glow must use a smooth continuous pulse');
-assert.ok(app.includes("const sheenCenter=-w*.48+((t*.19)%1)*w*.96;"), 'shimmer mode must sweep a highlight across the Arabic title');
+assert.ok(app.includes("const sheenCenter=-w*.48+((motionTime*.19)%1)*w*.96;"), 'shimmer mode must sweep a highlight across the Arabic title');
 assert.ok(app.includes("const floatScale=animated&&state.animation==='float'"), 'float mode must combine eased vertical drift with subtle scale breathing');
 assert.ok(app.includes('Keep the animation phase continuous while the narrated sequence changes names'), 'narrated export must not reset animation phase on each name');
 
