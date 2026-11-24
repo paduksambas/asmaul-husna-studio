@@ -220,8 +220,6 @@
     ctx.fillText(String(state.index+1).padStart(2,'0')+' / 99',cx,py);
     ctx.restore();
     if (nameFade >= 1) state.transitionStart = 0;
-    ctx.fillStyle=c[4]+'b5';ctx.font='500 '+Math.max(10,u*.011)+'px "DM Sans",sans-serif';
-    ctx.fillText('REMEMBER THE BEAUTIFUL NAMES',cx,h-Math.max(54,u*.065));
   }
   function ensureRenderLoop() {
     if (state.renderLoopActive) return;
