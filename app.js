@@ -20,7 +20,7 @@
     translation:true, transliteration:true, playing:false, elapsed:0, start:0, image:null, imageUrl:'',
     audioUrl:'', recorder:null, chunks:[], timer:0, audioDestination:null, backgroundAudioSource:null, backgroundAudioGain:null,
     ttsPipeline:null, ttsLoadPromise:null, ttsBackend:'', ttsBusy:false, ttsStop:false, speechAudioContext:null, speechSource:null,
-    speechAnimating:false, speechAnimationStart:0, renderLoopActive:false,
+    speechAnimating:false, speechAnimationStart:0, renderLoopActive:false, transitionCanvas:null, transitionStart:0, transitionDuration:680,
     exportBusy:false, exportPreparing:false, exportCancelled:false, narrationExportActive:false,
     exportDuration:0, exportAudioStart:0, exportTimeline:[], exportSources:[] };
   const clamp = (n,min,max) => Math.min(max,Math.max(min,n));
@@ -109,6 +109,20 @@
       if (i===0) ctx.moveTo(Math.cos(a)*rr,Math.sin(a)*rr); else ctx.lineTo(Math.cos(a)*rr,Math.sin(a)*rr);
     }
     ctx.closePath(); ctx.stroke(); ctx.restore();
+  }
+  function beginNameTransition(nextIndex) {
+    if (nextIndex === state.index || !canvas || !canvas.width || !canvas.height) return;
+    try {
+      const snapshot = document.createElement('canvas');
+      snapshot.width = canvas.width;
+      snapshot.height = canvas.height;
+      snapshot.getContext('2d').drawImage(canvas, 0, 0);
+      state.transitionCanvas = snapshot;
+      state.transitionStart = performance.now();
+    } catch (error) {
+      state.transitionCanvas = null;
+      state.transitionStart = 0;
+    }
   }
   function draw(t) {
     if (!ctx || !data.length) return;
@@ -202,6 +216,18 @@
     ctx.fillText(String(state.index+1).padStart(2,'0')+' / 99',cx,py);
     ctx.fillStyle=c[4]+'b5';ctx.font='500 '+Math.max(10,u*.011)+'px "DM Sans",sans-serif';
     ctx.fillText('REMEMBER THE BEAUTIFUL NAMES',cx,h-Math.max(54,u*.065));
+    if (state.transitionCanvas) {
+      const progress = clamp((performance.now() - state.transitionStart) / state.transitionDuration, 0, 1);
+      if (progress < 1) {
+        ctx.save();
+        ctx.globalAlpha = 1 - progress;
+        ctx.drawImage(state.transitionCanvas, 0, 0, w, h);
+        ctx.restore();
+      } else {
+        state.transitionCanvas = null;
+        state.transitionStart = 0;
+      }
+    }
   }
   function ensureRenderLoop() {
     if (state.renderLoopActive) return;
@@ -257,6 +283,7 @@
           else break;
         }
         if (nextIndex !== state.index) {
+          beginNameTransition(nextIndex);
           state.index = nextIndex;
           renderNames(byId('searchInput').value);
           updateCaptions();
@@ -698,7 +725,7 @@
         resolve(!state.ttsStop);
       };
       try {
-        startSpeechAnimation(true);
+        startSpeechAnimation();
         source.start(0);
       } catch (error) {
         state.speechSource = null;
@@ -760,6 +787,7 @@
       startSpeechAnimation();
       for (let i = 0; i < data.length; i++) {
         if (state.ttsStop) break;
+        if (i !== state.index) beginNameTransition(i);
         state.index = i;
         renderNames(byId('searchInput').value);
         updateCaptions();
