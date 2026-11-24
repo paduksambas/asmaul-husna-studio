@@ -18,6 +18,8 @@ assert.deepEqual(missingIds, [], 'app.js references IDs missing from index.html'
 const nameRows = names.match(/^\s*\["[^"]+",\s*"[^"]+",\s*"[^"]+"\],?$/gm) || [];
 assert.equal(nameRows.length, 99, 'Asmaul Husna data must contain exactly 99 three-field rows');
 
+assert.match(html, /id="arabicVerticalOffset"/, 'Arabic calligraphy vertical position control must exist');
+assert.ok(app.includes('state.arabicVerticalOffset*.001'), 'Arabic calligraphy vertical position must affect canvas layout');
 assert.match(html, /id="arabicTextGap"/, 'Arabic-to-transliteration spacing control must exist');
 assert.match(html, /id="textMeaningGap"/, 'transliteration-to-meaning spacing control must exist');
 assert.ok(app.includes('state.arabicTextGap*.001'), 'Arabic-to-transliteration spacing must affect canvas layout');
