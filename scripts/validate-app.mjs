@@ -111,6 +111,13 @@ assert.match(app, /if \(alpha <= \.015\) return;/, 'fully faded wheel labels mus
 assert.match(app, /const wheelOffsets = direction >= 0 \? \[0, 1\] : \[-1, 0\]/, 'the previously read label must be excluded so it cannot reappear in the incoming position');
 assert.ok(html.includes('<option value="tasbih">Tasbih Emas 99 · ruang 3D</option>'), 'tasbih must be offered as a standalone visual template');
 assert.ok(app.includes("if(state.template==='tasbih'){drawTasbihTemplate(t,item);return;}"), 'tasbih template must bypass the generic background and scene composition');
+assert.match(app, /tasbihTransitionStart:0, tasbihFromIndex:0, tasbihToIndex:0/, 'Tasbih scene must track its own bead transition state');
+assert.match(app, /state\.template === 'tasbih'[\s\S]*?state\.tasbihTransitionStart = now/, 'Tasbih name changes must trigger a dedicated light transition');
+assert.match(app, /const forward=active\?u\*\(\.022\+\.012\*pulse\):0/, 'the active Tasbih bead must move toward the camera');
+assert.match(app, /const ribbon=ctx\.createLinearGradient[\s\S]*?ctx\.ellipse\(cx,ringY,u\*\.315,u\*\.245,0,fromAngle,toAngle,delta<0\)/, 'a travelling light ribbon must follow the ring between selected beads');
+assert.match(app, /const sheenAngle=elapsed\*\.34/, 'polished beads must receive a moving specular highlight');
+assert.match(app, /Tiny white-gold reflection at the upper-left of each bead/, 'gold beads must render a distinct material highlight');
+assert.match(app, /if\(\(state\.animation==='wheel' \|\| state\.template==='tasbih'\) && i!==state\.index\) beginNameTransition\(i\)/, 'manual bead selection must animate in Tasbih mode');
 assert.ok(app.includes("else if (state.template === 'tasbih') draw((now - state.tasbihStart) / 1000);"), 'tasbih template must animate independently of generic effects');
 assert.ok(app.includes("template:state.template"), 'selected visual template must persist');
 assert.match(app, /wheelEntries\.sort\(\(a,b\) => a\.depth - b\.depth\)/, 'rear labels must render before the incoming/front label');
