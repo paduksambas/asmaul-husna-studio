@@ -34,11 +34,11 @@ assert.match(app, /source\.start\(state\.exportAudioStart \+ timeline\[index\]\)
 assert.match(app, /state\.exportCancelled/, 'narration export must support cancellation');
 assert.match(app, /totalDuration \+ 1/, 'recording duration must follow the generated narration');
 
-assert.match(app, /const motionActive=animated&&state\\.animation!==\x27none\x27/, 'ambient motion must respect the selected animation mode');
-assert.match(app, /const ambientPulse=motionActive\?\.5\+\.5\*Math\\.sin/, 'ambient glow must use a smooth continuous pulse');
-assert.match(app, /const sheenCenter=-w\\*\\.48\+\\(\\(t\\*\\.19\\)%1\\)\\*w\\*\\.96/, 'shimmer mode must sweep a highlight across the Arabic title');
-assert.match(app, /const floatScale=animated&&state\\.animation===\x27float\x27/, 'float mode must combine eased vertical drift with subtle scale breathing');
-assert.match(app, /Keep the animation phase continuous while the narrated sequence changes names/, 'narrated export must not reset animation phase on each name');
+assert.ok(app.includes("const motionActive=animated&&state.animation!=='none'"), 'ambient motion must respect the selected animation mode');
+assert.ok(app.includes("const ambientPulse=motionActive ? .5+.5*Math.sin(t*.72) : 0;"), 'ambient glow must use a smooth continuous pulse');
+assert.ok(app.includes("const sheenCenter=-w*.48+((t*.19)%1)*w*.96;"), 'shimmer mode must sweep a highlight across the Arabic title');
+assert.ok(app.includes("const floatScale=animated&&state.animation==='float'"), 'float mode must combine eased vertical drift with subtle scale breathing');
+assert.ok(app.includes('Keep the animation phase continuous while the narrated sequence changes names'), 'narrated export must not reset animation phase on each name');
 
 console.log('App source validation passed.');
 console.log('HTML IDs:', htmlIds.length, 'unique.');
