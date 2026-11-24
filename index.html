@@ -111,21 +111,19 @@
           <button class="remove-media" id="removeMediaButton">Hapus media tambahan</button>
         </section>
         <section class="control-section speech-section">
-          <div class="section-title"><span class="section-number">06</span><h3>Suara AI Arab gratis</h3></div>
-          <p class="speech-description">Suara dibuat langsung di perangkat. Model diunduh satu kali untuk setiap perangkat dan disimpan dalam cache browser bila tersedia. GitHub menyimpan arsip cadangan model.</p>
-          <p class="speech-mirror"><a href="https://github.com/paduksambas/asmaul-husna-studio/releases/tag/supertonic3-model-v1" target="_blank" rel="noopener noreferrer">Buka arsip cadangan model di GitHub (597,6 MB)</a></p>
-          <label class="field-label" for="speechVoice">Pilih karakter suara</label>
+          <div class="section-title"><span class="section-number">06</span><h3>Pembacaan Arab</h3></div>
+          <p class="speech-description">Menggunakan suara Arab yang tersedia pada sistem operasi atau browser. Tidak perlu mengunduh model AI. Ketersediaan suara dan kualitas pelafalan bergantung pada perangkat. Suara ini diputar langsung dan belum ikut direkam ke video.</p>
+          <label class="field-label" for="speechVoice">Pilih suara Arab perangkat</label>
           <select id="speechVoice" class="select-input">
-            <option value="M1">M1 · Laki-laki</option>
-            <option value="F1">F1 · Perempuan</option>
+            <option value="">Mendeteksi suara Arab…</option>
           </select>
-          <button class="button button-outline speech-load" id="loadSpeechButton">Muat mesin suara AI</button>
+          <button class="button button-outline speech-load" id="loadSpeechButton">Periksa suara Arab</button>
           <div class="speech-actions">
-            <button class="button button-primary" id="speakCurrentButton">Uji suara / baca nama ini</button>
+            <button class="button button-primary" id="speakCurrentButton">Baca nama ini</button>
             <button class="button button-outline" id="speakAllButton">Bacakan 99 nama</button>
             <button class="button button-outline" id="stopSpeechButton">Hentikan suara</button>
           </div>
-          <p class="speech-status" id="speechStatus" role="status" aria-live="polite">Pilih M1 atau F1, lalu muat mesin suara untuk mulai menguji.</p>
+          <p class="speech-status" id="speechStatus" role="status" aria-live="polite">Mendeteksi suara Arab yang terpasang di perangkat…</p>
         </section>
         <div class="inspector-bottom"><span class="secure-icon">◈</span><span>Proyek tersimpan lokal di browser ini.</span></div>
       </aside>
@@ -140,7 +138,6 @@
 
   <div class="export-overlay hidden" id="exportOverlay" role="status" aria-live="polite"><div class="export-card"><div class="export-spinner"></div><strong id="exportTitle">Menyiapkan video...</strong><span id="exportMessage">Jangan tutup tab ini selama proses ekspor.</span><button class="button button-outline button-small hidden" id="cancelExportButton">Hentikan ekspor</button></div></div>
   <audio id="backgroundAudio" preload="auto" loop></audio>
-  <audio id="speechAudio" preload="auto"></audio>
   <script src="./asmaul-husna.js"></script>
   <script src="./app.js"></script>
 </body>
