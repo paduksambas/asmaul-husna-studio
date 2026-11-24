@@ -24,6 +24,7 @@ const arabicTextGroup = arabicGroupEnd > arabicGroupStart ? html.slice(arabicGro
 assert.ok(arabicTextGroup, 'Arabic position and Arabic-to-transliteration controls must share one group');
 assert.ok(arabicTextGroup.includes('id="arabicVerticalOffset"'), 'Arabic position control must be inside the Arabic group');
 assert.ok(arabicTextGroup.includes('id="arabicTextGap"'), 'Arabic-to-transliteration spacing must be inside the Arabic group');
+assert.ok(arabicTextGroup.includes('id="textMeaningGap"'), 'transliteration-to-meaning spacing must be inside the text spacing group');
 assert.match(html, /id="arabicVerticalOffset"/, 'Arabic calligraphy vertical position control must exist');
 assert.ok(app.includes('state.arabicVerticalOffset*.001'), 'Arabic calligraphy vertical position must affect canvas layout');
 assert.match(html, /id="arabicTextGap"/, 'Arabic-to-transliteration spacing control must exist');
