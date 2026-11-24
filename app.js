@@ -643,6 +643,7 @@
     state.exportPreparing = true;
     state.exportCancelled = false;
     state.ttsBusy = true;
+    ['builtinMusicEnabled','builtinMusicMode','builtinMusicTestButton','builtinMusicVolume'].forEach(id => { byId(id).disabled = true; });
     state.builtinMusicPreview = false;
     byId('builtinMusicTestButton').textContent = 'Dengarkan contoh audio';
     stopBuiltinMusic();
@@ -736,6 +737,7 @@
         state.exportPreparing = false; state.narrationExportActive = false;
         state.exportDuration = 0; state.exportAudioStart = 0; state.exportTimeline = [];
         state.exportCancelled = false; state.ttsBusy = false;
+        ['builtinMusicEnabled','builtinMusicMode','builtinMusicTestButton','builtinMusicVolume'].forEach(id => { byId(id).disabled = false; });
         byId('cancelExportButton').disabled = false;
         byId('exportOverlay').classList.add('hidden');
         stopSpeechAnimation(); stopPlayback();
@@ -798,6 +800,7 @@
       state.exportPreparing = false; state.narrationExportActive = false;
       state.exportDuration = 0; state.exportAudioStart = 0; state.exportTimeline = [];
       state.exportCancelled = false; state.ttsBusy = false;
+      ['builtinMusicEnabled','builtinMusicMode','builtinMusicTestButton','builtinMusicVolume'].forEach(id => { byId(id).disabled = false; });
       byId('cancelExportButton').disabled = false;
       byId('exportOverlay').classList.add('hidden');
       stopSpeechAnimation(); stopPlayback();
@@ -1036,6 +1039,10 @@
     draw(0);persist();notify('Media tambahan dihapus.');
   }
   function reset() {
+    if (state.exportBusy || state.exportPreparing) {
+      notify('Selesaikan atau hentikan ekspor sebelum mengatur ulang pengaturan.');
+      return;
+    }
     stopSpeech(false);
     state.index=0;state.theme='emerald';state.format='portrait';state.animation='float';
     state.duration=15;state.size=100;state.translation=true;state.transliteration=true;state.arabicVerticalOffset=0;state.arabicTextGap=0;state.textMeaningGap=0;state.wheelTransitionStart=0;state.transitionStart=0;state.builtinMusicEnabled=true;state.builtinMusicMode='vocal';state.builtinMusicVolume=10;state.builtinMusicPreview=false;byId('builtinMusicTestButton').textContent='Dengarkan contoh audio';state.elapsed=0;
