@@ -109,6 +109,12 @@ jobs:
               print(f"nodes={len(model.graph.node)} opsets={[(x.domain, x.version) for x in model.opset_import]}")
           PY
 
+      - name: Smoke-test official Transformers.js Arabic synthesis
+        run: |
+          npm init -y
+          npm install --no-save @huggingface/transformers
+          node scripts/test-supertonic-tts.mjs
+
       - name: Package model and generate checksum
         run: |
           tar -czf supertonic-3-onnx-model.tar.gz -C model-bundle .
