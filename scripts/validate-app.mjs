@@ -56,6 +56,7 @@ assert.match(app, /builtinMusicPreview=!state\.builtinMusicPreview/, 'music test
 assert.match(app, /speechSequenceActive:false/, 'full 99-name playback must track its own background-music lifecycle');
 assert.match(app, /state\.speechSequenceActive = true;[\s\S]*?syncBuiltinMusic\(0\);/, 'background music must start when full 99-name playback begins');
 assert.match(app, /state\.playing \|\| state\.builtinMusicPreview \|\| state\.speechSequenceActive/, 'background music must remain active during live 99-name recitation');
+assert.match(app, /\!\(state\.playing \|\| state\.builtinMusicPreview \|\| state\.speechSequenceActive\)/, 'background loader must not abort while full 99-name playback is active');
 assert.match(app, /state\.speechSequenceActive = false;\s*syncBuiltinMusic\(\);\s*stopSpeechAnimation\(\);/, 'background music must stop when full 99-name playback finishes or errors');
 assert.match(app, /if \(state\.speechSequenceActive\) \{\s*state\.speechSequenceActive = false;\s*syncBuiltinMusic\(\);/, 'stopping a 99-name recitation must also stop background music');
 
