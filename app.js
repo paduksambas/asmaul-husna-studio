@@ -22,7 +22,7 @@
     ttsPipeline:null, ttsLoadPromise:null, ttsBackend:'', ttsBusy:false, ttsStop:false, speechAudioContext:null, speechSource:null,
     speechAnimating:false, speechAnimationStart:0, renderLoopActive:false,
     exportBusy:false, exportPreparing:false, exportCancelled:false, narrationExportActive:false,
-    exportDuration:0, exportAudioStart:0, exportTimeline:[], exportSources:[], exportPreviousBackgroundGain:null };
+    exportDuration:0, exportAudioStart:0, exportTimeline:[], exportSources:[] };
   const clamp = (n,min,max) => Math.min(max,Math.max(min,n));
   const fileSafe = (s) => String(s || 'asmaul-husna').normalize('NFKD').replace(/[^a-z0-9_-]+/gi,'-').replace(/^-+|-+$/g,'').toLowerCase() || 'asmaul-husna';
   const timeText = (n) => {
@@ -271,6 +271,29 @@
     }
     stream.addTrack(track.clone());
   }
+  async function loadBackgroundAudioBuffer(context) {
+    if (!state.audioUrl) return null;
+    const response = await fetch(state.audioUrl);
+    if (!response.ok) throw new Error('File audio latar tidak dapat dibaca untuk ekspor.');
+    const buffer = await context.decodeAudioData(await response.arrayBuffer());
+    if (!buffer || !Number.isFinite(buffer.duration) || buffer.duration <= 0) {
+      throw new Error('File audio latar tidak menghasilkan audio yang valid.');
+    }
+    return buffer;
+  }
+  function scheduleBackgroundAudio(context, audioDestination, buffer, startAt) {
+    if (!buffer) return;
+    const source = context.createBufferSource();
+    const gain = context.createGain();
+    source.buffer = buffer;
+    source.loop = true;
+    gain.gain.value = 0.18;
+    source.connect(gain);
+    gain.connect(context.destination);
+    gain.connect(audioDestination);
+    state.exportSources.push({ source, gain });
+    source.start(startAt);
+  }
   function stopNarrationSources() {
     state.exportSources.forEach(entry => { try { (entry.source || entry).stop(); } catch (_) {} });
     state.exportSources = [];
@@ -398,10 +421,13 @@
       });
       const totalDuration = cursor;
       const audioDestination = ensureAudioMixDestination();
+      let backgroundBuffer = null;
+      if (state.audioUrl) {
+        byId('exportMessage').textContent = 'Menyiapkan audio latar untuk dicampur dengan narasi…';
+        backgroundBuffer = await loadBackgroundAudioBuffer(context);
+      }
+      if (state.exportCancelled) throw new Error('EXPORT_CANCELLED');
       await context.resume();
-
-      state.exportPreviousBackgroundGain = state.backgroundAudioGain ? state.backgroundAudioGain.gain.value : null;
-      if (state.backgroundAudioGain) state.backgroundAudioGain.gain.setValueAtTime(0.18, context.currentTime);
 
       stream = canvas.captureStream(30);
       attachAudioMixTrack(stream, audioDestination);
@@ -444,10 +470,6 @@
         clearTimeout(state.timer);
         stopNarrationSources();
         audio.pause();
-        if (state.backgroundAudioGain && state.exportPreviousBackgroundGain !== null) {
-          state.backgroundAudioGain.gain.setValueAtTime(state.exportPreviousBackgroundGain, context.currentTime);
-        }
-        state.exportPreviousBackgroundGain = null;
         state.recorder = null; state.chunks = []; state.exportBusy = false;
         state.exportPreparing = false; state.narrationExportActive = false;
         state.exportDuration = 0; state.exportAudioStart = 0; state.exportTimeline = [];
@@ -473,6 +495,8 @@
       state.playing = true;
       state.start = performance.now();
       state.exportAudioStart = context.currentTime + 0.25;
+      audio.pause();
+      scheduleBackgroundAudio(context, audioDestination, backgroundBuffer, state.exportAudioStart);
       startSpeechAnimation(true);
       updateCaptions();
       draw(0);
@@ -480,11 +504,6 @@
       ensureRenderLoop();
       byId('transportStatus').textContent = 'Merekam video + suara AI…';
       byId('speechStatus').textContent = 'Merekam 99 nama dengan preset ' + voice + '…';
-
-      if (state.audioUrl) {
-        audio.currentTime = 0;
-        audio.play().catch(error => console.warn('Audio latar tidak dapat diputar:', error));
-      }
 
       buffers.forEach((buffer, index) => {
         const source = context.createBufferSource();
@@ -510,10 +529,6 @@
       }
       if (stream) stream.getTracks().forEach(track => track.stop());
       stopNarrationSources();
-      if (state.backgroundAudioGain && state.exportPreviousBackgroundGain !== null && state.speechAudioContext) {
-        state.backgroundAudioGain.gain.setValueAtTime(state.exportPreviousBackgroundGain, state.speechAudioContext.currentTime);
-      }
-      state.exportPreviousBackgroundGain = null;
       state.recorder = null; state.chunks = []; state.exportBusy = false;
       state.exportPreparing = false; state.narrationExportActive = false;
       state.exportDuration = 0; state.exportAudioStart = 0; state.exportTimeline = [];
