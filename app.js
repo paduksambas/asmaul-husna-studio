@@ -259,7 +259,7 @@
     return state.audioDestination;
   }
   function stopNarrationSources() {
-    state.exportSources.forEach(source => { try { source.stop(); } catch (_) {} });
+    state.exportSources.forEach(entry => { try { (entry.source || entry).stop(); } catch (_) {} });
     state.exportSources = [];
   }
   function stopExport(userCancelled=true) {
@@ -308,7 +308,7 @@
       state.recorder = rec;
       rec.ondataavailable = e => { if (e.data && e.data.size) state.chunks.push(e.data); };
       rec.onerror = () => {
-        state.recorder = null; state.exportBusy = false;
+        state.recorder = null; state.exportBusy = false; clearTimeout(state.timer);
         stream.getTracks().forEach(t => t.stop());
         byId('exportOverlay').classList.add('hidden'); stopPlayback();
         notify('Terjadi kesalahan saat merekam.');
@@ -480,7 +480,7 @@
         source.connect(gain);
         gain.connect(context.destination);
         gain.connect(audioDestination);
-        state.exportSources.push(source);
+        state.exportSources.push({ source, gain });
         source.start(state.exportAudioStart + timeline[index]);
       });
 
