@@ -18,10 +18,12 @@ assert.deepEqual(missingIds, [], 'app.js references IDs missing from index.html'
 const nameRows = names.match(/^\s*\["[^"]+",\s*"[^"]+",\s*"[^"]+"\],?$/gm) || [];
 assert.equal(nameRows.length, 99, 'Asmaul Husna data must contain exactly 99 three-field rows');
 
-const arabicTextGroup = html.match(/<div class="text-control-group">([\s\S]*?)<\/div>/);
+const arabicGroupStart = html.indexOf('<div class="text-control-group">');
+const arabicGroupEnd = arabicGroupStart >= 0 ? html.indexOf('</section>', arabicGroupStart) : -1;
+const arabicTextGroup = arabicGroupEnd > arabicGroupStart ? html.slice(arabicGroupStart, arabicGroupEnd) : '';
 assert.ok(arabicTextGroup, 'Arabic position and Arabic-to-transliteration controls must share one group');
-assert.match(arabicTextGroup[1], /id="arabicVerticalOffset"/, 'Arabic position control must be inside the Arabic group');
-assert.match(arabicTextGroup[1], /id="arabicTextGap"/, 'Arabic-to-transliteration spacing must be inside the Arabic group');
+assert.ok(arabicTextGroup.includes('id="arabicVerticalOffset"'), 'Arabic position control must be inside the Arabic group');
+assert.ok(arabicTextGroup.includes('id="arabicTextGap"'), 'Arabic-to-transliteration spacing must be inside the Arabic group');
 assert.match(html, /id="arabicVerticalOffset"/, 'Arabic calligraphy vertical position control must exist');
 assert.ok(app.includes('state.arabicVerticalOffset*.001'), 'Arabic calligraphy vertical position must affect canvas layout');
 assert.match(html, /id="arabicTextGap"/, 'Arabic-to-transliteration spacing control must exist');
