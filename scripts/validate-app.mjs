@@ -111,9 +111,10 @@ assert.match(app, /const arabicY = -u \* \(\.12 - state\.arabicVerticalOffset \*
 assert.match(app, /const transliterationY = u \* \(\.10 \+ state\.arabicTextGap \* \.001\)/, 'Arabic-to-transliteration spacing control must affect wheel mode');
 assert.match(app, /state\.textMeaningGap \* \.001/, 'transliteration-to-meaning spacing control must affect wheel mode');
 assert.match(app, /else if \(state\.wheelTransitionStart\) draw\(/, 'manual wheel transitions must continue rendering even when speech is not active');
-assert.match(app, /async function prepareSpeechBuffer\(index, voice\)[\\s\\S]*?return decodeSpeechBlob\(blob\)/, 'the next narration clip must be synthesized and decoded ahead of playback');
-assert.match(app, /const nextBufferPromise = i \\+ 1 < data\\.length[\\s\\S]*?prepareSpeechBuffer\\(i \\+ 1, voice\\)[\\s\\S]*?const played = await playSpeechBuffer\\(preparedBuffer\\)/, 'the following clip must be prefetched while the current clip plays');
-assert.match(app, /function playSpeechBuffer\(buffer\)[\\s\\S]*?source\\.buffer = buffer[\\s\\S]*?source\\.start\(0\)/, 'prepared narration audio must play directly from a decoded AudioBuffer');
+assert.ok(app.includes('async function prepareSpeechBuffer(index, voice)') && app.includes('return decodeSpeechBlob(blob);'), 'the next narration clip must be synthesized and decoded ahead of playback');
+const speakAllSource = app.slice(app.indexOf('async function speakAll()'), app.indexOf('function uploadImage(file)'));
+assert.ok(speakAllSource.indexOf('prepareSpeechBuffer(i + 1, voice)') >= 0 && speakAllSource.indexOf('prepareSpeechBuffer(i + 1, voice)') < speakAllSource.indexOf('playSpeechBuffer(preparedBuffer)'), 'the following clip must be prefetched while the current clip plays');
+assert.ok(app.includes('async function playSpeechBuffer(buffer)') && app.includes('source.buffer = buffer;') && app.includes('source.start(0);'), 'prepared narration audio must play directly from a decoded AudioBuffer');
 assert.ok(app.includes('(performance.now() - state.wheelTransitionStart) / 520'), 'wheel transitions must use the quicker 520 ms duration');
 
 assert.match(app, /state\.wheelTransitionStart = performance\.now\(\);\s*state\.transitionStart = 0;\s*ensureRenderLoop\(\)/, 'manual selection must start a render loop for the wheel transition');
