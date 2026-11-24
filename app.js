@@ -751,6 +751,8 @@
         true
       );
 
+      state.wheelTransitionStart = 0;
+      state.transitionStart = 0;
       state.index = 0;
       renderNames(byId('searchInput').value);
       state.elapsed = 0;
