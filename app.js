@@ -239,23 +239,6 @@
     ctx.fillStyle=c[3];ctx.font='500 '+Math.max(12,u*.014)+'px "DM Sans",sans-serif';
     ctx.fillText(String(state.index+1).padStart(2,'0')+' / 99',cx,py);
     ctx.restore();
-    if (state.builtinMusicEnabled) {
-      const creditText = state.builtinMusicMode === 'instrumental' ? 'Instrumental: “Ramadan Music With Dark Reflective Tone” — Alex Morgan · CC BY 4.0' : 'Nasheed: “Alhamdulilah (Vocal Only Nasheed)” — SyedsLife · CC BY 3.0';
-      ctx.save(); ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-      ctx.font = '600 ' + Math.max(11, u * .013) + 'px "DM Sans",sans-serif';
-      const creditWidth = Math.min(w * .96, ctx.measureText(creditText).width + u * .045);
-      const creditHeight = Math.max(22, u * .034), creditY = h - u * .026;
-      ctx.fillStyle = '#07120edb';
-      if (ctx.roundRect) {
-        ctx.beginPath(); ctx.roundRect(cx - creditWidth / 2, creditY - creditHeight / 2, creditWidth, creditHeight, creditHeight / 2);
-        ctx.fill(); ctx.strokeStyle = c[3] + '66'; ctx.lineWidth = 1; ctx.stroke();
-      } else {
-        ctx.fillRect(cx - creditWidth / 2, creditY - creditHeight / 2, creditWidth, creditHeight);
-        ctx.strokeStyle = c[3] + '66'; ctx.lineWidth = 1; ctx.strokeRect(cx - creditWidth / 2, creditY - creditHeight / 2, creditWidth, creditHeight);
-      }
-      ctx.fillStyle = c[3]; ctx.fillText(creditText, cx, creditY, creditWidth - u * .02);
-      ctx.restore();
-    }
     if (nameFade >= 1) state.transitionStart = 0;
   }
   function ensureRenderLoop() {
