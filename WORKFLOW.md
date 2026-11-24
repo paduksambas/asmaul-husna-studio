@@ -91,6 +91,7 @@ Ikuti urutan ini. Jangan melewati pemeriksaan Preview sebelum perubahan dinyatak
 
 - [x] Inventarisasi source dan fitur awal.
 - [x] Perbaikan awal loop pratinjau, penanganan penyimpanan lokal, dan kontrol saat ekspor.
+- [x] Tambahkan fallback ekspor MP4 untuk browser yang mendukungnya (termasuk Safari modern), dengan WebM sebagai fallback dan ekstensi unduhan sesuai MIME.
 - [x] Perubahan source dicatat pada branch `main`.
 - [x] Project Vercel dibuat.
 - [x] Deployment Production awal berstatus READY.
@@ -100,7 +101,7 @@ Ikuti urutan ini. Jangan melewati pemeriksaan Preview sebelum perubahan dinyatak
 - [ ] Uji interaksi aplikasi di laptop: seluruh 99 nama, pencarian, tema, rasio, animasi, durasi, dan reset.
 - [ ] Uji unggah gambar dan audio, termasuk kondisi file tidak valid dan izin browser.
 - [ ] Uji pratinjau dan sinkronisasi audio selama pemutaran.
-- [ ] Uji ekspor WebM sampai selesai, unduh file, dan putar hasilnya.
+- [ ] Uji ekspor MP4/WebM sampai selesai, unduh file, dan putar hasilnya di laptop serta iPad.
 - [ ] Uji simpan PNG.
 - [x] Tambahkan konfigurasi `.devcontainer/devcontainer.json` untuk GitHub Codespaces (Ubuntu, Python preview server, port 8000, dan pengaturan editor).
 - [ ] Buat/nyalakan Codespace dari Safari iPad A17 Pro dan verifikasi editor, terminal, port forwarding, serta server otomatis.
@@ -134,11 +135,13 @@ Ikuti urutan ini. Jangan melewati pemeriksaan Preview sebelum perubahan dinyatak
 ## 7. Catatan sesi terakhir
 
 **Tanggal:** 24 November 2026  
-**Commit source:** `e2a150244138d7c98c51f29466831a5654f8e43f`  
+**Commit perbaikan ekspor:** `be7d0a6545a2450db146d49a005f735ba259d22d`  
+**Commit panduan ekspor:** `921593e9d5ee7a62a9783ad7b867d05c27134ba0`  
 **Perubahan:** efisiensi loop pratinjau, ketahanan saat localStorage tidak tersedia, dan pencegahan gangguan kontrol selama ekspor.  
-**Status deployment:** Production READY; Preview READY.  
+**Status deployment:** Production awal READY; Preview terbaru READY (`dpl_86ix5KEFPtxY37cSnPtbhYmUjmaV`, https://asmaul-husna-studio-hu6xuft8l-paduka-sambas.vercel.app). Preview terbaru dibuat dari empat file aplikasi di branch `main`; build selesai.  
 **Catatan integrasi:** GitHub Integration belum terhubung ke project Vercel. Deployment yang sudah ada dibuat melalui transfer source langsung.  
-**Pembaruan jalur perangkat:** iPad A17 Pro ditetapkan sebagai perangkat kerja penuh melalui GitHub Codespaces (Safari), selain laptop. Konfigurasi Codespaces telah ditambahkan pada `.devcontainer/devcontainer.json`; pembuatan/penyalakan Codespace dari akun pengguna dan pengujian langsung di iPad masih perlu dilakukan. **Tahap kerja berikutnya:** nyalakan Codespace di iPad, verifikasi server dan port 8000, lalu lakukan pengujian fungsi penuh dari kedua perangkat.
+**Pemeriksaan source:** 99 data nama terdeteksi; seluruh 88 referensi elemen DOM di `app.js` cocok dengan 45 ID HTML, tanpa ID HTML duplikat. Pemeriksaan ini statis, bukan pengujian browser.  
+**Pembaruan jalur perangkat:** iPad A17 Pro ditetapkan sebagai perangkat kerja penuh melalui GitHub Codespaces (Safari), selain laptop. Konfigurasi Codespaces telah ditambahkan pada `.devcontainer/devcontainer.json`; pembuatan/penyalakan Codespace dari akun pengguna dan pengujian langsung di iPad masih perlu dilakukan. **Tahap kerja berikutnya:** uji preview baru di browser, verifikasi ekspor MP4/WebM dan audio, lalu nyalakan Codespace di iPad untuk pengujian fungsi penuh dari kedua perangkat.
 
 ---
 
