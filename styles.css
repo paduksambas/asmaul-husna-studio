@@ -64,3 +64,20 @@
 .music-credit-button{width:100%;justify-content:center;margin:0 0 8px;min-height:32px;font-size:9px}
 .music-credit-source{margin:0;color:#8f9d91;font-size:8px;line-height:1.5}
 .music-credit-source a{color:#d6bd80;text-decoration:underline;text-underline-offset:2px}
+
+/* Template scene visual card grid and contextual tabs */
+.template-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:8px 0 14px}
+.template-card{display:flex;align-items:center;gap:10px;padding:10px 12px;background:#15221b;border:1px solid #2f4939;border-radius:10px;color:#f4eedb;cursor:pointer;text-align:left;transition:all .18s ease}
+.template-card:hover{background:#1a2b22;border-color:#d6b97888}
+.template-card.active{background:linear-gradient(135deg,#1f382b,#15251d);border-color:#d6b978;box-shadow:0 0 12px #d6b97833}
+.template-card-icon{font-size:22px;line-height:1;flex-shrink:0}
+.template-card-text{display:flex;flex-direction:column;gap:2px}
+.template-card-text b{font-size:12px;color:#fbf6ea;font-weight:600}
+.template-card-text small{font-size:10px;color:#a8b99d}
+.template-card.active .template-card-text b{color:#d6b978}
+.template-tab-pane{transition:opacity .2s ease}
+.tasbih-scene-badge-card{margin-top:8px;padding:12px;border:1px solid #d7b36b44;border-radius:10px;background:linear-gradient(135deg,#0c1523,#142033);color:#e2d4b7}
+.tasbih-badge-row{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.tasbih-gold-badge{background:#d7b36b;color:#0a121d;font-size:9px;font-weight:700;padding:2px 6px;border-radius:4px;letter-spacing:.5px}
+.tasbih-badge-row b{font-size:12px;color:#fff2d4}
+.tasbih-scene-badge-card p{margin:0;font-size:10.5px;line-height:1.55;color:#bda884}
