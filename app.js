@@ -219,7 +219,7 @@
       const sx=cx+Math.sin(i*12.9898+1.7)*u*(.17+(i%7)*.024);
       const sy=ringY+Math.cos(i*7.233+2.4)*u*(.16+(i%5)*.025);
       const x=sx+(point.x-sx)*formation,y=sy+(point.y-sy)*formation;
-      const radius=u*(.0072+depth*.0015)*(active?1.65:1)*point.perspective;
+      const radius=u*(.0049+depth*.0012)*(active?1.58:1)*point.perspective;
       beads.push({index:i,x,y,baseY:y,depth:active?1.1:depth,angle,tangent,active,lit,r:radius,point});
     }
     // A travelling ribbon follows the ring from the last reading bead to the new one.
@@ -252,10 +252,11 @@
       const p=projectTasbihPoint(beadStart+step/198*beadSweep,1);
       if(step===0)ctx.moveTo(p.x,p.y);else ctx.lineTo(p.x,p.y);
     }
-    ctx.strokeStyle='#21160f';ctx.lineWidth=u*.008;ctx.lineCap='round';ctx.stroke();
-    ctx.strokeStyle='#b88743';ctx.lineWidth=u*.0017;ctx.stroke();ctx.restore();
+    ctx.strokeStyle='#050810ee';ctx.lineWidth=Math.max(2.6,u*.0042);ctx.lineCap='round';ctx.stroke();
+    ctx.strokeStyle='#22150c';ctx.lineWidth=Math.max(2,u*.0032);ctx.stroke();
+    ctx.strokeStyle='#d8a458';ctx.lineWidth=Math.max(1,u*.0014);ctx.setLineDash([u*.003,u*.0022]);ctx.stroke();ctx.setLineDash([]);ctx.restore();
     beads.forEach(b=>{
-      const rx=b.r*1.35,ry=b.r*0.92;
+      const rx=b.r*1.18,ry=b.r*0.88;
       ctx.save();ctx.globalAlpha=.15+.85*formation;
       ctx.translate(b.x,b.y);ctx.rotate(b.tangent);
       // Soft contact shadow oriented with the physical bead strand.
