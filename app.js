@@ -163,6 +163,138 @@
     state.transitionStart = now;
   }
   // Physical misbaha scene: open 99-bead strand, imam assembly and silk tassel. Render with the dedicated low-angle camera.
+    let threeTasbih = null;
+  function renderThreeTasbih(w, h, u, cx, ringY, elapsed, spin, pitch, pulse, finale, activeIndex) {
+    if (typeof THREE === 'undefined') return null;
+    try {
+      if (!threeTasbih) {
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(38, w / h, 0.1, 100);
+        camera.position.set(0, 0, 8.2);
+        const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true, preserveDrawingBuffer: true, powerPreference: 'high-performance' });
+        renderer.setSize(w, h, false);
+        renderer.toneMapping = THREE.ACESFilmicToneMapping;
+        renderer.toneMappingExposure = 1.35;
+
+        // Metallic reflection canvas
+        const envCanvas = document.createElement('canvas');
+        envCanvas.width = 128; envCanvas.height = 128;
+        const envCtx = envCanvas.getContext('2d');
+        const envGrad = envCtx.createLinearGradient(0, 0, 128, 128);
+        envGrad.addColorStop(0, '#fff7de'); envGrad.addColorStop(0.28, '#e5b258'); envGrad.addColorStop(0.65, '#422710'); envGrad.addColorStop(1, '#0e0804');
+        envCtx.fillStyle = envGrad; envCtx.fillRect(0, 0, 128, 128);
+        const envTex = new THREE.CanvasTexture(envCanvas);
+        envTex.mapping = THREE.EquirectangularReflectionMapping;
+
+        // PBR physically-based gold materials
+        const goldMat = new THREE.MeshStandardMaterial({
+          color: 0xfed884,
+          metalness: 0.96,
+          roughness: 0.15,
+          envMap: envTex,
+          envMapIntensity: 1.85
+        });
+        const activeGoldMat = new THREE.MeshStandardMaterial({
+          color: 0xfff4d4,
+          emissive: 0x8a5416,
+          emissiveIntensity: 0.8,
+          metalness: 0.98,
+          roughness: 0.10,
+          envMap: envTex,
+          envMapIntensity: 2.2
+        });
+        const separatorMat = new THREE.MeshStandardMaterial({
+          color: 0xffeab0,
+          metalness: 0.98,
+          roughness: 0.12,
+          envMap: envTex,
+          envMapIntensity: 2.1
+        });
+        const cordMat = new THREE.MeshStandardMaterial({
+          color: 0x1a120a,
+          roughness: 0.85,
+          metalness: 0.2
+        });
+
+        // Lights
+        const keyLight = new THREE.DirectionalLight(0xfff6e4, 2.9);
+        keyLight.position.set(4.5, 5.5, 6.5);
+        scene.add(keyLight);
+        const rimLight = new THREE.DirectionalLight(0xdba250, 1.8);
+        rimLight.position.set(-4.5, -4, -3);
+        scene.add(rimLight);
+        const ambLight = new THREE.AmbientLight(0x281a10, 1.4);
+        scene.add(ambLight);
+        const activeLight = new THREE.PointLight(0xffdf88, 3.8, 5);
+        scene.add(activeLight);
+
+        const group = new THREE.Group();
+        scene.add(group);
+
+        // 99 Beyzi meshes
+        const beadGeo = new THREE.SphereGeometry(1, 24, 18);
+        const beadMeshes = [];
+        const imamAngle = Math.PI / 2, joinGap = 0.19;
+        const beadStart = imamAngle + joinGap / 2, beadSweep = Math.PI * 2 - joinGap;
+        const rxRing = 2.45, ryRing = 1.92;
+
+        for (let i = 0; i < 99; i++) {
+          const angle = beadStart + (i / 98) * beadSweep;
+          const m = new THREE.Mesh(beadGeo, goldMat);
+          m.scale.set(0.065, 0.088, 0.065);
+          group.add(m);
+          beadMeshes.push({ mesh: m, angle, index: i });
+        }
+
+        // 2 separator discs
+        const discGeo = new THREE.CylinderGeometry(0.115, 0.115, 0.024, 24);
+        const sepMeshes = [32, 65].map(idx => {
+          const m = new THREE.Mesh(discGeo, separatorMat);
+          group.add(m);
+          return { mesh: m, index: idx };
+        });
+
+        threeTasbih = { scene, camera, renderer, group, beadMeshes, sepMeshes, goldMat, activeGoldMat, activeLight, cordMat, rxRing, ryRing, beadStart, beadSweep };
+      }
+
+      const { scene, camera, renderer, group, beadMeshes, sepMeshes, goldMat, activeGoldMat, activeLight, rxRing, ryRing } = threeTasbih;
+      if (renderer.domElement.width !== w || renderer.domElement.height !== h) {
+        renderer.setSize(w, h, false);
+        camera.aspect = w / h;
+        camera.updateProjectionMatrix();
+      }
+
+      group.rotation.x = pitch;
+      group.rotation.y = spin;
+
+      beadMeshes.forEach(b => {
+        const isActive = b.index === activeIndex;
+        const isLit = isActive || finale;
+        const zBoost = isActive ? 0.38 + 0.08 * pulse : 0;
+        const x = Math.cos(b.angle) * rxRing;
+        const y = Math.sin(b.angle) * ryRing;
+        b.mesh.position.set(x, y, zBoost);
+        b.mesh.rotation.z = b.angle + Math.PI / 2;
+        b.mesh.material = isLit ? activeGoldMat : goldMat;
+        const baseScale = isActive ? 1.55 : 1.0;
+        b.mesh.scale.set(0.065 * baseScale, 0.088 * baseScale, 0.065 * baseScale);
+        if (isActive) {
+          activeLight.position.set(x, y, zBoost + 0.3);
+        }
+      });
+
+      sepMeshes.forEach(s => {
+        const bead = beadMeshes.find(b => b.index === s.index);
+        if (bead) {
+          s.mesh.position.copy(bead.mesh.position);
+          s.mesh.rotation.z = bead.angle + Math.PI / 2;
+        }
+      });
+
+      renderer.render(scene, camera);
+      return renderer.domElement;
+    } catch (_) { return null; }
+  }
   function drawTasbihTemplate(t, item) {
     const w=canvas.width,h=canvas.height,cx=w/2,cy=h/2,u=Math.min(w,h);
     const elapsed=Math.max(0,(performance.now()-state.tasbihStart)/1000);
@@ -252,6 +384,10 @@
     sheen.addColorStop(0,'#ffe8ae24');sheen.addColorStop(1,'#ffe8ae00');
     ctx.fillStyle=sheen;ctx.fillRect(cx-u*.43,ringY-u*.34,u*.86,u*.68);
     beads.sort((a,b)=>a.depth-b.depth);
+    const threeCanvas = renderThreeTasbih(w, h, u, cx, ringY, elapsed, spin, pitch, pulse, finale, state.index);
+    if (threeCanvas) {
+      ctx.drawImage(threeCanvas, 0, 0);
+    } else {
     // A real misbaha reads as a connected strand: draw the dark silk cord first,
     // then the 99 beads over it so tiny gaps reveal the thread between beads.
     ctx.save();
@@ -303,6 +439,7 @@
       ctx.beginPath();ctx.ellipse(0,0,r*.22,r*.88,0,0,Math.PI*2);ctx.stroke();
       ctx.restore();
     });
+    }
     // Traditional imam bead closes the two ends of the strand. Its neck,
     // engraved metal cap and hanging silk tassel are deliberately distinct.
     const imam=projectTasbihPoint(imamAngle,1.02,u*.006);
