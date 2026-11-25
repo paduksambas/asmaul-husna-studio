@@ -16,7 +16,7 @@
     portrait: [1080,1920,'9:16 · 1080 × 1920'],
     square: [1080,1080,'1:1 · 1080 × 1080']
   };
-  const state = { index:0, theme:'emerald', format:'portrait', template:'classic', animation:'float', tasbihStart:0, tasbihTransitionStart:0, tasbihFromIndex:0, tasbihToIndex:0, duration:15,
+  const state = { index:0, theme:'emerald', format:'portrait', template:'classic', tasbihStyle:'flow', animation:'float', tasbihStart:0, tasbihTransitionStart:0, tasbihFromIndex:0, tasbihToIndex:0, duration:15,
     translation:true, transliteration:true, arabicVerticalOffset:0, arabicTextGap:0, textMeaningGap:0, builtinMusicEnabled:true, builtinMusicVolume:10, builtinMusicMode:'vocal', builtinMusicBuffers:{}, builtinMusicLoadPromises:{}, builtinMusicSource:null, builtinMusicGain:null, builtinMusicStarting:false, builtinMusicPreview:false, playing:false, elapsed:0, start:0, image:null, imageUrl:'',
     audioUrl:'', recorder:null, chunks:[], timer:0, audioDestination:null, backgroundAudioSource:null, backgroundAudioGain:null,
     ttsPipeline:null, ttsLoadPromise:null, ttsBackend:'', ttsBusy:false, ttsStop:false, speechSequenceActive:false, speechAudioContext:null, speechSource:null, wheelTransitionStart:0, wheelFromIndex:0, wheelToIndex:0, wheelDirection:1, pendingWheelTransition:null,
@@ -42,7 +42,7 @@
   function persist() {
     try {
       localStorage.setItem('asmaul-husna-studio-v1', JSON.stringify({
-        index:state.index,theme:state.theme,format:state.format,template:state.template,animation:state.animation,
+        index:state.index,theme:state.theme,format:state.format,template:state.template,tasbihStyle:state.tasbihStyle,animation:state.animation,
         duration:state.duration,size:state.size,translation:state.translation,builtinMusicEnabled:state.builtinMusicEnabled,builtinMusicVolume:state.builtinMusicVolume,builtinMusicMode:state.builtinMusicMode,
         transliteration:state.transliteration,arabicVerticalOffset:state.arabicVerticalOffset,arabicTextGap:state.arabicTextGap,textMeaningGap:state.textMeaningGap,project:byId('projectName').value
       }));
@@ -57,6 +57,7 @@
       if (themes[s.theme]) state.theme = s.theme;
       if (formats[s.format]) state.format = s.format;
       if (s.template === 'tasbih' || s.animation === 'tasbih') state.template = 'tasbih';
+      if (['flow','circular'].includes(s.tasbihStyle)) state.tasbihStyle = s.tasbihStyle;
       if (['float','zoom','shimmer','none','wheel'].includes(s.animation)) state.animation = s.animation;
       if (Number.isFinite(s.duration)) state.duration = clamp(s.duration,5,60);
       if (typeof s.builtinMusicEnabled === 'boolean') state.builtinMusicEnabled = s.builtinMusicEnabled;
@@ -117,6 +118,10 @@
     const tasbihTab = byId('tasbihSettingsTab');
     if (classicTab) classicTab.classList.toggle('hidden', isTasbih);
     if (tasbihTab) tasbihTab.classList.toggle('hidden', !isTasbih);
+    if (byId('tasbihStyleSelect')) byId('tasbihStyleSelect').value = state.tasbihStyle;
+    document.querySelectorAll('#tasbihStyleGrid .tasbih-style-card').forEach(card => {
+      card.classList.toggle('active', card.dataset.tasbihStyle === state.tasbihStyle);
+    });
     byId('durationInput').value = state.duration; byId('durationValue').textContent = state.duration;
     byId('builtinMusicEnabled').checked = state.builtinMusicEnabled;
     byId('builtinMusicMode').value = state.builtinMusicMode;
@@ -295,7 +300,424 @@
       return renderer.domElement;
     } catch (_) { return null; }
   }
+  function drawTasbihFlowScene(t, item) {
+    const w = canvas.width, h = canvas.height, cx = w / 2, cy = h / 2, u = Math.min(w, h);
+    const now = performance.now();
+    const elapsed = Math.max(0, (now - state.tasbihStart) / 1000);
+    const animated = state.playing || state.speechAnimating || state.tasbihTransitionStart > 0;
+    const motionTime = animated ? (now / 1000) : elapsed;
+
+    // 1. Cosmic Deep Space Background
+    const bg = ctx.createLinearGradient(0, 0, 0, h);
+    bg.addColorStop(0, '#030611');
+    bg.addColorStop(0.35, '#07101e');
+    bg.addColorStop(0.72, '#0c182b');
+    bg.addColorStop(1, '#050a14');
+    ctx.fillStyle = bg;
+    ctx.fillRect(0, 0, w, h);
+
+    // Subtle diagonal cosmic nebula glow
+    const nebula = ctx.createRadialGradient(cx * 1.15, cy * 0.72, u * 0.05, cx, cy * 0.8, u * 0.95);
+    nebula.addColorStop(0, '#1a3a5833');
+    nebula.addColorStop(0.5, '#0c223620');
+    nebula.addColorStop(1, '#00000000');
+    ctx.fillStyle = nebula;
+    ctx.fillRect(0, 0, w, h);
+
+    // Ambient twinkling stars
+    for (let i = 0; i < 68; i++) {
+      const sx = ((i * 179 + 37) % 997) / 997 * w;
+      const sy = ((i * 313 + 59) % 991) / 991 * h;
+      const twinkle = 0.35 + 0.65 * (0.5 + 0.5 * Math.sin(motionTime * (0.55 + (i % 5) * 0.22) + i * 2.1));
+      ctx.save();
+      ctx.globalAlpha = twinkle * (i % 6 === 0 ? 0.85 : 0.38);
+      ctx.fillStyle = i % 7 === 0 ? '#bfe9ff' : '#fcedaf';
+      ctx.beginPath();
+      ctx.arc(sx, sy, Math.max(0.9, u * (i % 9 === 0 ? 0.0022 : 0.0011)), 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+
+    // 2. Bottom Section: 3D Solar System & Planetary Orbits
+    const sunX = cx;
+    const sunY = h * 0.825;
+    const orbitAspect = 0.26;
+    const orbits = [
+      { r: u * 0.17, speed: 0.85, size: u * 0.008, color: '#b5a796' },
+      { r: u * 0.26, speed: 0.55, size: u * 0.012, color: '#e6bd7d' },
+      { r: u * 0.36, speed: 0.35, size: u * 0.014, color: '#4da6de', moon: true },
+      { r: u * 0.46, speed: 0.22, size: u * 0.010, color: '#e0583b' },
+      { r: u * 0.57, speed: 0.13, size: u * 0.022, color: '#deb887', ring: true }
+    ];
+
+    // Orbits tracks
+    orbits.forEach(orb => {
+      ctx.save();
+      ctx.strokeStyle = '#ffffff1a';
+      ctx.lineWidth = Math.max(0.8, u * 0.0009);
+      ctx.beginPath();
+      ctx.ellipse(sunX, sunY, orb.r, orb.r * orbitAspect, 0, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.restore();
+    });
+
+    // Central Sun
+    const sunR = u * 0.046;
+    const sunGlow = ctx.createRadialGradient(sunX, sunY, sunR * 0.2, sunX, sunY, sunR * 2.8);
+    sunGlow.addColorStop(0, '#fffbe6');
+    sunGlow.addColorStop(0.22, '#ffb834ee');
+    sunGlow.addColorStop(0.55, '#ff5e1355');
+    sunGlow.addColorStop(0.85, '#e03a0018');
+    sunGlow.addColorStop(1, '#00000000');
+    ctx.save();
+    ctx.fillStyle = sunGlow;
+    ctx.fillRect(sunX - sunR * 3, sunY - sunR * 3, sunR * 6, sunR * 6);
+
+    const sunGrad = ctx.createRadialGradient(sunX - sunR * 0.2, sunY - sunR * 0.2, sunR * 0.1, sunX, sunY, sunR);
+    sunGrad.addColorStop(0, '#ffffff');
+    sunGrad.addColorStop(0.4, '#ffe169');
+    sunGrad.addColorStop(0.8, '#ff7e1d');
+    sunGrad.addColorStop(1, '#e04207');
+    ctx.fillStyle = sunGrad;
+    ctx.beginPath();
+    ctx.arc(sunX, sunY, sunR, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Rotating solar corona rays
+    ctx.save();
+    ctx.translate(sunX, sunY);
+    ctx.rotate(motionTime * 0.08);
+    ctx.strokeStyle = '#ffa23833';
+    ctx.lineWidth = u * 0.003;
+    for (let r = 0; r < 8; r++) {
+      ctx.beginPath();
+      ctx.moveTo(0, 0);
+      ctx.lineTo(0, -sunR * 2.2);
+      ctx.stroke();
+      ctx.rotate(Math.PI / 4);
+    }
+    ctx.restore();
+    ctx.restore();
+
+    // Planets
+    orbits.forEach((orb, idx) => {
+      const pAngle = motionTime * orb.speed + idx * 1.35;
+      const px = sunX + Math.cos(pAngle) * orb.r;
+      const py = sunY + Math.sin(pAngle) * orb.r * orbitAspect;
+      const pr = orb.size;
+      ctx.save();
+      const lightAngle = Math.atan2(sunY - py, sunX - px);
+      const pGrad = ctx.createRadialGradient(
+        px + Math.cos(lightAngle) * pr * 0.45,
+        py + Math.sin(lightAngle) * pr * 0.45,
+        pr * 0.1,
+        px, py, pr
+      );
+      pGrad.addColorStop(0, '#ffffff');
+      pGrad.addColorStop(0.35, orb.color);
+      pGrad.addColorStop(0.85, '#1e2430');
+      pGrad.addColorStop(1, '#080a0f');
+      ctx.fillStyle = pGrad;
+      ctx.beginPath();
+      ctx.arc(px, py, pr, 0, Math.PI * 2);
+      ctx.fill();
+
+      if (orb.ring) {
+        ctx.strokeStyle = '#deb88766';
+        ctx.lineWidth = Math.max(1, pr * 0.35);
+        ctx.beginPath();
+        ctx.ellipse(px, py, pr * 2.1, pr * 0.55, -0.25, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+      if (orb.moon) {
+        const mAngle = motionTime * 2.5;
+        const mx = px + Math.cos(mAngle) * pr * 2.2;
+        const my = py + Math.sin(mAngle) * pr * 1.3;
+        ctx.fillStyle = '#f0f3f8';
+        ctx.beginPath();
+        ctx.arc(mx, my, pr * 0.32, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.restore();
+    });
+
+    // 3. Middle Section: Bead Flow & Snap Mechanism
+    const strandCenterY = cy - u * 0.035;
+    function getStrandY(x) {
+      const dx = (x - cx) / (u * 0.65);
+      return strandCenterY + Math.pow(dx, 2) * u * 0.075;
+    }
+
+    const transDur = 480;
+    let slideIndex = state.index;
+    let transProgress = 1;
+    let isSnap = false;
+    if (state.tasbihTransitionStart) {
+      transProgress = clamp((now - state.tasbihTransitionStart) / transDur, 0, 1);
+      if (transProgress < 1) {
+        isSnap = true;
+        const p = transProgress;
+        const snap = 1 - Math.pow(1 - p, 4) + Math.sin(p * Math.PI) * 0.07 * Math.exp(-3 * p);
+        slideIndex = state.tasbihFromIndex + (state.tasbihToIndex - state.tasbihFromIndex) * snap;
+      } else {
+        state.tasbihTransitionStart = 0;
+      }
+    }
+
+    // Braided cord
+    ctx.save();
+    ctx.strokeStyle = '#22384c';
+    ctx.lineWidth = Math.max(2.5, u * 0.0035);
+    ctx.beginPath();
+    for (let x = -50; x <= w + 50; x += 20) {
+      const y = getStrandY(x);
+      if (x === -50) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    }
+    ctx.stroke();
+    ctx.strokeStyle = '#5a789644';
+    ctx.lineWidth = Math.max(1, u * 0.0014);
+    ctx.beginPath();
+    for (let x = -50; x <= w + 50; x += 20) {
+      const y = getStrandY(x) - u * 0.0012;
+      if (x === -50) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    }
+    ctx.stroke();
+    ctx.restore();
+
+    // Center Reticle / Trigger Zone
+    const reticleR = u * 0.052;
+    ctx.save();
+    const retGlow = ctx.createRadialGradient(cx, strandCenterY, reticleR * 0.5, cx, strandCenterY, reticleR * 1.8);
+    retGlow.addColorStop(0, '#4fd1c528');
+    retGlow.addColorStop(0.7, '#4fd1c510');
+    retGlow.addColorStop(1, '#00000000');
+    ctx.fillStyle = retGlow;
+    ctx.fillRect(cx - reticleR * 2, strandCenterY - reticleR * 2, reticleR * 4, reticleR * 4);
+
+    ctx.strokeStyle = '#ffffff88';
+    ctx.lineWidth = Math.max(1.5, u * 0.0018);
+    ctx.beginPath();
+    ctx.arc(cx, strandCenterY, reticleR, 0, Math.PI * 2);
+    ctx.stroke();
+
+    ctx.strokeStyle = '#4fd1c544';
+    ctx.lineWidth = Math.max(1, u * 0.0012);
+    ctx.beginPath();
+    ctx.arc(cx, strandCenterY, reticleR * 0.84, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.restore();
+
+    // Beads
+    const beadSpacing = u * 0.116;
+    const baseBeadR = u * 0.034;
+    const minIdx = Math.max(0, Math.floor(slideIndex - 6));
+    const maxIdx = Math.min(98, Math.ceil(slideIndex + 6));
+    for (let i = minIdx; i <= maxIdx; i++) {
+      const rel = i - slideIndex;
+      const bx = cx + rel * beadSpacing;
+      const by = getStrandY(bx);
+      const distCenter = Math.abs(bx - cx);
+      const inReticle = distCenter < beadSpacing * 0.65;
+      let scale = 1;
+      let focusAlpha = 0;
+      if (inReticle) {
+        focusAlpha = Math.max(0, 1 - distCenter / (beadSpacing * 0.65));
+        scale = 1 + 0.18 * Math.cos((1 - focusAlpha) * Math.PI / 2);
+      }
+      const br = baseBeadR * scale;
+      ctx.save();
+      // Bead shadow
+      ctx.fillStyle = '#02070f88';
+      ctx.beginPath();
+      ctx.ellipse(bx, by + br * 0.45, br * 0.95, br * 0.45, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Active center bead halo
+      if (inReticle && focusAlpha > 0.4) {
+        const haloR = br * 2.2;
+        const halo = ctx.createRadialGradient(bx, by, br * 0.2, bx, by, haloR);
+        halo.addColorStop(0, '#5eead455');
+        halo.addColorStop(0.6, '#38bdf822');
+        halo.addColorStop(1, '#00000000');
+        ctx.fillStyle = halo;
+        ctx.beginPath();
+        ctx.arc(bx, by, haloR, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      // Lustrous jewel bead (celestial turquoise/cyan with gold rim)
+      const beadGrad = ctx.createRadialGradient(
+        bx - br * 0.35, by - br * 0.35, br * 0.08,
+        bx, by, br * 1.15
+      );
+      beadGrad.addColorStop(0, '#ffffff');
+      beadGrad.addColorStop(0.22, '#99f6e4');
+      beadGrad.addColorStop(0.55, '#2dd4bf');
+      beadGrad.addColorStop(0.85, '#0f766e');
+      beadGrad.addColorStop(1, '#042f2e');
+      ctx.fillStyle = beadGrad;
+      ctx.beginPath();
+      ctx.arc(bx, by, br, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.fillStyle = '#ffffffdd';
+      ctx.beginPath();
+      ctx.arc(bx - br * 0.32, by - br * 0.32, br * 0.22, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.strokeStyle = '#5eead466';
+      ctx.lineWidth = Math.max(0.8, u * 0.001);
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    // Left-End Imam Stopper Bead & Tassel (Physics Inertia)
+    const headRel = 0 - slideIndex - 0.75;
+    const headX = cx + headRel * beadSpacing;
+    if (headX > -100 && headX < w + 100) {
+      const headY = getStrandY(headX);
+      const headR = baseBeadR * 1.25;
+      const vel = isSnap ? (state.tasbihToIndex - state.tasbihFromIndex) * Math.sin(transProgress * Math.PI) * 1.6 : 0;
+      const inertiaSway = -vel * 0.26;
+      const ambientSway = Math.sin(motionTime * 2.2) * 0.04;
+      const totalSway = inertiaSway + ambientSway;
+      ctx.save();
+      const rubyGrad = ctx.createRadialGradient(
+        headX - headR * 0.32, headY - headR * 0.32, headR * 0.08,
+        headX, headY, headR
+      );
+      rubyGrad.addColorStop(0, '#ff9999');
+      rubyGrad.addColorStop(0.3, '#ef4444');
+      rubyGrad.addColorStop(0.7, '#b91c1c');
+      rubyGrad.addColorStop(1, '#450a0a');
+      ctx.fillStyle = rubyGrad;
+      ctx.beginPath();
+      ctx.arc(headX, headY, headR, 0, Math.PI * 2);
+      ctx.fill();
+
+      const capW = headR * 0.9, capH = headR * 0.45;
+      const capY = headY + headR * 0.75;
+      ctx.fillStyle = '#d4af37';
+      ctx.fillRect(headX - capW / 2, capY, capW, capH);
+
+      ctx.strokeStyle = '#ef4444cc';
+      ctx.lineWidth = Math.max(1.2, u * 0.0016);
+      for (let s = 0; s < 16; s++) {
+        const sOffset = (s - 7.5) * headR * 0.09;
+        const sWave = Math.sin(motionTime * 3 + s * 0.4) * headR * 0.08;
+        const swayX = Math.sin(totalSway) * headR * 2.2;
+        ctx.beginPath();
+        ctx.moveTo(headX + sOffset * 0.4, capY + capH);
+        ctx.bezierCurveTo(
+          headX + sOffset + swayX * 0.4, capY + capH + headR * 0.8,
+          headX + sOffset + swayX * 0.8 + sWave, capY + capH + headR * 1.6,
+          headX + sOffset * 0.8 + swayX, capY + capH + headR * (2.4 + (s % 4) * 0.15)
+        );
+        ctx.stroke();
+      }
+      ctx.restore();
+    }
+
+    // Floating +1 Pop-up
+    if (isSnap || (now - (state.tasbihTransitionStart || 0)) < 700) {
+      const fp = clamp((now - (state.tasbihTransitionStart || (now - 1000))) / 650, 0, 1);
+      if (fp < 1) {
+        const floatY = strandCenterY - u * 0.048 - fp * u * 0.052;
+        const floatX = cx + u * 0.038;
+        const floatAlpha = 1 - Math.pow(fp, 1.4);
+        ctx.save();
+        ctx.globalAlpha = floatAlpha;
+        ctx.fillStyle = '#ff7a29';
+        ctx.font = '700 ' + Math.max(16, u * 0.024) + 'px "DM Sans",sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.shadowColor = '#ff7a29aa';
+        ctx.shadowBlur = u * 0.015;
+        ctx.fillText('+1', floatX, floatY);
+        ctx.restore();
+      }
+    }
+
+    // Synced Circular Counter Progress Badge
+    const badgeY = strandCenterY + u * 0.145;
+    const badgeR = u * 0.068;
+    ctx.save();
+    ctx.fillStyle = '#0b1626cc';
+    ctx.beginPath();
+    ctx.arc(cx, badgeY, badgeR, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = '#ffffff22';
+    ctx.lineWidth = Math.max(1.2, u * 0.0015);
+    ctx.stroke();
+
+    const arcR = badgeR * 0.88;
+    ctx.strokeStyle = '#ffffff18';
+    ctx.lineWidth = Math.max(2.5, u * 0.0035);
+    ctx.beginPath();
+    ctx.arc(cx, badgeY, arcR, 0, Math.PI * 2);
+    ctx.stroke();
+
+    const countFraction = clamp((state.index + 1) / 99, 0, 1);
+    const arcGrad = ctx.createLinearGradient(cx - arcR, badgeY - arcR, cx + arcR, badgeY + arcR);
+    arcGrad.addColorStop(0, '#2dd4bf');
+    arcGrad.addColorStop(1, '#ff9933');
+    ctx.strokeStyle = arcGrad;
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.arc(cx, badgeY, arcR, -Math.PI / 2, -Math.PI / 2 + countFraction * Math.PI * 2);
+    ctx.stroke();
+
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle = '#ffffff';
+    ctx.font = '700 ' + Math.max(18, u * 0.028) + 'px "DM Sans",sans-serif';
+    ctx.fillText(String(state.index + 1), cx, badgeY - u * 0.010);
+    ctx.fillStyle = '#8ea3b8';
+    ctx.font = '500 ' + Math.max(10, u * 0.013) + 'px "DM Sans",sans-serif';
+    ctx.fillText('/ 99', cx, badgeY + u * 0.016);
+    ctx.restore();
+
+    // 4. Top Section: Asmaul Husna Calligraphy & Meaning
+    const topY = cy - u * 0.28;
+    ctx.save();
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    let arabicSize = u * 0.108 * (state.size / 100);
+    ctx.font = '700 ' + arabicSize + 'px "Amiri",serif';
+    while (ctx.measureText(item[1]).width > w * 0.82 && arabicSize > u * 0.05) {
+      arabicSize *= 0.94;
+      ctx.font = '700 ' + arabicSize + 'px "Amiri",serif';
+    }
+    const glowBloom = isSnap ? Math.sin(transProgress * Math.PI) * u * 0.025 : 0;
+    ctx.shadowColor = '#5eead488';
+    ctx.shadowBlur = u * 0.015 + glowBloom;
+    ctx.fillStyle = '#ffffff';
+    ctx.fillText(item[1], cx, topY - u * 0.04, w * 0.85);
+    ctx.shadowBlur = 0;
+
+    ctx.fillStyle = '#f59e0b';
+    ctx.font = '600 ' + Math.max(10, u * 0.014) + 'px "DM Sans",sans-serif';
+    ctx.fillText('◆', cx, topY + u * 0.038);
+
+    if (state.transliteration) {
+      ctx.fillStyle = '#f8fafc';
+      ctx.font = '600 ' + Math.max(16, u * 0.027) + 'px "DM Sans",sans-serif';
+      ctx.fillText(item[0], cx, topY + u * 0.075, w * 0.85);
+    }
+    if (state.translation) {
+      ctx.fillStyle = '#94a3b8';
+      ctx.font = '400 ' + Math.max(13, u * 0.021) + 'px "DM Sans",sans-serif';
+      ctx.fillText(item[2], cx, topY + u * 0.115, w * 0.85);
+    }
+    ctx.restore();
+  }
   function drawTasbihTemplate(t, item) {
+    if (state.tasbihStyle === 'flow') {
+      drawTasbihFlowScene(t, item);
+      return;
+    }
     const w=canvas.width,h=canvas.height,cx=w/2,cy=h/2,u=Math.min(w,h);
     const elapsed=Math.max(0,(performance.now()-state.tasbihStart)/1000);
     const opening=clamp(elapsed/2.4,0,1),formation=1-Math.pow(1-opening,3);
@@ -1591,6 +2013,26 @@
         byId('renderHint').textContent = state.template === 'tasbih'
           ? 'Template Tasbih Emas 99 · latar dan komposisi khusus'
           : 'Template klasik · mengikuti tema dan latar editor';
+        draw(0);
+        persist();
+      });
+    });
+    if (byId('tasbihStyleSelect')) {
+      byId('tasbihStyleSelect').addEventListener('change', e => {
+        state.tasbihStyle = e.target.value;
+        applyControls();
+        ensureRenderLoop();
+        draw(0);
+        persist();
+      });
+    }
+    document.querySelectorAll('#tasbihStyleGrid .tasbih-style-card').forEach(card => {
+      card.addEventListener('click', () => {
+        const style = card.dataset.tasbihStyle;
+        if (!style || style === state.tasbihStyle) return;
+        state.tasbihStyle = style;
+        applyControls();
+        ensureRenderLoop();
         draw(0);
         persist();
       });

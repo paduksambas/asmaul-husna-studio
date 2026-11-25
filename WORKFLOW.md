@@ -360,3 +360,21 @@ Ikuti urutan ini. Jangan melewati pemeriksaan Preview sebelum perubahan dinyatak
 3. Mengganti perputaran rotasi 360 derajat yang membuat bentuk tasbih miring ekstrem dengan ayunan nafas 3D halus (*gentle breathing sway* ±1°), menjaga posisi bukaan imam selalu berada anggun di bagian bawah tengah layar.
 4. Menghapus cincin elips bagian dalam (*inner orbit*) yang mengganggu dan mengganti lingkaran target bergaris pada butir aktif dengan pendaran aura cahaya emas radial lembut yang memancar langsung dari butir.
 5. Menyempurnakan piringan penanda 33 dan 66 (*separator discs*) agar ramping dan menyatu rapi di antara butir tanpa tonjolan berlebih. Seluruh pengujian statis dan regresi CI lulus 100%.
+
+### 25 November 2026 — Penambahan Model Tasbih "Aliran Kosmis & Snap" (Flow & Snap)
+Menambahkan sub-gaya/model baru pada template "Tasbih Emas 99" terinspirasi dari video viral dzikir @khayrxstudio dengan fitur lengkap:
+1. **Mekanisme Jalur Butiran (Bead Flow & Snap Mechanism):**
+   - Jalur melengkung horizontal (*catenary curve*) melintasi layar.
+   - Sensor reticle tengah bercahaya (*trigger zone*) di bagian tengah layar.
+   - Butiran mengalir dari kanan ke kiri dengan efek hentakan halus (*snap / ease-out bounce*) saat tiap butir mendarat tepat di lingkaran tengah.
+2. **Efek Saat Terjadi Hitungan:**
+   - Butir aktif membesar (~15-18%) dengan specular glow dan halo cahaya aquamarine/emas.
+   - Pop-up teks oranye/emas `+1` yang melayang ke atas lalu memudar (*float up & fade out*).
+   - Di ujung kiri, kepala tasbih merah ruby dilengkapi rumbai sutra dengan animasi inersia fisika (*secondary inertia motion*) yang mengayun berlawanan arah tarikan butir dan teredam alami.
+3. **Keterhubungan Elemen UI (Synced UI):**
+   - Lingkaran counter progres tepat di bawah reticle (`XX / 99`) dengan busur progres melingkar yang bertambah panjang proporsional mengisi lingkaran (1 langkah = 1%).
+   - Kaligrafi Asmaul Husna di bagian atas dengan shimmer glow sinkron per pergantian nama/hitungan.
+   - Latar tata surya 3D (*planetary orbit*) di bagian bawah dengan matahari berpendar dan 5 planet berputar konstan secara ambient.
+4. **Pemilih Model UI:**
+   - Menghadirkan pemilih model interaktif dalam tab Tasbih Emas 99: "Aliran Kosmis & Snap" dan "Untaian Melingkar 3D". Seluruh preferensi tersimpan rapi di *local storage*.
+   - Seluruh pengujian statis lulus 100% (72 ID unik, 67 referensi DOM sinkron).

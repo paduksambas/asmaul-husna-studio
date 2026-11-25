@@ -104,12 +104,30 @@
             </div>
           </div>
           <div id="tasbihSettingsTab" class="template-tab-pane hidden">
-            <div class="tasbih-scene-badge-card">
-              <div class="tasbih-badge-row">
-                <span class="tasbih-gold-badge">3D SCENE</span>
-                <b>Untaian Misbaha Emas</b>
-              </div>
-              <p>Animasi 99 butir oval zaitun (Beyzi cut) dengan kamera perspektif 3D, pencahayaan kosmis, dan pendaran aura kaligrafi.</p>
+            <label class="field-label field-spaced"><span>Model & Gaya Tasbih</span></label>
+            <div class="tasbih-style-grid" id="tasbihStyleGrid">
+              <button type="button" class="tasbih-style-card active" data-tasbih-style="flow" id="tasbihStyleFlow">
+                <div class="tasbih-style-badge-row">
+                  <span class="tasbih-style-icon">🌌</span>
+                  <span class="tasbih-gold-badge">NEW · VIRAL</span>
+                </div>
+                <b>Aliran Kosmis & Snap</b>
+                <small>Jalur melengkung horizontal, sensor reticle (+1 pop-up), rumbai inersia & orbit planet tata surya</small>
+              </button>
+              <button type="button" class="tasbih-style-card" data-tasbih-style="circular" id="tasbihStyleCircular">
+                <div class="tasbih-style-badge-row">
+                  <span class="tasbih-style-icon">📿</span>
+                  <span class="tasbih-gold-badge">KLASIK</span>
+                </div>
+                <b>Untaian Melingkar 3D</b>
+                <small>Untaian 99 butir zaitun melingkar perspektif 3D, pembatas emas & kepala imam stopper</small>
+              </button>
+            </div>
+            <div style="display:none;" aria-hidden="true">
+              <select id="tasbihStyleSelect" class="select-input">
+                <option value="flow">Aliran Kosmis & Snap</option>
+                <option value="circular">Untaian Melingkar 3D</option>
+              </select>
             </div>
           </div>
         </section>
