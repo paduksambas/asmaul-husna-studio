@@ -99,6 +99,19 @@
     const visibleDuration = state.narrationExportActive ? state.exportDuration : state.duration;
     byId('timeLabel').textContent = timeText(state.elapsed) + ' / ' + timeText(visibleDuration);
   }
+  function updateRenderHint() {
+    if (state.template === 'tasbih') {
+      byId('renderHint').textContent = state.tasbihStyle === 'flow'
+        ? 'Tasbih: Aliran Kosmis & Snap · fisika snap, reticle, rumbai inersia & orbit planet aktif'
+        : 'Tasbih: Untaian Melingkar 3D · perspektif 3D, nafas, dan pendaran aura aktif';
+    } else {
+      byId('renderHint').textContent = state.animation === 'none'
+        ? 'Animasi dinonaktifkan'
+        : state.animation === 'wheel'
+          ? 'Roda bacaan: teks aktif membesar, tetangganya mengecil dan berputar'
+          : 'Animasi lembut aktif saat diputar';
+    }
+  }
   function applyControls() {
     document.querySelectorAll('[data-theme]').forEach(b=>b.classList.toggle('active',b.dataset.theme===state.theme));
     document.querySelectorAll('[data-format]').forEach(b=>b.classList.toggle('active',b.dataset.format===state.format));
@@ -118,6 +131,14 @@
     const tasbihTab = byId('tasbihSettingsTab');
     if (classicTab) classicTab.classList.toggle('hidden', isTasbih);
     if (tasbihTab) tasbihTab.classList.toggle('hidden', !isTasbih);
+    const animationSection = byId('animationSection');
+    if (animationSection) animationSection.classList.toggle('hidden', isTasbih);
+    let secIdx = 1;
+    document.querySelectorAll('.inspector-panel .control-section').forEach(sec => {
+      if (sec.classList.contains('hidden')) return;
+      const numEl = sec.querySelector('.section-number');
+      if (numEl) numEl.textContent = String(secIdx++).padStart(2, '0');
+    });
     if (byId('tasbihStyleSelect')) byId('tasbihStyleSelect').value = state.tasbihStyle;
     document.querySelectorAll('#tasbihStyleGrid .tasbih-style-card').forEach(card => {
       card.classList.toggle('active', card.dataset.tasbihStyle === state.tasbihStyle);
@@ -131,6 +152,7 @@
     byId('dimensionLabel').textContent = formats[state.format][2];
     const f = formats[state.format]; canvas.width = f[0]; canvas.height = f[1];
     canvas.style.aspectRatio = f[0] + ' / ' + f[1];
+    updateRenderHint();
     updateCaptions(); draw(0);
   }
   function star(x,y,r,color) {
@@ -2410,7 +2432,7 @@
     byId('arabicVerticalOffset').addEventListener('input',e=>{state.arabicVerticalOffset=Number(e.target.value);byId('arabicVerticalOffsetValue').textContent=(state.arabicVerticalOffset>0?'+':'')+state.arabicVerticalOffset;draw(0);persist();});
     byId('arabicTextGap').addEventListener('input',e=>{state.arabicTextGap=Number(e.target.value);byId('arabicTextGapValue').textContent=(state.arabicTextGap>0?'+':'')+state.arabicTextGap;draw(0);persist();});
      byId('textMeaningGap').addEventListener('input',e=>{state.textMeaningGap=Number(e.target.value);byId('textMeaningGapValue').textContent=(state.textMeaningGap>0?'+':'')+state.textMeaningGap;draw(0);persist();});
-     byId('templateSelect').addEventListener('change',e=>{state.template=e.target.value;state.tasbihStart=performance.now();state.tasbihTransitionStart=0;state.transitionStart=0;applyControls();if(state.template==='tasbih')ensureRenderLoop();byId('renderHint').textContent=state.template==='tasbih'?'Template Tasbih Emas 99 · latar dan komposisi khusus':'Template klasik · mengikuti tema dan latar editor';draw(0);persist();});
+     byId('templateSelect').addEventListener('change',e=>{state.template=e.target.value;state.tasbihStart=performance.now();state.tasbihTransitionStart=0;state.transitionStart=0;applyControls();if(state.template==='tasbih')ensureRenderLoop();draw(0);persist();});
     document.querySelectorAll('.template-card').forEach(card=>{
       card.addEventListener('click',()=>{
         const template = card.dataset.template;
@@ -2421,9 +2443,6 @@
         state.transitionStart = 0;
         applyControls();
         if (state.template === 'tasbih') ensureRenderLoop();
-        byId('renderHint').textContent = state.template === 'tasbih'
-          ? 'Template Tasbih Emas 99 · latar dan komposisi khusus'
-          : 'Template klasik · mengikuti tema dan latar editor';
         draw(0);
         persist();
       });
@@ -2448,7 +2467,7 @@
         persist();
       });
     });
-     byId('animationSelect').addEventListener('change',e=>{state.animation=e.target.value;state.wheelTransitionStart=0;state.transitionStart=0;byId('renderHint').textContent=state.animation==='none'?'Animasi dinonaktifkan':state.animation==='wheel'?'Roda bacaan: teks aktif membesar, tetangganya mengecil dan berputar':'Animasi lembut aktif saat diputar';draw(0);persist();});
+     byId('animationSelect').addEventListener('change',e=>{state.animation=e.target.value;state.wheelTransitionStart=0;state.transitionStart=0;updateRenderHint();draw(0);persist();});
     byId('durationInput').addEventListener('input',e=>{state.duration=Number(e.target.value);byId('durationValue').textContent=state.duration;updateCaptions();persist();});
     byId('builtinMusicEnabled').addEventListener('change',e=>{state.builtinMusicEnabled=e.target.checked;syncBuiltinMusic(state.elapsed);persist();});
     byId('builtinMusicMode').addEventListener('change',e=>{state.builtinMusicMode=e.target.value;stopBuiltinMusic();state.builtinMusicPreview=false;byId('builtinMusicTestButton').textContent='Dengarkan contoh audio';syncBuiltinMusic(state.elapsed);draw(0);persist();});
@@ -2475,7 +2494,7 @@
   function init() {
     if(!ctx){notify('Browser tidak mendukung kanvas HTML5.');return;}
     restore();renderNames('');applyControls();
-    byId('renderHint').textContent=state.template==='tasbih'?'Template Tasbih Emas 99 · latar dan komposisi khusus':state.animation==='none'?'Animasi dinonaktifkan':state.animation==='wheel'?'Roda bacaan: teks aktif membesar, tetangganya mengecil dan berputar':'Animasi lembut aktif saat diputar';if(state.template==='tasbih'){state.tasbihStart=performance.now();ensureRenderLoop();}
+    if(state.template==='tasbih'){state.tasbihStart=performance.now();ensureRenderLoop();}
     bind();
     refreshSpeechVoices();
     byId('speechStatus').textContent = 'Pilih preset suara, lalu tekan Muat model AI. Model akan diunduh otomatis dan disimpan dalam cache browser bila tersedia.';
