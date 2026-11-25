@@ -1323,8 +1323,12 @@
           // mode, schedule the next rotation into the final transition window
           // of this clip so it lands at center exactly as this audio ends.
           if (i !== state.index) {
-            if (state.animation !== 'wheel') beginNameTransition(i);
-            else {
+            if (state.animation !== 'wheel') {
+              beginNameTransition(i);
+              // Keep the visual name, Arabic calligraphy and active bead in sync
+              // with the speech clip that is starting, including Tasbih Emas.
+              state.index = i;
+            } else {
               state.wheelTransitionStart = 0;
               state.index = i;
             }
