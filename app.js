@@ -16,7 +16,7 @@
     portrait: [1080,1920,'9:16 · 1080 × 1920'],
     square: [1080,1080,'1:1 · 1080 × 1080']
   };
-  const state = { index:0, theme:'emerald', format:'portrait', template:'classic', tasbihStyle:'flow', animation:'float', tasbihStart:0, tasbihTransitionStart:0, tasbihFromIndex:0, tasbihToIndex:0, duration:15,
+  const state = { index:0, theme:'emerald', format:'portrait', template:'classic', tasbihStyle:'flow', animation:'float', size:100, tasbihStart:0, tasbihTransitionStart:0, tasbihFromIndex:0, tasbihToIndex:0, duration:15,
     translation:true, transliteration:true, arabicVerticalOffset:0, arabicTextGap:0, textMeaningGap:0, builtinMusicEnabled:true, builtinMusicVolume:10, builtinMusicMode:'vocal', builtinMusicBuffers:{}, builtinMusicLoadPromises:{}, builtinMusicSource:null, builtinMusicGain:null, builtinMusicStarting:false, builtinMusicPreview:false, playing:false, elapsed:0, start:0, image:null, imageUrl:'',
     audioUrl:'', recorder:null, chunks:[], timer:0, audioDestination:null, backgroundAudioSource:null, backgroundAudioGain:null,
     ttsPipeline:null, ttsLoadPromise:null, ttsBackend:'', ttsBusy:false, ttsStop:false, speechSequenceActive:false, speechAudioContext:null, speechSource:null, wheelTransitionStart:0, wheelFromIndex:0, wheelToIndex:0, wheelDirection:1, pendingWheelTransition:null,
@@ -912,7 +912,8 @@
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
 
-    let arabicSize = (isPortrait ? u * 0.105 : Math.min(u * 0.088, h * 0.11)) * (state.size / 100);
+    const currentSize = Number.isFinite(state.size) ? state.size : 100;
+    let arabicSize = (isPortrait ? u * 0.125 : Math.min(u * 0.098, h * 0.11)) * (currentSize / 100);
     ctx.font = '700 ' + arabicSize + 'px "Amiri",serif';
     while (ctx.measureText(item[1]).width > w * 0.82 && arabicSize > u * 0.045) {
       arabicSize *= 0.94;
@@ -1314,7 +1315,8 @@
     ctx.textBaseline = 'middle';
 
     // Arabic Calligraphy with glow bloom
-    let arabicSize = u * 0.102 * (state.size / 100);
+    const currentSize = Number.isFinite(state.size) ? state.size : 100;
+    let arabicSize = u * 0.118 * (currentSize / 100);
     ctx.font = '700 ' + arabicSize + 'px "Amiri",serif';
     while (ctx.measureText(item[1]).width > textMaxW * 0.88 && arabicSize > u * 0.048) {
       arabicSize *= 0.94;
