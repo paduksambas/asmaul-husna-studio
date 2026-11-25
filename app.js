@@ -718,217 +718,462 @@
       drawTasbihFlowScene(t, item);
       return;
     }
-    const w=canvas.width,h=canvas.height,cx=w/2,cy=h/2,u=Math.min(w,h);
-    const elapsed=Math.max(0,(performance.now()-state.tasbihStart)/1000);
-    const opening=clamp(elapsed/2.4,0,1),formation=1-Math.pow(1-opening,3);
-    const finale=state.index===98&&!state.speechSequenceActive&&!state.ttsBusy;
-    const pulse=.5+.5*Math.sin(elapsed*1.35);
-    const bg=ctx.createLinearGradient(0,0,w,h);
-    bg.addColorStop(0,'#080f1c');bg.addColorStop(.48,'#111827');bg.addColorStop(1,'#070b14');
-    ctx.fillStyle=bg;ctx.fillRect(0,0,w,h);
-    const aura=ctx.createRadialGradient(cx,cy,u*.025,cx,cy,u*.58);
-    aura.addColorStop(0,'#b9853828');aura.addColorStop(.52,'#6f4b2020');aura.addColorStop(1,'#05091400');
-    ctx.fillStyle=aura;ctx.fillRect(0,0,w,h);
-    // Dedicated celestial arch and fine ornamental frame, independent of editor themes/background uploads.
-    ctx.save();ctx.strokeStyle='#d7b36b55';ctx.lineWidth=Math.max(2,u*.002);
-    const inset=u*.055, top=h*.075, bottom=h*.925;
-    ctx.beginPath();ctx.moveTo(inset,bottom);ctx.lineTo(inset,top+u*.16);
-    ctx.quadraticCurveTo(inset,top,inset+u*.16,top);
-    ctx.lineTo(w-inset-u*.16,top);ctx.quadraticCurveTo(w-inset,top,w-inset,top+u*.16);
-    ctx.lineTo(w-inset,bottom);ctx.stroke();
-    ctx.strokeStyle='#d7b36b28';ctx.lineWidth=Math.max(1,u*.001);
-    ctx.strokeRect(inset+u*.018,top+u*.02,w-2*(inset+u*.018),bottom-top-u*.04);
-    ctx.restore();
-    // Sparse stars and floating gold dust.
-    for(let i=0;i<72;i++){
-      const x=((i*193+31)%997)/997*w,y=((i*317+67)%991)/991*h;
-      const twinkle=.35+.65*(.5+.5*Math.sin(elapsed*(.7+i%4*.18)+i*1.7));
-      ctx.save();ctx.globalAlpha=twinkle*(i%5===0?.8:.35);ctx.fillStyle=i%7===0?'#fff0c4':'#d8b36c';
-      ctx.beginPath();ctx.arc(x,y,Math.max(1,u*(i%9===0?.0024:.0011)),0,Math.PI*2);ctx.fill();ctx.restore();
+    const w = canvas.width, h = canvas.height, cx = w / 2, cy = h / 2, u = Math.min(w, h);
+    const now = performance.now();
+    const elapsed = Math.max(0, (now - state.tasbihStart) / 1000);
+    const opening = clamp(elapsed / 2.4, 0, 1), formation = 1 - Math.pow(1 - opening, 3);
+    const finale = state.index === 98 && !state.speechSequenceActive && !state.ttsBusy;
+    const pulse = 0.5 + 0.5 * Math.sin(elapsed * 1.35);
+
+    // 1. Clean Cosmic Deep Space Background (matching Aliran Kosmis & Snap)
+    const bg = ctx.createLinearGradient(0, 0, 0, h);
+    bg.addColorStop(0, '#030611');
+    bg.addColorStop(0.35, '#07101e');
+    bg.addColorStop(0.72, '#0c182b');
+    bg.addColorStop(1, '#050a14');
+    ctx.fillStyle = bg;
+    ctx.fillRect(0, 0, w, h);
+
+    const ringY = cy + u * 0.035;
+
+    // Atmospheric cosmic nebula glow centered behind the circular misbaha
+    const aura = ctx.createRadialGradient(cx, ringY, u * 0.04, cx, ringY, u * 0.62);
+    aura.addColorStop(0, '#f59e0b1f');
+    aura.addColorStop(0.42, '#38bdf814');
+    aura.addColorStop(1, '#00000000');
+    ctx.fillStyle = aura;
+    ctx.fillRect(0, 0, w, h);
+
+    // Clean twinkling stars
+    for (let i = 0; i < 68; i++) {
+      const sx = ((i * 179 + 37) % 997) / 997 * w;
+      const sy = ((i * 313 + 59) % 991) / 991 * h;
+      const twinkle = 0.35 + 0.65 * (0.5 + 0.5 * Math.sin(elapsed * (0.55 + (i % 5) * 0.22) + i * 2.1));
+      ctx.save();
+      ctx.globalAlpha = twinkle * (i % 6 === 0 ? 0.85 : 0.38);
+      ctx.fillStyle = i % 7 === 0 ? '#bfe9ff' : '#fcedaf';
+      ctx.beginPath();
+      ctx.arc(sx, sy, Math.max(0.9, u * (i % 9 === 0 ? 0.0022 : 0.0011)), 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
     }
-    // Header and title belong to this template rather than the generic frame.
-    ctx.save();ctx.textAlign='center';ctx.textBaseline='middle';
-    ctx.fillStyle='#e8c982';ctx.font='600 '+Math.max(18,u*.021)+'px "DM Sans",sans-serif';ctx.letterSpacing=Math.max(2,u*.004)+'px';
-    ctx.fillText('THE 99 BEAUTIFUL NAMES',cx,h*.125);ctx.letterSpacing='0px';
-    ctx.fillStyle='#f4e7c7';ctx.font='400 '+Math.max(25,u*.036)+'px "Amiri",serif';ctx.fillText('أَسْمَاءُ اللَّهِ الْحُسْنَى',cx,h*.165);
-    ctx.fillStyle='#bda36f';ctx.font='400 '+Math.max(12,u*.013)+'px "DM Sans",sans-serif';ctx.fillText('A CIRCLE OF LIGHT · A JOURNEY OF REMEMBRANCE',cx,h*.205);
+
+    // Elegant minimal top header with ample breathing room
+    ctx.save();
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle = '#e2c27599';
+    ctx.font = '600 ' + Math.max(12, u * 0.015) + 'px "DM Sans",sans-serif';
+    ctx.letterSpacing = Math.max(2, u * 0.0035) + 'px';
+    ctx.fillText('ASMAUL HUSNA · 99 BEAUTIFUL NAMES', cx, h * 0.088);
+    ctx.letterSpacing = '0px';
     ctx.restore();
-    // A physical misbaha silhouette: 99 individually spaced amber beads
-    // leave a small opening at the lower join for the imam bead and tassel.
-    const ringY=cy+u*.055,spin=Math.sin(elapsed*.22)*.018,beads=[];
+
+    // 2. 3D Perspective Projection for 99 Circular Beads
+    const spin = Math.sin(elapsed * 0.22) * 0.018, beads = [];
     const yaw=spin, pitch=.30+Math.sin(elapsed*.16)*.012, focal=u*2.6;
     const projectTasbihPoint=(angle,scale=1,zBoost=0)=>{
-      const lx=Math.cos(angle)*u*.305*scale,ly=Math.sin(angle)*u*.235*scale;
-      const tiltedY=ly*Math.cos(pitch),tiltedZ=ly*Math.sin(pitch);
-      const rotatedX=lx*Math.cos(yaw)+tiltedZ*Math.sin(yaw);
-      const rotatedZ=-lx*Math.sin(yaw)+tiltedZ*Math.cos(yaw)+zBoost;
+      const lx = Math.cos(angle) * u * 0.305 * scale, ly = Math.sin(angle) * u * 0.235 * scale;
+      const tiltedY = ly * Math.cos(pitch), tiltedZ = ly * Math.sin(pitch);
+      const rotatedX = lx * Math.cos(yaw) + tiltedZ * Math.sin(yaw);
+      const rotatedZ = -lx * Math.sin(yaw) + tiltedZ * Math.cos(yaw) + zBoost;
       const perspective=focal/Math.max(focal*.78,focal-rotatedZ);
-      return {x:cx+rotatedX*perspective,y:ringY+tiltedY*perspective,z:rotatedZ,perspective};
+      return { x: cx + rotatedX * perspective, y: ringY + tiltedY * perspective, z: rotatedZ, perspective };
     };
-    const transitionProgress=state.tasbihTransitionStart?clamp((performance.now()-state.tasbihTransitionStart)/1050,0,1):1;
-    const transitionEase=1-Math.pow(1-transitionProgress,3);
-    const transitionActive=state.tasbihTransitionStart&&transitionProgress<1;
+
+    const transitionProgress = state.tasbihTransitionStart ? clamp((now - state.tasbihTransitionStart) / 1050, 0, 1) : 1;
+    const transitionEase = 1 - Math.pow(1 - transitionProgress, 3);
+    const transitionActive = state.tasbihTransitionStart && transitionProgress < 1;
     const imamAngle=Math.PI/2,joinGap=.19;
     const beadStart=imamAngle+joinGap/2,beadSweep=Math.PI*2-joinGap;
+
     for(let i=0;i<99;i++){
-      const angle=beadStart+i/(98)*beadSweep;
-      const active=i===state.index,lit=active||finale;
-      const point=projectTasbihPoint(angle,1,active?u*(.052+.012*pulse):0);
-      const pPrev=projectTasbihPoint(angle-.015,1);
-      const pNext=projectTasbihPoint(angle+.015,1);
-      const tangent=Math.atan2(pNext.y-pPrev.y,pNext.x-pPrev.x);
-      const depth=clamp(.5+point.z/(u*.62),0,1);
-      const sx=cx+Math.sin(i*12.9898+1.7)*u*(.17+(i%7)*.024);
-      const sy=ringY+Math.cos(i*7.233+2.4)*u*(.16+(i%5)*.025);
-      const x=sx+(point.x-sx)*formation,y=sy+(point.y-sy)*formation;
-      const radius=u*(.0048+depth*.0011)*(active?1.55:1)*point.perspective;
-      beads.push({index:i,x,y,baseY:y,depth:active?1.1:depth,angle,tangent,active,lit,r:radius,point});
+      const angle = beadStart + i / 98 * beadSweep;
+      const active = i === state.index, lit = active || finale;
+      const point = projectTasbihPoint(angle, 1, active?u*(.052+.012*pulse):0);
+      const pPrev = projectTasbihPoint(angle - 0.015, 1);
+      const pNext = projectTasbihPoint(angle + 0.015, 1);
+      const tangent = Math.atan2(pNext.y - pPrev.y, pNext.x - pPrev.x);
+      const depth = clamp(0.5 + point.z / (u * 0.62), 0, 1);
+      const sx = cx + Math.sin(i * 12.9898 + 1.7) * u * (0.17 + (i % 7) * 0.024);
+      const sy = ringY + Math.cos(i * 7.233 + 2.4) * u * (0.16 + (i % 5) * 0.025);
+      const x = sx + (point.x - sx) * formation, y = sy + (point.y - sy) * formation;
+      const radius = u * (0.0050 + depth * 0.0012) * (active ? 1.6 : 1) * point.perspective;
+      beads.push({ index: i, x, y, baseY: y, depth: active ? 1.1 : depth, angle, tangent, active, lit, r: radius, point });
     }
+
     // A travelling ribbon follows the ring from the last reading bead to the new one.
-    if(transitionActive&&opening>=.8){
-      const deltaRaw=state.tasbihToIndex-state.tasbihFromIndex;
-      const fromAngle=beadStart+state.tasbihFromIndex/98*beadSweep;
-      let targetAngle=beadStart+state.tasbihToIndex/98*beadSweep;
-      if(deltaRaw>49) targetAngle-=Math.PI*2;
-      else if(deltaRaw< -49) targetAngle+=Math.PI*2;
-      const toAngle=fromAngle+(targetAngle-fromAngle)*transitionEase;
-      const ribbon=ctx.createLinearGradient(cx-u*.32,ringY-u*.22,cx+u*.32,ringY+u*.22);
-      ribbon.addColorStop(0,'#f5c76a00');ribbon.addColorStop(.5,'#ffe9ae');ribbon.addColorStop(1,'#f5c76a00');
-      ctx.save();ctx.beginPath();
-      for(let step=0;step<=48;step++){const a=fromAngle+(toAngle-fromAngle)*step/48,p=projectTasbihPoint(a,1,u*.012);if(step===0)ctx.moveTo(p.x,p.y);else ctx.lineTo(p.x,p.y);}
-      ctx.strokeStyle=ribbon;ctx.lineWidth=u*.009;ctx.lineCap='round';ctx.shadowColor='#ffd77b';ctx.shadowBlur=u*.025;ctx.globalAlpha=1-transitionProgress*.28;ctx.stroke();ctx.restore();
+    if (transitionActive && opening >= 0.8) {
+      const deltaRaw = state.tasbihToIndex - state.tasbihFromIndex;
+      const fromAngle = beadStart + state.tasbihFromIndex / 98 * beadSweep;
+      let targetAngle = beadStart + state.tasbihToIndex / 98 * beadSweep;
+      if (deltaRaw > 49) targetAngle -= Math.PI * 2;
+      else if (deltaRaw < -49) targetAngle += Math.PI * 2;
+      const toAngle = fromAngle + (targetAngle - fromAngle) * transitionEase;
+      const ribbon=ctx.createLinearGradient(cx - u * 0.32, ringY - u * 0.22, cx + u * 0.32, ringY + u * 0.22);
+      ribbon.addColorStop(0, '#f5c76a00');
+      ribbon.addColorStop(0.5, '#ffe9ae');
+      ribbon.addColorStop(1, '#f5c76a00');
+      ctx.save();
+      ctx.beginPath();
+      for (let step = 0; step <= 48; step++) {
+        const a = fromAngle + (toAngle - fromAngle) * step / 48, p = projectTasbihPoint(a,1,u*.012);
+        if (step === 0) ctx.moveTo(p.x, p.y); else ctx.lineTo(p.x, p.y);
+      }
+      ctx.strokeStyle = ribbon;
+      ctx.lineWidth = u * 0.009;
+      ctx.lineCap = 'round';
+      ctx.shadowColor = '#ffd77b';
+      ctx.shadowBlur = u * 0.025;
+      ctx.globalAlpha = 1 - transitionProgress * 0.28;
+      ctx.stroke();
+      ctx.restore();
     }
+
     // A slow moving specular sweep gives the polished gold beads a living surface.
     const sheenAngle=elapsed*.34;
-    const sheenPoint=projectTasbihPoint(sheenAngle,1.04);
-    const sheenX=sheenPoint.x,sheenY=sheenPoint.y;
-    const sheen=ctx.createRadialGradient(sheenX,sheenY,0,sheenX,sheenY,u*.09);
-    sheen.addColorStop(0,'#ffe8ae24');sheen.addColorStop(1,'#ffe8ae00');
-    ctx.fillStyle=sheen;ctx.fillRect(cx-u*.43,ringY-u*.34,u*.86,u*.68);
-    beads.sort((a,b)=>a.depth-b.depth);
-    // A real misbaha reads as a connected strand: draw the dark silk cord first,
-    // then the 99 beads over it so tiny gaps reveal the thread between beads.
+    const sheenPoint = projectTasbihPoint(sheenAngle, 1.04);
+    const sheenX = sheenPoint.x, sheenY = sheenPoint.y;
+    const sheen = ctx.createRadialGradient(sheenX, sheenY, 0, sheenX, sheenY, u * 0.10);
+    sheen.addColorStop(0, '#ffe8ae33');
+    sheen.addColorStop(1, '#ffe8ae00');
+    ctx.fillStyle = sheen;
+    ctx.fillRect(cx - u * 0.43, ringY - u * 0.34, u * 0.86, u * 0.68);
+
+    beads.sort((a, b) => a.depth - b.depth);
+
+    // Braided cord
     ctx.save();
     ctx.beginPath();
-    for(let step=0;step<=198;step++){
-      const p=projectTasbihPoint(beadStart+step/198*beadSweep,1);
-      if(step===0)ctx.moveTo(p.x,p.y);else ctx.lineTo(p.x,p.y);
+    for (let step = 0; step <= 198; step++) {
+      const p = projectTasbihPoint(beadStart+step/198*beadSweep,1);
+      if (step === 0) ctx.moveTo(p.x, p.y); else ctx.lineTo(p.x, p.y);
     }
-    ctx.strokeStyle='#050810ee';ctx.lineWidth=Math.max(2.5,u*.0038);ctx.lineCap='round';ctx.stroke();
-    ctx.strokeStyle='#24160c';ctx.lineWidth=Math.max(2,u*.0028);ctx.stroke();
-    ctx.strokeStyle='#dfab5a';ctx.lineWidth=Math.max(1,u*.0013);ctx.setLineDash([u*.003,u*.0022]);ctx.stroke();ctx.setLineDash([]);ctx.restore();
-    beads.forEach(b=>{
-      const rx=b.r*1.15,ry=b.r*0.86;
-      ctx.save();ctx.globalAlpha=.15+.85*formation;
-      ctx.translate(b.x,b.y);ctx.rotate(b.tangent);
+    ctx.strokeStyle = '#050810ee'; ctx.lineWidth = Math.max(2.5, u * 0.0038); ctx.lineCap = 'round'; ctx.stroke();
+    ctx.strokeStyle = '#24160c'; ctx.lineWidth = Math.max(2, u * 0.0028); ctx.stroke();
+    ctx.strokeStyle = '#dfab5a'; ctx.lineWidth = Math.max(1, u * 0.0013); ctx.setLineDash([u * 0.003, u * 0.0022]); ctx.stroke(); ctx.setLineDash([]);
+    ctx.restore();
+
+    // 3. Render 99 Beyzi olive-cut beads with vibrant, clean 24K gold material
+    beads.forEach(b => {
+      const rx = b.r * 1.15, ry = b.r * 0.86;
+      ctx.save();
+      ctx.globalAlpha = 0.15 + 0.85 * formation;
+      ctx.translate(b.x, b.y);
+      ctx.rotate(b.tangent);
+
       // Soft contact shadow oriented with the physical bead strand.
-      ctx.fillStyle='#02050b88';ctx.beginPath();ctx.ellipse(0,ry*.65,rx*.96,ry*.44,0,0,Math.PI*2);ctx.fill();
-      if(b.lit){ctx.shadowColor='#ffd77b';ctx.shadowBlur=u*(b.active?.065:.026);}
+      ctx.fillStyle = '#02050b88';
+      ctx.beginPath();
+      ctx.ellipse(0, ry * 0.65, rx * 0.96, ry * 0.44, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      if (b.lit) {
+        ctx.shadowColor = '#ffd77b';
+        ctx.shadowBlur = u * (b.active ? 0.065 : 0.026);
+      }
+
       // Beyzi olive-cut silhouette with elongated warm gold volume.
-      const grad=ctx.createRadialGradient(-rx*.32,-ry*.45,ry*.08,0,0,rx*1.28);
-      grad.addColorStop(0,b.lit?'#fff7da':'#fcedaf');grad.addColorStop(.18,b.lit?'#edbe6a':'#e0ab5e');grad.addColorStop(.48,b.lit?'#b9772f':'#a86c33');grad.addColorStop(.78,b.lit?'#75421e':'#6f4220');grad.addColorStop(1,'#29170e');
-      ctx.fillStyle=grad;ctx.beginPath();ctx.ellipse(0,0,rx,ry,0,0,Math.PI*2);ctx.fill();
-      ctx.shadowBlur=0;ctx.strokeStyle=b.lit?'#fff5d2':'#e0c48e88';ctx.lineWidth=Math.max(1,u*.0012);ctx.stroke();
+      const grad = ctx.createRadialGradient(-rx * 0.32, -ry * 0.45, ry * 0.08, 0, 0, rx * 1.28);
+      grad.addColorStop(0, b.lit ? '#ffffff' : '#fff4cc');
+      grad.addColorStop(0.18, b.lit ? '#ffe082' : '#fed268');
+      grad.addColorStop(0.48, b.lit ? '#f59e0b' : '#e58b16');
+      grad.addColorStop(0.78, b.lit ? '#b45309' : '#a1480b');
+      grad.addColorStop(1, '#451a03');
+      ctx.fillStyle = grad;
+      ctx.beginPath();
+      ctx.ellipse(0, 0, rx, ry, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.shadowBlur = 0;
+      ctx.strokeStyle = b.lit ? '#fff5d2' : '#e0c48e88';
+      ctx.lineWidth = Math.max(1, u * 0.0012);
+      ctx.stroke();
+
       // Fine gold collars capping the cord entry holes at both tapered tips.
-      ctx.strokeStyle=b.lit?'#fff0ca':'#c6934488';ctx.lineWidth=Math.max(.7,u*.00075);
-      ctx.beginPath();ctx.ellipse(-rx*.92,0,rx*.07,ry*.28,0,0,Math.PI*2);ctx.stroke();
-      ctx.beginPath();ctx.ellipse(rx*.92,0,rx*.07,ry*.28,0,0,Math.PI*2);ctx.stroke();
+      ctx.strokeStyle = b.lit ? '#fff0ca' : '#c6934488';
+      ctx.lineWidth = Math.max(0.7, u * 0.00075);
+      ctx.beginPath();
+      ctx.ellipse(-rx * 0.92, 0, rx * 0.07, ry * 0.28, 0, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.ellipse(rx * 0.92, 0, rx * 0.07, ry * 0.28, 0, 0, Math.PI * 2);
+      ctx.stroke();
+
       // Tiny white-gold reflection at the upper-left of each bead.
-      ctx.globalAlpha*=b.active?.95:.65;ctx.fillStyle='#fff9e2';
-      ctx.beginPath();ctx.ellipse(-rx*.24,-ry*.36,rx*.46,ry*.18,-.08,0,Math.PI*2);ctx.fill();
+      ctx.globalAlpha *= b.active ? 0.95 : 0.75;
+      ctx.fillStyle = '#ffffff';
+      ctx.beginPath();
+      ctx.ellipse(-rx * 0.24, -ry * 0.36, rx * 0.46, ry * 0.18, -0.08, 0, Math.PI * 2);
+      ctx.fill();
+
       // A tiny dark bore with a warm rim suggests the drilled channel through each bead.
-      ctx.globalAlpha=.68;ctx.fillStyle='#24150d';ctx.beginPath();ctx.ellipse(rx*.88,0,rx*.08,ry*.16,0,0,Math.PI*2);ctx.fill();
-      ctx.strokeStyle='#e2bd7a88';ctx.lineWidth=Math.max(.7,u*.00065);ctx.stroke();
+      ctx.globalAlpha = 0.68;
+      ctx.fillStyle = '#24150d';
+      ctx.beginPath();
+      ctx.ellipse(rx * 0.88, 0, rx * 0.08, ry * 0.16, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = '#e2bd7a88';
+      ctx.lineWidth = Math.max(0.7, u * 0.00065);
+      ctx.stroke();
       ctx.restore();
     });
+
     // Three small separator spacers mark the traditional 33-bead sections.
     [32,65].forEach(index=>{
-      const bead=beads.find(entry=>entry.index===index);if(!bead)return;
-      const r=bead.r*1.12;
-      ctx.save();ctx.shadowColor='#f4c66e';ctx.shadowBlur=u*.008;
-      ctx.translate(bead.x,bead.y);ctx.rotate(bead.tangent);
-      const spacer=ctx.createLinearGradient(-r,-r,r,r);
-      spacer.addColorStop(0,'#fff2c2');spacer.addColorStop(.28,'#dfa94e');spacer.addColorStop(.68,'#8e5c21');spacer.addColorStop(1,'#f9dc92');
-      ctx.fillStyle=spacer;
-      // Traditional flattened fluted disc (pul) set perpendicular to the strand.
-      ctx.beginPath();ctx.ellipse(0,0,r*.28,r*1.15,0,0,Math.PI*2);ctx.fill();
-      ctx.strokeStyle='#fff0b2';ctx.lineWidth=Math.max(1,u*.001);ctx.stroke();
+      const bead = beads.find(entry => entry.index === index);
+      if (!bead) return;
+      const r = bead.r * 1.12;
+      ctx.save();
+      ctx.shadowColor = '#f4c66e';
+      ctx.shadowBlur = u * 0.008;
+      ctx.translate(bead.x, bead.y);
+      ctx.rotate(bead.tangent);
+      const spacer = ctx.createLinearGradient(-r, -r, r, r);
+      spacer.addColorStop(0, '#fff2c2');
+      spacer.addColorStop(0.28, '#dfa94e');
+      spacer.addColorStop(0.68, '#8e5c21');
+      spacer.addColorStop(1, '#f9dc92');
+      ctx.fillStyle = spacer;
+      ctx.beginPath();
+      ctx.ellipse(0, 0, r * 0.28, r * 1.15, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = '#fff0b2';
+      ctx.lineWidth = Math.max(1, u * 0.001);
+      ctx.stroke();
       ctx.restore();
     });
-    // Traditional imam bead closes the two ends of the strand. Its neck,
-    // engraved metal cap and hanging silk tassel are deliberately distinct.
-    const b0=beads.find(b=>b.index===0);
-    const b98=beads.find(b=>b.index===98);
-    const joinX=(b0&&b98)?(b0.x+b98.x)/2:cx;
-    const joinY=(b0&&b98)?Math.max(b0.y,b98.y):ringY+u*.235;
-    const imam=projectTasbihPoint(imamAngle,1,0);
-    const imamX=joinX;
-    const imamY=joinY+u*.002;
-    const imamR=u*.016;
-    const tasselSway=Math.sin(elapsed*.9)*imamR*.1;
+
+    // Traditional imam bead closes the two ends of the strand.
+    const b0 = beads.find(b => b.index === 0);
+    const b98 = beads.find(b => b.index === 98);
+    const joinX = (b0 && b98) ? (b0.x + b98.x) / 2 : cx;
+    const joinY = (b0 && b98) ? Math.max(b0.y, b98.y) : ringY + u * 0.235;
+    const imam = projectTasbihPoint(imamAngle, 1, 0);
+    const imamX = joinX;
+    const imamY = joinY + u * 0.002;
+    const imamR = u * 0.016;
+
+    // Physics inertia sway during transition
+    const transVel = transitionActive ? Math.sin(transitionProgress * Math.PI) * 1.4 : 0;
+    const inertiaSway = -transVel * imamR * 0.18;
+    const ambientSway = Math.sin(elapsed * 0.9) * imamR * 0.08;
+    const tasselSway = inertiaSway + ambientSway;
+
     ctx.save();
-    // Short connector cord emerging from the two end beads to the imam.
-    if(b0&&b98){
-      ctx.strokeStyle='#dfab5a';ctx.lineWidth=Math.max(1.8,u*.0022);ctx.lineCap='round';
-      ctx.beginPath();ctx.moveTo(b0.x,b0.y);ctx.lineTo(imamX,imamY);ctx.lineTo(b98.x,b98.y);ctx.stroke();
+    if (b0 && b98) {
+      ctx.strokeStyle = '#dfab5a';
+      ctx.lineWidth = Math.max(1.8, u * 0.0022);
+      ctx.lineCap = 'round';
+      ctx.beginPath();
+      ctx.moveTo(b0.x, b0.y);
+      ctx.lineTo(imamX, imamY);
+      ctx.lineTo(b98.x, b98.y);
+      ctx.stroke();
     }
-    // Imam bead body: an elongated turned baluster form with warm amber-gold gradation.
-    const imamH=imamR*2.6;
-    const imamGrad=ctx.createLinearGradient(imamX-imamR,imamY,imamX+imamR,imamY);
-    imamGrad.addColorStop(0,'#6f481c');imamGrad.addColorStop(.3,'#f4d48b');imamGrad.addColorStop(.65,'#9f6828');imamGrad.addColorStop(1,'#f7dd9d');
-    ctx.fillStyle=imamGrad;ctx.beginPath();
-    ctx.moveTo(imamX-imamR*.35,imamY);
-    ctx.quadraticCurveTo(imamX-imamR*.9,imamY+imamH*.4,imamX-imamR*.45,imamY+imamH*.75);
-    ctx.lineTo(imamX-imamR*.6,imamY+imamH);
-    ctx.lineTo(imamX+imamR*.6,imamY+imamH);
-    ctx.lineTo(imamX+imamR*.45,imamY+imamH*.75);
-    ctx.quadraticCurveTo(imamX+imamR*.9,imamY+imamH*.4,imamX+imamR*.35,imamY);
-    ctx.closePath();ctx.fill();
-    ctx.strokeStyle='#f6dda1';ctx.lineWidth=Math.max(1,u*.0012);ctx.stroke();
-    // Brass collars and the small cap at the tassel neck.
-    ctx.strokeStyle='#f0d18b';ctx.lineWidth=u*.0025;
-    [-.82,.82].forEach(k=>{ctx.beginPath();ctx.ellipse(imamX,imamY+imamH*.5+imamR*k*.4,imamR*.6,imamR*.14,0,0,Math.PI*2);ctx.stroke();});
-    const capY=imamY+imamH,capW=imamR*.75,capH=imamR*.55;
-    const capGrad=ctx.createLinearGradient(imamX-capW/2,capY,imamX+capW/2,capY);
-    capGrad.addColorStop(0,'#79501f');capGrad.addColorStop(.35,'#f4d48b');capGrad.addColorStop(.7,'#a16b2b');capGrad.addColorStop(1,'#f5d995');
-    ctx.fillStyle=capGrad;ctx.fillRect(imamX-capW/2,capY,capW,capH);
-    ctx.strokeStyle='#f5dfa8';ctx.lineWidth=u*.001;ctx.strokeRect(imamX-capW/2,capY,capW,capH);
-    // Fine silk threads hang down from the cap and sway gently.
-    ctx.strokeStyle='#d8ad62';ctx.lineWidth=Math.max(1,u*.0015);
-    for(let strand=0;strand<17;strand++){
-      const offset=(strand-8)*imamR*.09;
-      const sway=Math.sin(elapsed*.95+strand*.43)*imamR*.12;
-      ctx.beginPath();ctx.moveTo(imamX+offset*.25,capY+capH);
-      ctx.bezierCurveTo(imamX+offset+sway,capY+capH+imamR*.7,imamX+offset*.8-sway,capY+capH+imamR*1.35,imamX+offset*.72+tasselSway,capY+capH+imamR*(2.15+(strand%4)*.12));
+
+    const imamH = imamR * 2.6;
+    const imamGrad = ctx.createLinearGradient(imamX - imamR, imamY, imamX + imamR, imamY);
+    imamGrad.addColorStop(0, '#6f481c');
+    imamGrad.addColorStop(0.3, '#f4d48b');
+    imamGrad.addColorStop(0.65, '#9f6828');
+    imamGrad.addColorStop(1, '#f7dd9d');
+    ctx.fillStyle = imamGrad;
+    ctx.beginPath();
+    ctx.moveTo(imamX - imamR * 0.35, imamY);
+    ctx.quadraticCurveTo(imamX - imamR * 0.9, imamY + imamH * 0.4, imamX - imamR * 0.45, imamY + imamH * 0.75);
+    ctx.lineTo(imamX - imamR * 0.6, imamY + imamH);
+    ctx.lineTo(imamX + imamR * 0.6, imamY + imamH);
+    ctx.lineTo(imamX + imamR * 0.45, imamY + imamH * 0.75);
+    ctx.quadraticCurveTo(imamX + imamR * 0.9, imamY + imamH * 0.4, imamX + imamR * 0.35, imamY);
+    ctx.closePath();
+    ctx.fill();
+    ctx.strokeStyle = '#f6dda1';
+    ctx.lineWidth = Math.max(1, u * 0.0012);
+    ctx.stroke();
+
+    ctx.strokeStyle = '#f0d18b';
+    ctx.lineWidth = u * 0.0025;
+    [-0.82, 0.82].forEach(k => {
+      ctx.beginPath();
+      ctx.ellipse(imamX, imamY + imamH * 0.5 + imamR * k * 0.4, imamR * 0.6, imamR * 0.14, 0, 0, Math.PI * 2);
+      ctx.stroke();
+    });
+
+    const capY = imamY + imamH, capW = imamR * 0.75, capH = imamR * 0.55;
+    const capGrad = ctx.createLinearGradient(imamX - capW / 2, capY, imamX + capW / 2, capY);
+    capGrad.addColorStop(0, '#79501f');
+    capGrad.addColorStop(0.35, '#f4d48b');
+    capGrad.addColorStop(0.7, '#a16b2b');
+    capGrad.addColorStop(1, '#f5d995');
+    ctx.fillStyle = capGrad;
+    ctx.fillRect(imamX - capW / 2, capY, capW, capH);
+    ctx.strokeStyle = '#f5dfa8';
+    ctx.lineWidth = u * 0.001;
+    ctx.strokeRect(imamX - capW / 2, capY, capW, capH);
+
+    // Fine silk threads hang down from the cap and sway gently
+    ctx.strokeStyle = '#d8ad62';
+    ctx.lineWidth = Math.max(1, u * 0.0015);
+    for (let strand = 0; strand < 17; strand++) {
+      const offset = (strand - 8) * imamR * 0.09;
+      const sway = Math.sin(elapsed * 0.95 + strand * 0.43) * imamR * 0.12;
+      ctx.beginPath();
+      ctx.moveTo(imamX + offset * 0.25, capY + capH);
+      ctx.bezierCurveTo(
+        imamX + offset + sway + tasselSway * 0.5, capY + capH + imamR * 0.7,
+        imamX + offset * 0.8 - sway + tasselSway * 0.9, capY + capH + imamR * 1.35,
+        imamX + offset * 0.72 + tasselSway * 1.4, capY + capH + imamR * (2.15 + (strand % 4) * 0.12)
+      );
       ctx.stroke();
     }
     ctx.restore();
-    // Radiant golden glow on the active reading bead.
-    const activeBead=beads.find(b=>b.active);
-    if(activeBead&&opening>=.8){
-      const haloPulse=.5+.5*Math.sin(elapsed*2.4);
-      const glowR=activeBead.r*(2.5+.5*haloPulse);
-      const glow=ctx.createRadialGradient(activeBead.x,activeBead.y,activeBead.r*.2,activeBead.x,activeBead.y,glowR);
-      glow.addColorStop(0,'#ffd982aa');glow.addColorStop(.4,'#ffd98233');glow.addColorStop(1,'#ffd98200');
-      ctx.save();ctx.fillStyle=glow;ctx.beginPath();ctx.arc(activeBead.x,activeBead.y,glowR,0,Math.PI*2);ctx.fill();ctx.restore();
+
+    // Radiant bloom glow on active bead
+    const activeBead = beads.find(b => b.active);
+    if (activeBead && opening >= 0.8) {
+      const haloPulse = 0.5 + 0.5 * Math.sin(elapsed * 2.4);
+      const glowR = activeBead.r * (2.6 + 0.6 * haloPulse);
+      const glow = ctx.createRadialGradient(activeBead.x, activeBead.y, activeBead.r * 0.2, activeBead.x, activeBead.y, glowR);
+      glow.addColorStop(0, '#ffd982cc');
+      glow.addColorStop(0.4, '#ffd98244');
+      glow.addColorStop(1, '#ffd98200');
+      ctx.save();
+      ctx.fillStyle = glow;
+      ctx.beginPath();
+      ctx.arc(activeBead.x, activeBead.y, glowR, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+
+      // Floating +1 Pop-up in circular mode too!
+      if (transitionActive || (now - (state.tasbihTransitionStart || 0)) < 700) {
+        const fp = clamp((now - (state.tasbihTransitionStart || (now - 1000))) / 650, 0, 1);
+        if (fp < 1) {
+          const floatY = activeBead.y - activeBead.r * 1.5 - fp * u * 0.045;
+          const floatX = activeBead.x;
+          const floatAlpha = 1 - Math.pow(fp, 1.4);
+          ctx.save();
+          ctx.globalAlpha = floatAlpha;
+          ctx.fillStyle = '#ff7a29';
+          ctx.font = '700 ' + Math.max(16, u * 0.024) + 'px "DM Sans",sans-serif';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.shadowColor = '#ff7a29aa';
+          ctx.shadowBlur = u * 0.015;
+          ctx.fillText('+1', floatX, floatY);
+          ctx.restore();
+        }
+      }
     }
-    if(state.tasbihTransitionStart&&transitionProgress>=1) state.tasbihTransitionStart=0;
-    // Central reading panel (clean typography floating without card wrapper).
-    const textMaxW=u*.55,py=ringY;
+
+    if (state.tasbihTransitionStart && transitionProgress >= 1) state.tasbihTransitionStart = 0;
+
+    // 4. Central Calligraphy & Typography (Spacious, clean, floating without heavy card)
+    const textMaxW = u * 0.55, py = ringY;
     ctx.save();
-    const fade=state.transitionStart?clamp((performance.now()-state.transitionStart)/state.transitionDuration,0,1):1;
-    ctx.globalAlpha=fade;ctx.textAlign='center';ctx.textBaseline='middle';
-    let arabicSize=u*.096*(state.size/100);ctx.font='700 '+arabicSize+'px "Amiri",serif';
-    while(ctx.measureText(item[1]).width>textMaxW*.88&&arabicSize>u*.045){arabicSize*=.94;ctx.font='700 '+arabicSize+'px "Amiri",serif';}
-    ctx.shadowColor='#f4c96f88';ctx.shadowBlur=u*.018;ctx.fillStyle='#fff0ca';ctx.fillText(item[1],cx,py-u*.067,textMaxW*.9);ctx.shadowBlur=0;
-    if(state.transliteration){ctx.fillStyle='#e9d4a4';ctx.font='600 '+Math.max(16,u*.027)+'px "DM Sans",sans-serif';ctx.fillText(item[0],cx,py+u*.018,textMaxW*.9);}
-    if(state.translation){ctx.fillStyle='#c9b58c';ctx.font='400 '+Math.max(14,u*.022)+'px "DM Sans",sans-serif';ctx.fillText(item[2],cx,py+u*.073,textMaxW*.9);}
+    const fade = state.transitionStart ? clamp((now - state.transitionStart) / state.transitionDuration, 0, 1) : 1;
+    ctx.globalAlpha = fade;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+
+    // Arabic Calligraphy with glow bloom
+    let arabicSize = u * 0.102 * (state.size / 100);
+    ctx.font = '700 ' + arabicSize + 'px "Amiri",serif';
+    while (ctx.measureText(item[1]).width > textMaxW * 0.88 && arabicSize > u * 0.048) {
+      arabicSize *= 0.94;
+      ctx.font = '700 ' + arabicSize + 'px "Amiri",serif';
+    }
+    const shimmerGlow = transitionActive ? Math.sin(transitionProgress * Math.PI) * u * 0.025 : 0;
+    ctx.shadowColor = '#5eead488';
+    ctx.shadowBlur = u * 0.016 + shimmerGlow;
+    ctx.fillStyle = '#ffffff';
+    ctx.fillText(item[1], cx, py - u * 0.062, textMaxW * 0.9);
+    ctx.shadowBlur = 0;
+
+    // Diamond separator
+    ctx.fillStyle = '#f59e0b';
+    ctx.font = '600 ' + Math.max(10, u * 0.014) + 'px "DM Sans",sans-serif';
+    ctx.fillText('◆', cx, py - u * 0.008);
+
+    // Transliteration
+    if (state.transliteration) {
+      ctx.fillStyle = '#f8fafc';
+      ctx.font = '600 ' + Math.max(16, u * 0.027) + 'px "DM Sans",sans-serif';
+      ctx.fillText(item[0], cx, py + u * 0.038, textMaxW * 0.9);
+    }
+    // Translation / Meaning
+    if (state.translation) {
+      ctx.fillStyle = '#94a3b8';
+      ctx.font = '400 ' + Math.max(13, u * 0.021) + 'px "DM Sans",sans-serif';
+      ctx.fillText(item[2], cx, py + u * 0.082, textMaxW * 0.9);
+    }
     ctx.restore();
-    // Footer ornament and counter.
-    ctx.save();ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillStyle='#d9bd80';
-    ctx.font='500 '+Math.max(15,u*.018)+'px "DM Sans",sans-serif';ctx.fillText(String(state.index+1).padStart(2,'0')+'  /  99',cx,h*.835);
-    ctx.fillStyle='#9e8c6b';ctx.font='400 '+Math.max(12,u*.013)+'px "DM Sans",sans-serif';ctx.fillText('REMEMBER · REFLECT · RECONNECT',cx,h*.865);
+
+    // 5. Sleek Circular Counter Progress Badge at bottom (matching flow mode)
+    const badgeY = h * 0.855;
+    const badgeR = u * 0.065;
+    ctx.save();
+    ctx.fillStyle = '#0b1626cc';
+    ctx.beginPath();
+    ctx.arc(cx, badgeY, badgeR, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = '#ffffff22';
+    ctx.lineWidth = Math.max(1.2, u * 0.0015);
+    ctx.stroke();
+
+    const arcR = badgeR * 0.88;
+    ctx.strokeStyle = '#ffffff18';
+    ctx.lineWidth = Math.max(2.5, u * 0.0035);
+    ctx.beginPath();
+    ctx.arc(cx, badgeY, arcR, 0, Math.PI * 2);
+    ctx.stroke();
+
+    const countFraction = clamp((state.index + 1) / 99, 0, 1);
+    const arcGrad = ctx.createLinearGradient(cx - arcR, badgeY - arcR, cx + arcR, badgeY + arcR);
+    arcGrad.addColorStop(0, '#f59e0b');
+    arcGrad.addColorStop(1, '#5eead4');
+    ctx.strokeStyle = arcGrad;
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.arc(cx, badgeY, arcR, -Math.PI / 2, -Math.PI / 2 + countFraction * Math.PI * 2);
+    ctx.stroke();
+
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle = '#ffffff';
+    ctx.font = '700 ' + Math.max(18, u * 0.028) + 'px "DM Sans",sans-serif';
+    ctx.fillText(String(state.index + 1), cx, badgeY - u * 0.010);
+    ctx.fillStyle = '#8ea3b8';
+    ctx.font = '500 ' + Math.max(10, u * 0.013) + 'px "DM Sans",sans-serif';
+    ctx.fillText('/ 99', cx, badgeY + u * 0.016);
     ctx.restore();
+
+    if (opening < 1) {
+      for (let i = 0; i < 55; i++) {
+        const a = i * 2.399 + elapsed * 1.7, rad = u * (0.05 + (i % 13) * 0.019) * (1 - opening);
+        const x = cx + Math.cos(a) * rad, y = ringY + Math.sin(a) * rad;
+        ctx.save();
+        ctx.globalAlpha = (1 - opening) * (0.2 + 0.6 * (0.5 + 0.5 * Math.sin(elapsed * 5 + i)));
+        ctx.fillStyle = '#ffe4a4';
+        ctx.shadowColor = '#f2c66e';
+        ctx.shadowBlur = u * 0.012;
+        ctx.beginPath();
+        ctx.arc(x, y, u * 0.002, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      }
+    }
+    if (finale) {
+      const halo = ctx.createRadialGradient(cx, ringY, u * 0.12, cx, ringY, u * 0.43);
+      halo.addColorStop(0, '#ffe4a42b');
+      halo.addColorStop(1, '#ffe4a400');
+      ctx.save();
+      ctx.globalAlpha = 0.65 + 0.35 * pulse;
+      ctx.fillStyle = halo;
+      ctx.fillRect(cx - u * 0.45, ringY - u * 0.45, u * 0.9, u * 0.9);
+      ctx.restore();
+    }
+  }
     if(opening<1){
       for(let i=0;i<55;i++){const a=i*2.399+elapsed*1.7,rad=u*(.05+(i%13)*.019)*(1-opening);
         const x=cx+Math.cos(a)*rad,y=ringY+Math.sin(a)*rad;

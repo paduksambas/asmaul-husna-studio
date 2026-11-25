@@ -378,3 +378,11 @@ Menambahkan sub-gaya/model baru pada template "Tasbih Emas 99" terinspirasi dari
 4. **Pemilih Model UI:**
    - Menghadirkan pemilih model interaktif dalam tab Tasbih Emas 99: "Aliran Kosmis & Snap" dan "Untaian Melingkar 3D". Seluruh preferensi tersimpan rapi di *local storage*.
    - Seluruh pengujian statis lulus 100% (72 ID unik, 67 referensi DOM sinkron).
+
+### 25 November 2026 — Modernisasi Visual Untaian Melingkar 3D (Clean & Alive Overhaul)
+Memperbarui tampilan visual model "Untaian Melingkar 3D" agar sebersih, semodern, dan sehidup model "Aliran Kosmis & Snap":
+1. **Latar Belakang Bersih & Kosmis:** Mengganti gradasi kusam dan menghapus bingkai arch kotak kaku yang mengurung layar dengan latar kosmis deep space luas, nebula aura hangat yang terpusat di belakang untaian, dan taburan bintang berkedip organik.
+2. **Tipografi Bersih & Elegan:** Menghapus penumpukan teks header atas yang berlebihan, menggantinya dengan label identitas minimalis di bagian atas dengan ruang bernapas yang lapang, serta menyempurnakan kaligrafi Arab di tengah dengan efek *shimmer glow bloom* bercahaya dan pemisah diamond oranye `◆`.
+3. **Material Emas 24K Bercahaya (Tanpa Nada Lumpur):** Butiran zaitun oval 3D kini menggunakan gradasi emas murni yang bercahaya tinggi (*pure gold highlight & warm amber core*), collar emas halus di ujung lubang tali, dan pendaran aura radial lembut.
+4. **Efek Interaktif Pop-up `+1` & Inersia Rumbai:** Menambahkan animasi pop-up angka oranye `+1` yang melayang ke atas dan memudar saat terjadi perpindahan butir di model melingkar, serta ayunan inersia fisika pada rumbai sutra kepala imam.
+5. **Piringan Counter Progres Bawah (`XX / 99`):** Menambahkan badge counter kaca gelap melingkar di bawah untaian dengan cincin progres bercahaya yang mengisi secara proporsional. Seluruh pengujian statis lulus 100%.
