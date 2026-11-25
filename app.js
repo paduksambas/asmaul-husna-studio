@@ -1174,20 +1174,7 @@
       ctx.restore();
     }
   }
-    if(opening<1){
-      for(let i=0;i<55;i++){const a=i*2.399+elapsed*1.7,rad=u*(.05+(i%13)*.019)*(1-opening);
-        const x=cx+Math.cos(a)*rad,y=ringY+Math.sin(a)*rad;
-        ctx.save();ctx.globalAlpha=(1-opening)*(.2+.6*(.5+.5*Math.sin(elapsed*5+i)));
-        ctx.fillStyle='#ffe4a4';ctx.shadowColor='#f2c66e';ctx.shadowBlur=u*.012;
-        ctx.beginPath();ctx.arc(x,y,u*.002,0,Math.PI*2);ctx.fill();ctx.restore();}
-    }
-    if(finale){
-      const halo=ctx.createRadialGradient(cx,ringY,u*.12,cx,ringY,u*.43);
-      halo.addColorStop(0,'#ffe4a42b');halo.addColorStop(1,'#ffe4a400');
-      ctx.save();ctx.globalAlpha=.65+.35*pulse;ctx.fillStyle=halo;ctx.fillRect(cx-u*.45,ringY-u*.45,u*.9,u*.9);ctx.restore();
-    }
-  }
-    function draw(t) {
+  function draw(t) {
     if (!ctx || !data.length) return;
     const w=canvas.width,h=canvas.height,cx=w/2,cy=h/2,u=Math.min(w,h);
     const item=data[state.index]||data[0];
