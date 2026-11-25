@@ -222,9 +222,11 @@
     // A travelling ribbon follows the ring from the last reading bead to the new one.
     if(transitionActive&&opening>=.8){
       const deltaRaw=state.tasbihToIndex-state.tasbihFromIndex;
-      const delta=deltaRaw>49?deltaRaw-99:deltaRaw< -49?deltaRaw+99:deltaRaw;
-      const fromAngle=state.tasbihFromIndex*Math.PI*2/99-Math.PI/2;
-      const toAngle=fromAngle+delta*Math.PI*2/99*transitionEase;
+      const fromAngle=beadStart+state.tasbihFromIndex/98*beadSweep;
+      let targetAngle=beadStart+state.tasbihToIndex/98*beadSweep;
+      if(deltaRaw>49) targetAngle-=Math.PI*2;
+      else if(deltaRaw< -49) targetAngle+=Math.PI*2;
+      const toAngle=fromAngle+(targetAngle-fromAngle)*transitionEase;
       const ribbon=ctx.createLinearGradient(cx-u*.32,ringY-u*.22,cx+u*.32,ringY+u*.22);
       ribbon.addColorStop(0,'#f5c76a00');ribbon.addColorStop(.5,'#ffe9ae');ribbon.addColorStop(1,'#f5c76a00');
       ctx.save();ctx.beginPath();
