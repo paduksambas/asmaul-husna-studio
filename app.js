@@ -190,31 +190,33 @@
     ctx.fillStyle='#f4e7c7';ctx.font='400 '+Math.max(25,u*.036)+'px "Amiri",serif';ctx.fillText('أَسْمَاءُ اللَّهِ الْحُسْنَى',cx,h*.165);
     ctx.fillStyle='#bda36f';ctx.font='400 '+Math.max(12,u*.013)+'px "DM Sans",sans-serif';ctx.fillText('A CIRCLE OF LIGHT · A JOURNEY OF REMEMBRANCE',cx,h*.205);
     ctx.restore();
-    // The ring has its own 3D ellipse and 99 individually shaded gold beads.
-    const ringY=cy+u*.015,spin=elapsed*.105,beads=[];
-    // Lightweight 3D projection: yaw rotates the ring in depth while pitch tilts its plane.
-    const yaw=spin, pitch=.48+Math.sin(elapsed*.22)*.025, focal=u*2.15;
+    // A physical misbaha silhouette: 99 individually spaced amber beads
+    // leave a small opening at the lower join for the imam bead and tassel.
+    const ringY=cy+u*.005,spin=elapsed*.035,beads=[];
+    const yaw=spin, pitch=.30+Math.sin(elapsed*.16)*.012, focal=u*2.6;
     const projectTasbihPoint=(angle,scale=1,zBoost=0)=>{
-      const lx=Math.cos(angle)*u*.315*scale,ly=Math.sin(angle)*u*.245*scale;
+      const lx=Math.cos(angle)*u*.325*scale,ly=Math.sin(angle)*u*.255*scale;
       const tiltedY=ly*Math.cos(pitch),tiltedZ=ly*Math.sin(pitch);
       const rotatedX=lx*Math.cos(yaw)+tiltedZ*Math.sin(yaw);
       const rotatedZ=-lx*Math.sin(yaw)+tiltedZ*Math.cos(yaw)+zBoost;
-      const perspective=focal/Math.max(focal*.72,focal-rotatedZ);
+      const perspective=focal/Math.max(focal*.78,focal-rotatedZ);
       return {x:cx+rotatedX*perspective,y:ringY+tiltedY*perspective,z:rotatedZ,perspective};
     };
     const transitionProgress=state.tasbihTransitionStart?clamp((performance.now()-state.tasbihTransitionStart)/1050,0,1):1;
     const transitionEase=1-Math.pow(1-transitionProgress,3);
     const transitionActive=state.tasbihTransitionStart&&transitionProgress<1;
+    const imamAngle=Math.PI/2,joinGap=.19;
+    const beadStart=imamAngle+joinGap/2,beadSweep=Math.PI*2-joinGap;
     for(let i=0;i<99;i++){
-      const angle=i*Math.PI*2/99-Math.PI/2;
+      const angle=beadStart+i/(98)*beadSweep;
       const active=i===state.index,lit=active||finale;
-      const point=projectTasbihPoint(angle,1,active?u*(.045+.012*pulse):0);
-      const depth=clamp(.5+point.z/(u*.55),0,1);
+      const point=projectTasbihPoint(angle,1,active?u*(.052+.012*pulse):0);
+      const depth=clamp(.5+point.z/(u*.62),0,1);
       const sx=cx+Math.sin(i*12.9898+1.7)*u*(.17+(i%7)*.024);
       const sy=ringY+Math.cos(i*7.233+2.4)*u*(.16+(i%5)*.025);
       const x=sx+(point.x-sx)*formation,y=sy+(point.y-sy)*formation;
-      const radius=u*(.0062+depth*.002)*(active?2.05:1)*point.perspective;
-      beads.push({x,y,baseY:y,depth:active?1.1:depth,angle,active,lit,r:radius});
+      const radius=u*(.0072+depth*.0015)*(active?1.65:1)*point.perspective;
+      beads.push({index:i,x,y,baseY:y,depth:active?1.1:depth,angle,active,lit,r:radius,point});
     }
     // A travelling ribbon follows the ring from the last reading bead to the new one.
     if(transitionActive&&opening>=.8){
@@ -241,27 +243,30 @@
     ctx.save();
     ctx.beginPath();
     for(let step=0;step<=198;step++){
-      const p=projectTasbihPoint(step/198*Math.PI*2,1);
+      const p=projectTasbihPoint(beadStart+step/198*beadSweep,1);
       if(step===0)ctx.moveTo(p.x,p.y);else ctx.lineTo(p.x,p.y);
     }
-    ctx.closePath();ctx.strokeStyle='#17100a';ctx.lineWidth=u*.009;ctx.lineCap='round';ctx.stroke();
-    ctx.strokeStyle='#d6a64b55';ctx.lineWidth=u*.0022;ctx.stroke();ctx.restore();
+    ctx.strokeStyle='#21160f';ctx.lineWidth=u*.008;ctx.lineCap='round';ctx.stroke();
+    ctx.strokeStyle='#b88743';ctx.lineWidth=u*.0017;ctx.stroke();ctx.restore();
     beads.forEach(b=>{
       const r=b.r;ctx.save();ctx.globalAlpha=.15+.85*formation;
       // Soft contact shadow adds separation from the dark scene.
       ctx.fillStyle='#02050b88';ctx.beginPath();ctx.ellipse(b.x+u*.002,b.y+r*.62,r*.92,r*.43,0,0,Math.PI*2);ctx.fill();
       if(b.lit){ctx.shadowColor='#ffd77b';ctx.shadowBlur=u*(b.active?.06:.025);}
       const grad=ctx.createRadialGradient(b.x-r*.38,b.y-r*.46,r*.04,b.x,b.y,r*1.22);
-      grad.addColorStop(0,b.lit?'#fffdf0':'#fff0cb');grad.addColorStop(.22,b.lit?'#ffe8a0':'#e5c17d');grad.addColorStop(.58,b.lit?'#dca64d':'#a87939');grad.addColorStop(1,b.lit?'#704314':'#392817');
+      grad.addColorStop(0,b.lit?'#fff4d2':'#f7d89a');grad.addColorStop(.18,b.lit?'#edbd68':'#dca85c');grad.addColorStop(.48,b.lit?'#b9772f':'#a66b32');grad.addColorStop(.78,b.lit?'#75421e':'#6e421f');grad.addColorStop(1,'#29170e');
       ctx.fillStyle=grad;ctx.beginPath();ctx.arc(b.x,b.y,r,0,Math.PI*2);ctx.fill();
       ctx.shadowBlur=0;ctx.strokeStyle=b.lit?'#fff4ce':'#dfc28a88';ctx.lineWidth=Math.max(1,u*.0012);ctx.stroke();
       // Tiny white-gold reflection at the upper-left of each bead.
-      ctx.globalAlpha*=b.active?.9:.52;ctx.fillStyle='#fff7dc';ctx.beginPath();ctx.ellipse(b.x-r*.27,b.y-r*.34,r*.19,r*.1,-.6,0,Math.PI*2);ctx.fill();
+      ctx.globalAlpha*=b.active?.9:.62;ctx.fillStyle='#fff7dc';ctx.beginPath();ctx.ellipse(b.x-r*.27,b.y-r*.34,r*.2,r*.105,-.6,0,Math.PI*2);ctx.fill();
+      // A tiny dark bore with a warm rim suggests the drilled channel through each bead.
+      ctx.globalAlpha=.62;ctx.fillStyle='#29180f';ctx.beginPath();ctx.ellipse(b.x+r*.12,b.y+r*.27,r*.105,r*.075,.35,0,Math.PI*2);ctx.fill();
+      ctx.strokeStyle='#e2bd7a88';ctx.lineWidth=Math.max(.7,u*.00065);ctx.stroke();
       ctx.restore();
     });
     // Three small separator spacers mark the traditional 33-bead sections.
-    [32,65,98].forEach(index=>{
-      const bead=beads[index];if(!bead)return;
+    [32,65].forEach(index=>{
+      const bead=beads.find(entry=>entry.index===index);if(!bead)return;
       const r=bead.r*1.24;
       ctx.save();ctx.shadowColor='#f4c66e';ctx.shadowBlur=u*.009;
       const spacer=ctx.createLinearGradient(bead.x-r,bead.y-r,bead.x+r,bead.y+r);
@@ -269,27 +274,36 @@
       ctx.fillStyle=spacer;ctx.beginPath();ctx.ellipse(bead.x,bead.y,r*.72,r*1.38,bead.angle,0,Math.PI*2);ctx.fill();
       ctx.strokeStyle='#ffe6a0';ctx.lineWidth=u*.001;ctx.stroke();ctx.restore();
     });
-    // Imam bead (the larger terminal bead), connector and silk tassel make
-    // the silhouette unmistakably resemble a physical prayer bead strand.
-    const imam=projectTasbihPoint(-Math.PI/2,1.04,u*.008);
+    // Traditional imam bead closes the two ends of the strand. Its neck,
+    // engraved metal cap and hanging silk tassel are deliberately distinct.
+    const imam=projectTasbihPoint(imamAngle,1.02,u*.006);
     const imamR=u*.018*imam.perspective;
-    ctx.save();ctx.strokeStyle='#b88942';ctx.lineWidth=u*.004;ctx.lineCap='round';
-    ctx.beginPath();ctx.moveTo(imam.x,imam.y-imamR*.72);ctx.lineTo(imam.x,imam.y-imamR*1.55);ctx.stroke();
-    const imamGrad=ctx.createRadialGradient(imam.x-imamR*.35,imam.y-imamR*.42,imamR*.05,imam.x,imam.y,imamR*1.2);
-    imamGrad.addColorStop(0,'#fff8dc');imamGrad.addColorStop(.25,'#f2d18a');imamGrad.addColorStop(.62,'#b77b2d');imamGrad.addColorStop(1,'#573515');
-    ctx.fillStyle=imamGrad;ctx.shadowColor='#f6cf79';ctx.shadowBlur=u*.018;
-    ctx.beginPath();ctx.ellipse(imam.x,imam.y-imamR*.5,imamR*.82,imamR*1.22,0,0,Math.PI*2);ctx.fill();
-    ctx.strokeStyle='#f8dfa0';ctx.lineWidth=u*.0014;ctx.stroke();ctx.shadowBlur=0;
-    // Tassel cap and multiple fine hanging silk strands.
-    const capY=imam.y-imamR*1.85,capW=imamR*.78;
-    ctx.fillStyle='#c39245';ctx.fillRect(imam.x-capW/2,capY-imamR*.38,capW,imamR*.72);
-    ctx.strokeStyle='#e5c078';ctx.lineWidth=u*.0015;ctx.stroke();
-    ctx.strokeStyle='#c69a50';ctx.lineWidth=Math.max(1,u*.0018);
-    for(let strand=0;strand<13;strand++){
-      const offset=(strand-6)*imamR*.105;
-      const sway=Math.sin(elapsed*1.15+strand*.55)*imamR*.12;
-      ctx.beginPath();ctx.moveTo(imam.x+offset*.35,capY);
-      ctx.bezierCurveTo(imam.x+offset+sway,capY-imamR*.7,imam.x+offset*.8-sway,capY-imamR*1.35,imam.x+offset*.72,capY-imamR*(2.05+(strand%3)*.12));
+    const tasselSway=Math.sin(elapsed*.9)*imamR*.08;
+    ctx.save();
+    // Short connector cord emerging from the two end beads.
+    ctx.strokeStyle='#2b1a10';ctx.lineWidth=u*.006;ctx.lineCap='round';
+    ctx.beginPath();ctx.moveTo(imam.x-imamR*.48,imam.y);ctx.quadraticCurveTo(imam.x,imam.y+imamR*.5,imam.x+imamR*.48,imam.y);ctx.stroke();
+    // Elongated imam bead, polished amber with a fine brass collar.
+    const imamGrad=ctx.createRadialGradient(imam.x-imamR*.32,imam.y-imamR*.32,imamR*.04,imam.x,imam.y,imamR*1.25);
+    imamGrad.addColorStop(0,'#fff0c5');imamGrad.addColorStop(.2,'#e9bb70');imamGrad.addColorStop(.58,'#a9692c');imamGrad.addColorStop(1,'#321b0e');
+    ctx.fillStyle=imamGrad;ctx.shadowColor='#e9b85e';ctx.shadowBlur=u*.012;
+    ctx.beginPath();ctx.ellipse(imam.x,imam.y,imamR*.78,imamR*1.55,0,0,Math.PI*2);ctx.fill();
+    ctx.shadowBlur=0;ctx.strokeStyle='#d8b16d';ctx.lineWidth=u*.0015;ctx.stroke();
+    // Brass collars and the small cap at the tassel neck.
+    ctx.strokeStyle='#f0d18b';ctx.lineWidth=u*.003;
+    [-.92,.92].forEach(k=>{ctx.beginPath();ctx.ellipse(imam.x,imam.y+imamR*k,imamR*.72,imamR*.16,0,0,Math.PI*2);ctx.stroke();});
+    const capY=imam.y+imamR*1.45,capW=imamR*.78,capH=imamR*.62;
+    const capGrad=ctx.createLinearGradient(imam.x-capW/2,capY,imam.x+capW/2,capY);
+    capGrad.addColorStop(0,'#79501f');capGrad.addColorStop(.35,'#f4d48b');capGrad.addColorStop(.7,'#a16b2b');capGrad.addColorStop(1,'#f5d995');
+    ctx.fillStyle=capGrad;ctx.fillRect(imam.x-capW/2,capY,capW,capH);
+    ctx.strokeStyle='#f5dfa8';ctx.lineWidth=u*.001;ctx.strokeRect(imam.x-capW/2,capY,capW,capH);
+    // Fine silk threads hang down from the cap and sway gently.
+    ctx.strokeStyle='#c49a5a';ctx.lineWidth=Math.max(1,u*.0017);
+    for(let strand=0;strand<17;strand++){
+      const offset=(strand-8)*imamR*.095;
+      const sway=Math.sin(elapsed*.95+strand*.43)*imamR*.12;
+      ctx.beginPath();ctx.moveTo(imam.x+offset*.25,capY+capH);
+      ctx.bezierCurveTo(imam.x+offset+sway,capY+capH+imamR*.7,imam.x+offset*.8-sway,capY+capH+imamR*1.35,imam.x+offset*.72+tasselSway,capY+capH+imamR*(2.15+(strand%4)*.12));
       ctx.stroke();
     }
     ctx.restore();
