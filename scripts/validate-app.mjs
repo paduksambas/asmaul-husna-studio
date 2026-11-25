@@ -150,7 +150,7 @@ assert.ok(app.includes('const WHEEL_TRANSITION_LEAD_MS = WHEEL_TRANSITION_MS + 4
 assert.ok(speakAllSource.includes('preparedBuffer.duration - WHEEL_TRANSITION_LEAD_MS / 1000'), 'the next wheel item must rotate during the tail of the current spoken clip');
 assert.ok(app.includes('state.speechAudioContext.currentTime >= state.pendingWheelTransition.at') && app.includes('beginNameTransition(pending.nextIndex);'), 'wheel transition timing must follow the audio playback clock');
 assert.ok(speakAllSource.includes("beginNameTransition(i);\n              // Keep the visual name, Arabic calligraphy and active bead in sync") && speakAllSource.includes("state.index = i;"), 'every narration clip must update the visible name and active Tasbih bead to the same Asmaul Husna index');
-assert.ok(speakAllSource.includes("if (state.animation !== 'wheel') beginNameTransition(i);"), 'wheel mode must not begin the next item transition at the start of its own audio');
+assert.ok(speakAllSource.includes("} else {\n              state.wheelTransitionStart = 0;\n              state.index = i;\n            }"), 'wheel mode must keep its dedicated audio-synchronized transition behavior');
 
 assert.match(app, /state\.wheelTransitionStart = performance\.now\(\);\s*state\.transitionStart = 0;\s*ensureRenderLoop\(\)/, 'manual selection must start a render loop for the wheel transition');
 assert.ok(app.includes("const ambientPulse=motionActive ? .5+.5*Math.sin(t*.72) : 0;"), 'ambient glow must use a smooth continuous pulse');
