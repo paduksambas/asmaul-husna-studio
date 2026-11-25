@@ -70,18 +70,47 @@
       <aside class="inspector-panel panel">
         <div class="inspector-heading"><div><p class="eyebrow">PENGATURAN</p><h2>Editor adegan</h2></div><span class="settings-icon">☷</span></div>
         <section class="control-section">
-          <div class="section-title"><span class="section-number">01</span><h3>Gaya visual</h3></div>
-          <div class="theme-grid" id="themeGrid">
-            <button class="theme-card active" data-theme="emerald"><span class="theme-swatch swatch-emerald"><i></i></span><span>Emerald</span></button>
-            <button class="theme-card" data-theme="midnight"><span class="theme-swatch swatch-midnight"><i></i></span><span>Midnight</span></button>
-            <button class="theme-card" data-theme="sand"><span class="theme-swatch swatch-sand"><i></i></span><span>Desert</span></button>
-            <button class="theme-card" data-theme="rose"><span class="theme-swatch swatch-rose"><i></i></span><span>Rose</span></button>
+          <div class="section-title"><span class="section-number">01</span><h3>Template adegan</h3></div>
+          <div class="template-grid" id="templateGrid">
+            <button type="button" class="template-card active" data-template="classic">
+              <span class="template-card-icon">🏛️</span>
+              <div class="template-card-text">
+                <b>Classic Studio</b>
+                <small>Poster ornamen 2D</small>
+              </div>
+            </button>
+            <button type="button" class="template-card" data-template="tasbih">
+              <span class="template-card-icon">📿</span>
+              <div class="template-card-text">
+                <b>Tasbih Emas 99</b>
+                <small>Ruang 3D misbaha</small>
+              </div>
+            </button>
           </div>
-          <label class="field-label field-spaced" for="templateSelect"><span>Template adegan</span></label>
-          <select id="templateSelect" class="select-input">
-            <option value="classic">Classic · tema editor</option>
-            <option value="tasbih">Tasbih Emas 99 · ruang 3D</option>
-          </select>
+          <div style="display:none;" aria-hidden="true">
+            <select id="templateSelect" class="select-input">
+              <option value="classic">Classic · tema editor</option>
+              <option value="tasbih">Tasbih Emas 99 · ruang 3D</option>
+            </select>
+          </div>
+          <div id="classicSettingsTab" class="template-tab-pane">
+            <label class="field-label field-spaced"><span>Tema warna latar</span></label>
+            <div class="theme-grid" id="themeGrid">
+              <button class="theme-card active" data-theme="emerald"><span class="theme-swatch swatch-emerald"><i></i></span><span>Emerald</span></button>
+              <button class="theme-card" data-theme="midnight"><span class="theme-swatch swatch-midnight"><i></i></span><span>Midnight</span></button>
+              <button class="theme-card" data-theme="sand"><span class="theme-swatch swatch-sand"><i></i></span><span>Desert</span></button>
+              <button class="theme-card" data-theme="rose"><span class="theme-swatch swatch-rose"><i></i></span><span>Rose</span></button>
+            </div>
+          </div>
+          <div id="tasbihSettingsTab" class="template-tab-pane hidden">
+            <div class="tasbih-scene-badge-card">
+              <div class="tasbih-badge-row">
+                <span class="tasbih-gold-badge">3D SCENE</span>
+                <b>Untaian Misbaha Emas</b>
+              </div>
+              <p>Animasi 99 butir oval zaitun (Beyzi cut) dengan kamera perspektif 3D, pencahayaan kosmis, dan pendaran aura kaligrafi.</p>
+            </div>
+          </div>
         </section>
         <section class="control-section">
           <div class="section-title"><span class="section-number">02</span><h3>Format video</h3></div>
