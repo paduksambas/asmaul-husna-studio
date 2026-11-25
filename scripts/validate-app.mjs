@@ -114,11 +114,20 @@ assert.ok(app.includes("if(state.template==='tasbih'){drawTasbihTemplate(t,item)
 assert.match(app, /tasbihTransitionStart:0, tasbihFromIndex:0, tasbihToIndex:0/, 'Tasbih scene must track its own bead transition state');
 assert.match(app, /state\.template === 'tasbih'[\s\S]*?state\.tasbihTransitionStart = now/, 'Tasbih name changes must trigger a dedicated light transition');
 assert.match(app, /const projectTasbihPoint=\(angle,scale=1,zBoost=0\)=>/, 'Tasbih beads must use a dedicated 3D perspective projection');
-assert.match(app, /const yaw=spin, pitch=\.48\+Math\.sin\(elapsed\*\.22\)\*\.025, focal=u\*2\.15/, 'Tasbih camera must animate yaw and subtle pitch');
+assert.match(app, /const yaw=spin, pitch=\.30\+Math\.sin\(elapsed\*\.16\)\*\.012, focal=u\*2\.6/, 'Tasbih camera must animate yaw and subtle pitch');
 assert.match(app, /focal\/Math\.max\(focal\*\.72,focal-rotatedZ\)/, 'Tasbih bead size and position must respond to camera depth');
-assert.match(app, /active\?u\*\(\.045\+\.012\*pulse\):0/, 'the active Tasbih bead must move toward the camera');
+assert.match(app, /active\?u\*\(\.052\+\.012\*pulse\):0/, 'the active Tasbih bead must move toward the camera');
 assert.match(app, /const ribbon=ctx\.createLinearGradient[\s\S]*?projectTasbihPoint\(a,1,u\*\.012\)/, 'a travelling light ribbon must follow the projected 3D ring between selected beads');
 assert.match(app, /const sheenAngle=elapsed\*\.34/, 'polished beads must receive a moving specular highlight');
+assert.match(app, /const imamAngle=Math\.PI\/2,joinGap=\.19/, 'the physical bead loop must leave a real opening for the imam assembly');
+assert.match(app, /const beadStart=imamAngle\+joinGap\/2,beadSweep=Math\.PI\*2-joinGap/, '99 beads must be spaced around the strand with a dedicated imam gap');
+assert.match(app, /for\(let i=0;i<99;i\+\+\)/, 'the misbaha strand must contain exactly 99 individual beads');
+assert.match(app, /projectTasbihPoint\(beadStart\+step\/198\*beadSweep,1\)/, 'the visible cord must follow the open bead strand rather than a closed decorative ellipse');
+assert.match(app, /\[32,65\]\.forEach\(index=>/, 'two separator markers must divide the 99-bead strand into three sections');
+assert.match(app, /Traditional imam bead closes the two ends of the strand/, 'the imam bead must physically close the strand gap');
+assert.match(app, /Fine silk threads hang down from the cap and sway gently/, 'the imam assembly must include a hanging silk tassel');
+assert.match(app, /tiny dark bore with a warm rim/, 'individual beads must show a drilled string channel');
+
 assert.match(app, /Tiny white-gold reflection at the upper-left of each bead/, 'gold beads must render a distinct material highlight');
 assert.match(app, /if\(\(state\.animation==='wheel' \|\| state\.template==='tasbih'\) && i!==state\.index\) beginNameTransition\(i\)/, 'manual bead selection must animate in Tasbih mode');
 assert.ok(app.includes("else if (state.template === 'tasbih') draw((now - state.tasbihStart) / 1000);"), 'tasbih template must animate independently of generic effects');
