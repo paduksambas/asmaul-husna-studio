@@ -212,12 +212,15 @@
       const angle=beadStart+i/(98)*beadSweep;
       const active=i===state.index,lit=active||finale;
       const point=projectTasbihPoint(angle,1,active?u*(.052+.012*pulse):0);
+      const pPrev=projectTasbihPoint(angle-.015,1);
+      const pNext=projectTasbihPoint(angle+.015,1);
+      const tangent=Math.atan2(pNext.y-pPrev.y,pNext.x-pPrev.x);
       const depth=clamp(.5+point.z/(u*.62),0,1);
       const sx=cx+Math.sin(i*12.9898+1.7)*u*(.17+(i%7)*.024);
       const sy=ringY+Math.cos(i*7.233+2.4)*u*(.16+(i%5)*.025);
       const x=sx+(point.x-sx)*formation,y=sy+(point.y-sy)*formation;
       const radius=u*(.0072+depth*.0015)*(active?1.65:1)*point.perspective;
-      beads.push({index:i,x,y,baseY:y,depth:active?1.1:depth,angle,active,lit,r:radius,point});
+      beads.push({index:i,x,y,baseY:y,depth:active?1.1:depth,angle,tangent,active,lit,r:radius,point});
     }
     // A travelling ribbon follows the ring from the last reading bead to the new one.
     if(transitionActive&&opening>=.8){
@@ -252,30 +255,44 @@
     ctx.strokeStyle='#21160f';ctx.lineWidth=u*.008;ctx.lineCap='round';ctx.stroke();
     ctx.strokeStyle='#b88743';ctx.lineWidth=u*.0017;ctx.stroke();ctx.restore();
     beads.forEach(b=>{
-      const r=b.r;ctx.save();ctx.globalAlpha=.15+.85*formation;
-      // Soft contact shadow adds separation from the dark scene.
-      ctx.fillStyle='#02050b88';ctx.beginPath();ctx.ellipse(b.x+u*.002,b.y+r*.62,r*.92,r*.43,0,0,Math.PI*2);ctx.fill();
-      if(b.lit){ctx.shadowColor='#ffd77b';ctx.shadowBlur=u*(b.active?.06:.025);}
-      const grad=ctx.createRadialGradient(b.x-r*.38,b.y-r*.46,r*.04,b.x,b.y,r*1.22);
-      grad.addColorStop(0,b.lit?'#fff4d2':'#f7d89a');grad.addColorStop(.18,b.lit?'#edbd68':'#dca85c');grad.addColorStop(.48,b.lit?'#b9772f':'#a66b32');grad.addColorStop(.78,b.lit?'#75421e':'#6e421f');grad.addColorStop(1,'#29170e');
-      ctx.fillStyle=grad;ctx.beginPath();ctx.arc(b.x,b.y,r,0,Math.PI*2);ctx.fill();
-      ctx.shadowBlur=0;ctx.strokeStyle=b.lit?'#fff4ce':'#dfc28a88';ctx.lineWidth=Math.max(1,u*.0012);ctx.stroke();
+      const rx=b.r*1.35,ry=b.r*0.92;
+      ctx.save();ctx.globalAlpha=.15+.85*formation;
+      ctx.translate(b.x,b.y);ctx.rotate(b.tangent);
+      // Soft contact shadow oriented with the physical bead strand.
+      ctx.fillStyle='#02050b88';ctx.beginPath();ctx.ellipse(0,ry*.65,rx*.96,ry*.44,0,0,Math.PI*2);ctx.fill();
+      if(b.lit){ctx.shadowColor='#ffd77b';ctx.shadowBlur=u*(b.active?.065:.026);}
+      // Beyzi olive-cut silhouette with elongated warm gold volume.
+      const grad=ctx.createRadialGradient(-rx*.32,-ry*.45,ry*.08,0,0,rx*1.28);
+      grad.addColorStop(0,b.lit?'#fff7da':'#fcedaf');grad.addColorStop(.18,b.lit?'#edbe6a':'#e0ab5e');grad.addColorStop(.48,b.lit?'#b9772f':'#a86c33');grad.addColorStop(.78,b.lit?'#75421e':'#6f4220');grad.addColorStop(1,'#29170e');
+      ctx.fillStyle=grad;ctx.beginPath();ctx.ellipse(0,0,rx,ry,0,0,Math.PI*2);ctx.fill();
+      ctx.shadowBlur=0;ctx.strokeStyle=b.lit?'#fff5d2':'#e0c48e88';ctx.lineWidth=Math.max(1,u*.0012);ctx.stroke();
+      // Fine gold collars capping the cord entry holes at both tapered tips.
+      ctx.strokeStyle=b.lit?'#fff0ca':'#c6934488';ctx.lineWidth=Math.max(.7,u*.00075);
+      ctx.beginPath();ctx.ellipse(-rx*.92,0,rx*.07,ry*.28,0,0,Math.PI*2);ctx.stroke();
+      ctx.beginPath();ctx.ellipse(rx*.92,0,rx*.07,ry*.28,0,0,Math.PI*2);ctx.stroke();
       // Tiny white-gold reflection at the upper-left of each bead.
-      ctx.globalAlpha*=b.active?.9:.62;ctx.fillStyle='#fff7dc';ctx.beginPath();ctx.ellipse(b.x-r*.27,b.y-r*.34,r*.2,r*.105,-.6,0,Math.PI*2);ctx.fill();
+      ctx.globalAlpha*=b.active?.95:.65;ctx.fillStyle='#fff9e2';
+      ctx.beginPath();ctx.ellipse(-rx*.24,-ry*.36,rx*.46,ry*.18,-.08,0,Math.PI*2);ctx.fill();
       // A tiny dark bore with a warm rim suggests the drilled channel through each bead.
-      ctx.globalAlpha=.62;ctx.fillStyle='#29180f';ctx.beginPath();ctx.ellipse(b.x+r*.12,b.y+r*.27,r*.105,r*.075,.35,0,Math.PI*2);ctx.fill();
+      ctx.globalAlpha=.68;ctx.fillStyle='#24150d';ctx.beginPath();ctx.ellipse(rx*.88,0,rx*.08,ry*.16,0,0,Math.PI*2);ctx.fill();
       ctx.strokeStyle='#e2bd7a88';ctx.lineWidth=Math.max(.7,u*.00065);ctx.stroke();
       ctx.restore();
     });
     // Three small separator spacers mark the traditional 33-bead sections.
     [32,65].forEach(index=>{
       const bead=beads.find(entry=>entry.index===index);if(!bead)return;
-      const r=bead.r*1.24;
-      ctx.save();ctx.shadowColor='#f4c66e';ctx.shadowBlur=u*.009;
-      const spacer=ctx.createLinearGradient(bead.x-r,bead.y-r,bead.x+r,bead.y+r);
-      spacer.addColorStop(0,'#fff0bd');spacer.addColorStop(.32,'#d6a34d');spacer.addColorStop(.7,'#8b5b20');spacer.addColorStop(1,'#f8d98d');
-      ctx.fillStyle=spacer;ctx.beginPath();ctx.ellipse(bead.x,bead.y,r*.72,r*1.38,bead.angle,0,Math.PI*2);ctx.fill();
-      ctx.strokeStyle='#ffe6a0';ctx.lineWidth=u*.001;ctx.stroke();ctx.restore();
+      const r=bead.r*1.38;
+      ctx.save();ctx.shadowColor='#f4c66e';ctx.shadowBlur=u*.011;
+      ctx.translate(bead.x,bead.y);ctx.rotate(bead.tangent);
+      const spacer=ctx.createLinearGradient(-r,-r,r,r);
+      spacer.addColorStop(0,'#fff2c2');spacer.addColorStop(.28,'#dfa94e');spacer.addColorStop(.68,'#8e5c21');spacer.addColorStop(1,'#f9dc92');
+      ctx.fillStyle=spacer;
+      // Traditional flattened fluted disc (pul) set perpendicular to the strand.
+      ctx.beginPath();ctx.ellipse(0,0,r*.46,r*1.42,0,0,Math.PI*2);ctx.fill();
+      ctx.strokeStyle='#fff0b2';ctx.lineWidth=Math.max(1,u*.0013);ctx.stroke();
+      ctx.strokeStyle='#7a4b18';ctx.lineWidth=Math.max(.8,u*.0009);
+      ctx.beginPath();ctx.ellipse(0,0,r*.22,r*.88,0,0,Math.PI*2);ctx.stroke();
+      ctx.restore();
     });
     // Traditional imam bead closes the two ends of the strand. Its neck,
     // engraved metal cap and hanging silk tassel are deliberately distinct.
