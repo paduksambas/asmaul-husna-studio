@@ -115,7 +115,7 @@ assert.match(app, /tasbihTransitionStart:0, tasbihFromIndex:0, tasbihToIndex:0/,
 assert.match(app, /state\.template === 'tasbih'[\s\S]*?state\.tasbihTransitionStart = now/, 'Tasbih name changes must trigger a dedicated light transition');
 assert.match(app, /const projectTasbihPoint=\(angle,scale=1,zBoost=0\)=>/, 'Tasbih beads must use a dedicated 3D perspective projection');
 assert.match(app, /const yaw=spin, pitch=\.30\+Math\.sin\(elapsed\*\.16\)\*\.012, focal=u\*2\.6/, 'Tasbih camera must animate yaw and subtle pitch');
-assert.match(app, /focal\/Math\.max\(focal\*\.72,focal-rotatedZ\)/, 'Tasbih bead size and position must respond to camera depth');
+assert.match(app, /focal\/Math\.max\(focal\*\.78,focal-rotatedZ\)/, 'Tasbih bead size and position must respond to camera depth');
 assert.match(app, /active\?u\*\(\.052\+\.012\*pulse\):0/, 'the active Tasbih bead must move toward the camera');
 assert.match(app, /const ribbon=ctx\.createLinearGradient[\s\S]*?projectTasbihPoint\(a,1,u\*\.012\)/, 'a travelling light ribbon must follow the projected 3D ring between selected beads');
 assert.match(app, /const sheenAngle=elapsed\*\.34/, 'polished beads must receive a moving specular highlight');
