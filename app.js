@@ -154,6 +154,7 @@
     // with a frozen full-frame snapshot.
     state.transitionStart = now;
   }
+  // Physical misbaha scene: open 99-bead strand, imam assembly and silk tassel.
   function drawTasbihTemplate(t, item) {
     const w=canvas.width,h=canvas.height,cx=w/2,cy=h/2,u=Math.min(w,h);
     const elapsed=Math.max(0,(performance.now()-state.tasbihStart)/1000);
