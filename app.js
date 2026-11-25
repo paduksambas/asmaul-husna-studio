@@ -109,6 +109,14 @@
      byId('textMeaningGap').value = state.textMeaningGap; byId('textMeaningGapValue').textContent = (state.textMeaningGap>0?'+':'')+state.textMeaningGap;
      byId('animationSelect').value = state.animation;
     byId('templateSelect').value = state.template;
+    document.querySelectorAll('.template-card').forEach(card=>{
+      card.classList.toggle('active', card.dataset.template === state.template);
+    });
+    const isTasbih = state.template === 'tasbih';
+    const classicTab = byId('classicSettingsTab');
+    const tasbihTab = byId('tasbihSettingsTab');
+    if (classicTab) classicTab.classList.toggle('hidden', isTasbih);
+    if (tasbihTab) tasbihTab.classList.toggle('hidden', !isTasbih);
     byId('durationInput').value = state.duration; byId('durationValue').textContent = state.duration;
     byId('builtinMusicEnabled').checked = state.builtinMusicEnabled;
     byId('builtinMusicMode').value = state.builtinMusicMode;
@@ -1426,7 +1434,24 @@
     byId('arabicVerticalOffset').addEventListener('input',e=>{state.arabicVerticalOffset=Number(e.target.value);byId('arabicVerticalOffsetValue').textContent=(state.arabicVerticalOffset>0?'+':'')+state.arabicVerticalOffset;draw(0);persist();});
     byId('arabicTextGap').addEventListener('input',e=>{state.arabicTextGap=Number(e.target.value);byId('arabicTextGapValue').textContent=(state.arabicTextGap>0?'+':'')+state.arabicTextGap;draw(0);persist();});
      byId('textMeaningGap').addEventListener('input',e=>{state.textMeaningGap=Number(e.target.value);byId('textMeaningGapValue').textContent=(state.textMeaningGap>0?'+':'')+state.textMeaningGap;draw(0);persist();});
-     byId('templateSelect').addEventListener('change',e=>{state.template=e.target.value;state.tasbihStart=performance.now();state.tasbihTransitionStart=0;state.transitionStart=0;if(state.template==='tasbih')ensureRenderLoop();byId('renderHint').textContent=state.template==='tasbih'?'Template Tasbih Emas 99 · latar dan komposisi khusus':'Template klasik · mengikuti tema dan latar editor';draw(0);persist();});
+     byId('templateSelect').addEventListener('change',e=>{state.template=e.target.value;state.tasbihStart=performance.now();state.tasbihTransitionStart=0;state.transitionStart=0;applyControls();if(state.template==='tasbih')ensureRenderLoop();byId('renderHint').textContent=state.template==='tasbih'?'Template Tasbih Emas 99 · latar dan komposisi khusus':'Template klasik · mengikuti tema dan latar editor';draw(0);persist();});
+    document.querySelectorAll('.template-card').forEach(card=>{
+      card.addEventListener('click',()=>{
+        const template = card.dataset.template;
+        if (!template || template === state.template) return;
+        state.template = template;
+        state.tasbihStart = performance.now();
+        state.tasbihTransitionStart = 0;
+        state.transitionStart = 0;
+        applyControls();
+        if (state.template === 'tasbih') ensureRenderLoop();
+        byId('renderHint').textContent = state.template === 'tasbih'
+          ? 'Template Tasbih Emas 99 · latar dan komposisi khusus'
+          : 'Template klasik · mengikuti tema dan latar editor';
+        draw(0);
+        persist();
+      });
+    });
      byId('animationSelect').addEventListener('change',e=>{state.animation=e.target.value;state.wheelTransitionStart=0;state.transitionStart=0;byId('renderHint').textContent=state.animation==='none'?'Animasi dinonaktifkan':state.animation==='wheel'?'Roda bacaan: teks aktif membesar, tetangganya mengecil dan berputar':'Animasi lembut aktif saat diputar';draw(0);persist();});
     byId('durationInput').addEventListener('input',e=>{state.duration=Number(e.target.value);byId('durationValue').textContent=state.duration;updateCaptions();persist();});
     byId('builtinMusicEnabled').addEventListener('change',e=>{state.builtinMusicEnabled=e.target.checked;syncBuiltinMusic(state.elapsed);persist();});
