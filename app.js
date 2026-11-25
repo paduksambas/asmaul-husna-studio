@@ -323,19 +323,15 @@
     ctx.beginPath();
     for(let step=0;step<=120;step++){const p=projectTasbihPoint(step/120*Math.PI*2,.91);if(step===0)ctx.moveTo(p.x,p.y);else ctx.lineTo(p.x,p.y);}
     ctx.closePath();ctx.stroke();ctx.restore();
-    const panelW=u*.49,panelH=u*.31,py=ringY;
-    const panel=ctx.createLinearGradient(cx-panelW/2,py-panelH/2,cx+panelW/2,py+panelH/2);
-    panel.addColorStop(0,'#0c1423dd');panel.addColorStop(.5,'#111a2add');panel.addColorStop(1,'#0a1220dd');
-    ctx.save();ctx.fillStyle=panel;ctx.strokeStyle='#d6b36d77';ctx.lineWidth=Math.max(1,u*.0015);
-    if(ctx.roundRect){ctx.beginPath();ctx.roundRect(cx-panelW/2,py-panelH/2,panelW,panelH,u*.018);ctx.fill();ctx.stroke();}
-    else{ctx.fillRect(cx-panelW/2,py-panelH/2,panelW,panelH);ctx.strokeRect(cx-panelW/2,py-panelH/2,panelW,panelH);}
+    const textMaxW=u*.55,py=ringY;
+    ctx.save();
     const fade=state.transitionStart?clamp((performance.now()-state.transitionStart)/state.transitionDuration,0,1):1;
     ctx.globalAlpha=fade;ctx.textAlign='center';ctx.textBaseline='middle';
-    let arabicSize=u*.092*(state.size/100);ctx.font='700 '+arabicSize+'px "Amiri",serif';
-    while(ctx.measureText(item[1]).width>panelW*.88&&arabicSize>u*.045){arabicSize*=.94;ctx.font='700 '+arabicSize+'px "Amiri",serif';}
-    ctx.shadowColor='#f4c96f88';ctx.shadowBlur=u*.018;ctx.fillStyle='#fff0ca';ctx.fillText(item[1],cx,py-u*.067,panelW*.9);ctx.shadowBlur=0;
-    if(state.transliteration){ctx.fillStyle='#e9d4a4';ctx.font='600 '+Math.max(16,u*.027)+'px "DM Sans",sans-serif';ctx.fillText(item[0],cx,py+u*.018,panelW*.9);}
-    if(state.translation){ctx.fillStyle='#c9b58c';ctx.font='400 '+Math.max(14,u*.022)+'px "DM Sans",sans-serif';ctx.fillText(item[2],cx,py+u*.073,panelW*.9);}
+    let arabicSize=u*.096*(state.size/100);ctx.font='700 '+arabicSize+'px "Amiri",serif';
+    while(ctx.measureText(item[1]).width>textMaxW*.88&&arabicSize>u*.045){arabicSize*=.94;ctx.font='700 '+arabicSize+'px "Amiri",serif';}
+    ctx.shadowColor='#f4c96f88';ctx.shadowBlur=u*.018;ctx.fillStyle='#fff0ca';ctx.fillText(item[1],cx,py-u*.067,textMaxW*.9);ctx.shadowBlur=0;
+    if(state.transliteration){ctx.fillStyle='#e9d4a4';ctx.font='600 '+Math.max(16,u*.027)+'px "DM Sans",sans-serif';ctx.fillText(item[0],cx,py+u*.018,textMaxW*.9);}
+    if(state.translation){ctx.fillStyle='#c9b58c';ctx.font='400 '+Math.max(14,u*.022)+'px "DM Sans",sans-serif';ctx.fillText(item[2],cx,py+u*.073,textMaxW*.9);}
     ctx.restore();
     // Footer ornament and counter.
     ctx.save();ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillStyle='#d9bd80';
