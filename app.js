@@ -142,6 +142,59 @@
     }
     ctx.closePath(); ctx.stroke(); ctx.restore();
   }
+  function playTasbihBeadSound() {
+    try {
+      const ctx = ensureSpeechAudioContext();
+      if (!ctx) return;
+      if (ctx.state === 'suspended') ctx.resume().catch(() => {});
+      const now = ctx.currentTime;
+      // 1. Crisp tactile snap click (bandpass filtered impulse)
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      const filter = ctx.createBiquadFilter();
+
+      filter.type = 'bandpass';
+      filter.frequency.setValueAtTime(1550, now);
+      filter.Q.setValueAtTime(5.5, now);
+
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(1400, now);
+      osc.frequency.exponentialRampToValueAtTime(320, now + 0.045);
+
+      gain.gain.setValueAtTime(0.0001, now);
+      gain.gain.linearRampToValueAtTime(0.32, now + 0.003);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.048);
+
+      osc.connect(filter);
+      filter.connect(gain);
+      gain.connect(ctx.destination);
+      if (state.audioDestination) {
+        try { gain.connect(state.audioDestination); } catch (_) {}
+      }
+
+      // 2. Warm wood/stone bead resonance
+      const bodyOsc = ctx.createOscillator();
+      const bodyGain = ctx.createGain();
+      bodyOsc.type = 'sine';
+      bodyOsc.frequency.setValueAtTime(460, now);
+      bodyOsc.frequency.exponentialRampToValueAtTime(160, now + 0.038);
+
+      bodyGain.gain.setValueAtTime(0.0001, now);
+      bodyGain.gain.linearRampToValueAtTime(0.20, now + 0.002);
+      bodyGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.038);
+
+      bodyOsc.connect(bodyGain);
+      bodyGain.connect(ctx.destination);
+      if (state.audioDestination) {
+        try { bodyGain.connect(state.audioDestination); } catch (_) {}
+      }
+
+      osc.start(now);
+      bodyOsc.start(now);
+      osc.stop(now + 0.052);
+      bodyOsc.stop(now + 0.042);
+    } catch (_) {}
+  }
   function beginNameTransition(nextIndex) {
     if (nextIndex === state.index) return;
     const now = performance.now();
@@ -150,6 +203,7 @@
       state.tasbihToIndex = nextIndex;
       state.tasbihTransitionStart = now;
       state.transitionStart = now;
+      playTasbihBeadSound();
       ensureRenderLoop();
     }
     // In wheel mode, rotate only the three reading labels around a vertical loop.
@@ -316,16 +370,41 @@
     ctx.fillStyle = bg;
     ctx.fillRect(0, 0, w, h);
 
-    // Subtle diagonal cosmic nebula glow
-    const nebula = ctx.createRadialGradient(cx * 1.15, cy * 0.72, u * 0.05, cx, cy * 0.8, u * 0.95);
-    nebula.addColorStop(0, '#1a3a5833');
-    nebula.addColorStop(0.5, '#0c223620');
-    nebula.addColorStop(1, '#00000000');
-    ctx.fillStyle = nebula;
+    const sunX = cx;
+    const sunY = h * 0.825;
+    const strandCenterY = cy - u * 0.035;
+    const topY = cy - u * 0.28;
+
+    // Layer 1: Diagonal warm amber cosmic dust trail (Milky Way stardust)
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.rotate(-0.35);
+    const neb1 = ctx.createRadialGradient(0, -u * 0.12, u * 0.08, 0, -u * 0.12, u * 0.75);
+    neb1.addColorStop(0, '#d9770624');
+    neb1.addColorStop(0.45, '#b4530914');
+    neb1.addColorStop(1, '#00000000');
+    ctx.fillStyle = neb1;
+    ctx.fillRect(-w, -h, w * 2, h * 2);
+    ctx.restore();
+
+    // Layer 2: Celestial teal/cyan nebula stream behind beads
+    const neb2 = ctx.createRadialGradient(cx * 0.75, strandCenterY, u * 0.06, cx * 0.75, strandCenterY, u * 0.62);
+    neb2.addColorStop(0, '#14b8a624');
+    neb2.addColorStop(0.5, '#0f766e12');
+    neb2.addColorStop(1, '#00000000');
+    ctx.fillStyle = neb2;
+    ctx.fillRect(0, 0, w, h);
+
+    // Layer 3: Warm solar volumetric corona expanding upward into middle space
+    const solarCorona = ctx.createRadialGradient(sunX, sunY, u * 0.06, sunX, sunY, u * 0.54);
+    solarCorona.addColorStop(0, '#ff782622');
+    solarCorona.addColorStop(0.48, '#ea580c10');
+    solarCorona.addColorStop(1, '#00000000');
+    ctx.fillStyle = solarCorona;
     ctx.fillRect(0, 0, w, h);
 
     // Ambient twinkling stars
-    for (let i = 0; i < 68; i++) {
+    for (let i = 0; i < 75; i++) {
       const sx = ((i * 179 + 37) % 997) / 997 * w;
       const sy = ((i * 313 + 59) % 991) / 991 * h;
       const twinkle = 0.35 + 0.65 * (0.5 + 0.5 * Math.sin(motionTime * (0.55 + (i % 5) * 0.22) + i * 2.1));
@@ -338,9 +417,49 @@
       ctx.restore();
     }
 
+    // Sacred Qur'anic Header (QS. Al-A'raf: 180)
+    ctx.save();
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle = '#fde68a99';
+    ctx.font = '600 ' + Math.max(14, u * 0.017) + 'px "Amiri",serif';
+    ctx.shadowColor = '#f59e0b44';
+    ctx.shadowBlur = u * 0.010;
+    ctx.fillText('وَلِلَّهِ الْأَسْمَاءُ الْحُسْنَىٰ فَادْعُوهُ بِهَا', cx, h * 0.075);
+    ctx.shadowBlur = 0;
+    ctx.fillStyle = '#bda88477';
+    ctx.font = '500 ' + Math.max(9, u * 0.011) + 'px "DM Sans",sans-serif';
+    ctx.letterSpacing = Math.max(1.5, u * 0.0025) + 'px';
+    ctx.fillText('QS. AL-A’RAF : 180 · ASMAUL HUSNA', cx, h * 0.105);
+    ctx.letterSpacing = '0px';
+    ctx.restore();
+
+    // Divine Volumetric Light Rays (Nur Ilahi) beaming down from behind the calligraphy
+    ctx.save();
+    ctx.translate(cx, topY - u * 0.04);
+    for (let r = 0; r < 7; r++) {
+      const rayAngle = ((r - 3) * 0.078) + Math.sin(motionTime * 0.6 + r) * 0.012;
+      const rayLength = u * 0.36;
+      const rayWidth = u * 0.038;
+      const rayGrad = ctx.createLinearGradient(0, 0, 0, rayLength);
+      rayGrad.addColorStop(0, '#5eead424');
+      rayGrad.addColorStop(0.35, '#fde68a14');
+      rayGrad.addColorStop(1, '#00000000');
+      ctx.save();
+      ctx.rotate(rayAngle);
+      ctx.fillStyle = rayGrad;
+      ctx.beginPath();
+      ctx.moveTo(-rayWidth * 0.25, 0);
+      ctx.lineTo(rayWidth * 0.25, 0);
+      ctx.lineTo(rayWidth * 0.85, rayLength);
+      ctx.lineTo(-rayWidth * 0.85, rayLength);
+      ctx.closePath();
+      ctx.fill();
+      ctx.restore();
+    }
+    ctx.restore();
+
     // 2. Bottom Section: 3D Solar System & Planetary Orbits
-    const sunX = cx;
-    const sunY = h * 0.825;
     const orbitAspect = 0.26;
     const orbits = [
       { r: u * 0.17, speed: 0.85, size: u * 0.008, color: '#b5a796' },
@@ -442,7 +561,6 @@
     });
 
     // 3. Middle Section: Bead Flow & Snap Mechanism
-    const strandCenterY = cy - u * 0.035;
     function getStrandY(x) {
       const dx = (x - cx) / (u * 0.65);
       return strandCenterY + Math.pow(dx, 2) * u * 0.075;
@@ -509,14 +627,16 @@
     ctx.stroke();
     ctx.restore();
 
-    // Beads
+    // Continuous looping beads across the screen (never cut off at 99)
     const beadSpacing = u * 0.116;
     const baseBeadR = u * 0.034;
-    const minIdx = Math.max(0, Math.floor(slideIndex - 6));
-    const maxIdx = Math.min(98, Math.ceil(slideIndex + 6));
-    for (let i = minIdx; i <= maxIdx; i++) {
-      const rel = i - slideIndex;
+    const baseSlot = Math.round(slideIndex);
+    for (let k = -7; k <= 7; k++) {
+      const s = baseSlot + k;
+      const i = ((s % 99) + 99) % 99; // Wrapped continuous Asmaul Husna index 0..98
+      const rel = s - slideIndex;
       const bx = cx + rel * beadSpacing;
+      if (bx < -75 || bx > w + 75) continue;
       const by = getStrandY(bx);
       const distCenter = Math.abs(bx - cx);
       const inReticle = distCenter < beadSpacing * 0.65;
@@ -573,51 +693,111 @@
       ctx.restore();
     }
 
-    // Left-End Imam Stopper Bead & Tassel (Physics Inertia)
-    const headRel = 0 - slideIndex - 0.75;
-    const headX = cx + headRel * beadSpacing;
-    if (headX > -100 && headX < w + 100) {
-      const headY = getStrandY(headX);
-      const headR = baseBeadR * 1.25;
-      const vel = isSnap ? (state.tasbihToIndex - state.tasbihFromIndex) * Math.sin(transProgress * Math.PI) * 1.6 : 0;
-      const inertiaSway = -vel * 0.26;
-      const ambientSway = Math.sin(motionTime * 2.2) * 0.04;
-      const totalSway = inertiaSway + ambientSway;
-      ctx.save();
-      const rubyGrad = ctx.createRadialGradient(
-        headX - headR * 0.32, headY - headR * 0.32, headR * 0.08,
-        headX, headY, headR
-      );
-      rubyGrad.addColorStop(0, '#ff9999');
-      rubyGrad.addColorStop(0.3, '#ef4444');
-      rubyGrad.addColorStop(0.7, '#b91c1c');
-      rubyGrad.addColorStop(1, '#450a0a');
-      ctx.fillStyle = rubyGrad;
-      ctx.beginPath();
-      ctx.arc(headX, headY, headR, 0, Math.PI * 2);
-      ctx.fill();
+    // Traditional Ornate Separators (Pul / Marqam) at 33-34 and 66-67
+    [32.5, 65.5].forEach(sepSlot => {
+      const diff = sepSlot - slideIndex;
+      const wrappedDiff = ((diff % 99) + 99 + 49.5) % 99 - 49.5;
+      if (Math.abs(wrappedDiff) < 6.5) {
+        const sepX = cx + wrappedDiff * beadSpacing;
+        if (sepX >= -60 && sepX <= w + 60) {
+          const sepY = getStrandY(sepX);
+          const sepR = baseBeadR * 1.25;
+          ctx.save();
+          const dx = (sepX - cx) / (u * 0.65);
+          const slope = 2 * (dx / (u * 0.65)) * (u * 0.075);
+          const tangent = Math.atan2(slope, 1);
+          ctx.translate(sepX, sepY);
+          ctx.rotate(tangent + Math.PI / 2);
 
-      const capW = headR * 0.9, capH = headR * 0.45;
-      const capY = headY + headR * 0.75;
-      ctx.fillStyle = '#d4af37';
-      ctx.fillRect(headX - capW / 2, capY, capW, capH);
+          // Shadow
+          ctx.fillStyle = '#02070f88';
+          ctx.beginPath();
+          ctx.ellipse(0, sepR * 0.35, sepR * 0.35, sepR * 0.95, 0, 0, Math.PI * 2);
+          ctx.fill();
 
-      ctx.strokeStyle = '#ef4444cc';
-      ctx.lineWidth = Math.max(1.2, u * 0.0016);
-      for (let s = 0; s < 16; s++) {
-        const sOffset = (s - 7.5) * headR * 0.09;
-        const sWave = Math.sin(motionTime * 3 + s * 0.4) * headR * 0.08;
-        const swayX = Math.sin(totalSway) * headR * 2.2;
-        ctx.beginPath();
-        ctx.moveTo(headX + sOffset * 0.4, capY + capH);
-        ctx.bezierCurveTo(
-          headX + sOffset + swayX * 0.4, capY + capH + headR * 0.8,
-          headX + sOffset + swayX * 0.8 + sWave, capY + capH + headR * 1.6,
-          headX + sOffset * 0.8 + swayX, capY + capH + headR * (2.4 + (s % 4) * 0.15)
-        );
-        ctx.stroke();
+          // Golden Disc
+          const discGrad = ctx.createLinearGradient(-sepR * 0.3, -sepR, sepR * 0.3, sepR);
+          discGrad.addColorStop(0, '#ffffff');
+          discGrad.addColorStop(0.25, '#fde68a');
+          discGrad.addColorStop(0.55, '#f59e0b');
+          discGrad.addColorStop(0.85, '#b45309');
+          discGrad.addColorStop(1, '#78350f');
+          ctx.fillStyle = discGrad;
+          ctx.beginPath();
+          ctx.ellipse(0, 0, sepR * 0.32, sepR * 1.15, 0, 0, Math.PI * 2);
+          ctx.fill();
+
+          ctx.strokeStyle = '#fffbeb';
+          ctx.lineWidth = Math.max(1, u * 0.0014);
+          ctx.stroke();
+
+          // Emerald center jewel
+          ctx.fillStyle = '#10b981';
+          ctx.beginPath();
+          ctx.arc(0, 0, sepR * 0.22, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.strokeStyle = '#ffffffaa';
+          ctx.lineWidth = Math.max(0.6, u * 0.0008);
+          ctx.stroke();
+
+          // Teardrop pul ornament
+          ctx.fillStyle = '#f59e0b';
+          ctx.beginPath();
+          ctx.arc(0, sepR * 1.45, sepR * 0.24, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.restore();
+        }
       }
-      ctx.restore();
+    });
+
+    // Imam Head Bead & Tassel at the loop junction (between 98 and 0)
+    const junctionDiff = -0.5 - slideIndex;
+    const wrappedJunction = ((junctionDiff % 99) + 99 + 49.5) % 99 - 49.5;
+    if (Math.abs(wrappedJunction) < 6.5) {
+      const headX = cx + wrappedJunction * beadSpacing;
+      if (headX > -100 && headX < w + 100) {
+        const headY = getStrandY(headX);
+        const headR = baseBeadR * 1.25;
+        const vel = isSnap ? (state.tasbihToIndex - state.tasbihFromIndex) * Math.sin(transProgress * Math.PI) * 1.6 : 0;
+        const inertiaSway = -vel * 0.26;
+        const ambientSway = Math.sin(motionTime * 2.2) * 0.04;
+        const totalSway = inertiaSway + ambientSway;
+        ctx.save();
+        const rubyGrad = ctx.createRadialGradient(
+          headX - headR * 0.32, headY - headR * 0.32, headR * 0.08,
+          headX, headY, headR
+        );
+        rubyGrad.addColorStop(0, '#ff9999');
+        rubyGrad.addColorStop(0.3, '#ef4444');
+        rubyGrad.addColorStop(0.7, '#b91c1c');
+        rubyGrad.addColorStop(1, '#450a0a');
+        ctx.fillStyle = rubyGrad;
+        ctx.beginPath();
+        ctx.arc(headX, headY, headR, 0, Math.PI * 2);
+        ctx.fill();
+
+        const capW = headR * 0.9, capH = headR * 0.45;
+        const capY = headY + headR * 0.75;
+        ctx.fillStyle = '#d4af37';
+        ctx.fillRect(headX - capW / 2, capY, capW, capH);
+
+        ctx.strokeStyle = '#ef4444cc';
+        ctx.lineWidth = Math.max(1.2, u * 0.0016);
+        for (let s = 0; s < 16; s++) {
+          const sOffset = (s - 7.5) * headR * 0.09;
+          const sWave = Math.sin(motionTime * 3 + s * 0.4) * headR * 0.08;
+          const swayX = Math.sin(totalSway) * headR * 2.2;
+          ctx.beginPath();
+          ctx.moveTo(headX + sOffset * 0.4, capY + capH);
+          ctx.bezierCurveTo(
+            headX + sOffset + swayX * 0.4, capY + capH + headR * 0.8,
+            headX + sOffset + swayX * 0.8 + sWave, capY + capH + headR * 1.6,
+            headX + sOffset * 0.8 + swayX, capY + capH + headR * (2.4 + (s % 4) * 0.15)
+          );
+          ctx.stroke();
+        }
+        ctx.restore();
+      }
     }
 
     // Floating +1 Pop-up
@@ -680,7 +860,6 @@
     ctx.restore();
 
     // 4. Top Section: Asmaul Husna Calligraphy & Meaning
-    const topY = cy - u * 0.28;
     ctx.save();
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
