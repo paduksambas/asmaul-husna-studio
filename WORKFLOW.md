@@ -403,3 +403,13 @@ Menyelesaikan ketidaksesuaian antarmuka pada model "Aliran Kosmis & Snap" dan "T
 3. **Penomoran Bagian Dinamis:** Penomoran badge .section-number di panel inspektor kini dihitung secara dinamis dari bagian-bagian yang sedang tampil, sehingga tidak terjadi loncatan angka saat menu animasi disembunyikan.
 4. **Pembaruan Petunjuk Pratinjau (enderHint):** Teks status di bawah kanvas kini memberikan informasi spesifik sesuai model aktif (*"Tasbih: Aliran Kosmis & Snap · fisika snap, reticle, rumbai inersia & orbit planet aktif"*).
 5. **Verifikasi:** Seluruh pengujian statis alidate-app.mjs lulus 100% (73 ID unik, 68 referensi DOM sinkron).
+### 25 November 2026 — Jeda Seragam Kepala Tasbih Merah & Tata Letak Responsif Bebas Tumpuk Lintas Rasio
+Menyempurnakan model "Aliran Kosmis & Snap" pada rasio Portrait (9:16), Square (1:1), dan Landscape (16:9):
+1. **Jeda Alami Kepala Tasbih Merah (*Consistent Imam Bead Spacing*):** Kepala tasbih imam merah kini diintegrasikan ke slot ke-99 dalam siklus lingkaran 100 elemen (99 butir Asmaul Husna + 1 kepala imam). Jarak dari kepala merah ke butir ke-98 dan ke butir ke-0 kini sama persis 1 unit eadSpacing (jeda ~48 px), tidak lagi bertabrakan atau menempel pada butir di sebelahnya.
+2. **Penyatuan Teks Atas ke Bacaan Asmaul Husna Aktif:** Menghapus teks ayat Al-Qur'an statis terpisah yang sebelumnya menabrak kaligrafi saat berpindah rasio. Bagian atas-tengah kanvas kini 100% fokus dan menyatu menampilkan tulisan Arab bacaan Asmaul Husna aktif (item[1]), pemisah diamond oranye ◆, transliterasi Latin (item[0]), dan terjemahan Indonesia (item[2]).
+3. **Tata Letak Vertikal Adaptif Lintas Rasio (Bebas Tumpuk):**
+   - Menghitung titik jangkar vertikal secara dinamis berdasarkan orientasi layar (isPortrait, isLandscape, isSquare).
+   - Segenap elemen (bacaan teks atas, untaian tasbih, sensor reticle, badge counter XX / 99, dan tata surya bawah) memiliki ruang vertikal mandiri dengan margin bernapas yang luas di semua rasio.
+   - Terkoneksi penuh dengan kontrol offset dan jarak teks (state.arabicVerticalOffset, state.arabicTextGap, state.textMeaningGap, state.size).
+4. **Fokus Berkas Nur Ilahi:** 7 berkas cahaya ilahi kini memancar langsung dari balik kaligrafi Asmaul Husna aktif menuju zona tasbih.
+5. **Verifikasi:** Seluruh pengujian statis alidate-app.mjs lulus 100% (73 ID unik, 68 referensi DOM sinkron).

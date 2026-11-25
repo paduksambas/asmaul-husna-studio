@@ -383,6 +383,9 @@
     const animated = state.playing || state.speechAnimating || state.tasbihTransitionStart > 0;
     const motionTime = animated ? (now / 1000) : elapsed;
 
+    const isPortrait = h > w;
+    const isLandscape = w > h * 1.25;
+
     // 1. Cosmic Deep Space Background
     const bg = ctx.createLinearGradient(0, 0, 0, h);
     bg.addColorStop(0, '#030611');
@@ -392,10 +395,13 @@
     ctx.fillStyle = bg;
     ctx.fillRect(0, 0, w, h);
 
+    // Responsive Anchor Points (never collide across Portrait, Square, Landscape)
     const sunX = cx;
-    const sunY = h * 0.825;
-    const strandCenterY = cy - u * 0.035;
-    const topY = cy - u * 0.28;
+    const sunY = isPortrait ? h * 0.835 : h * 0.88;
+    const strandCenterY = isPortrait ? h * 0.48 : (isLandscape ? h * 0.50 : h * 0.51);
+    const topReadingCenterY = isPortrait
+      ? h * 0.22 + state.arabicVerticalOffset * (u * 0.0025)
+      : h * 0.19 + state.arabicVerticalOffset * (u * 0.0025);
 
     // Layer 1: Diagonal warm amber cosmic dust trail (Milky Way stardust)
     ctx.save();
@@ -439,30 +445,13 @@
       ctx.restore();
     }
 
-    // Sacred Qur'anic Header (QS. Al-A'raf: 180)
+    // Divine Volumetric Light Rays (Nur Ilahi) beaming down from behind the active calligraphy
     ctx.save();
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillStyle = '#fde68a99';
-    ctx.font = '600 ' + Math.max(14, u * 0.017) + 'px "Amiri",serif';
-    ctx.shadowColor = '#f59e0b44';
-    ctx.shadowBlur = u * 0.010;
-    ctx.fillText('وَلِلَّهِ الْأَسْمَاءُ الْحُسْنَىٰ فَادْعُوهُ بِهَا', cx, h * 0.075);
-    ctx.shadowBlur = 0;
-    ctx.fillStyle = '#bda88477';
-    ctx.font = '500 ' + Math.max(9, u * 0.011) + 'px "DM Sans",sans-serif';
-    ctx.letterSpacing = Math.max(1.5, u * 0.0025) + 'px';
-    ctx.fillText('QS. AL-A’RAF : 180 · ASMAUL HUSNA', cx, h * 0.105);
-    ctx.letterSpacing = '0px';
-    ctx.restore();
-
-    // Divine Volumetric Light Rays (Nur Ilahi) beaming down from behind the calligraphy
-    ctx.save();
-    ctx.translate(cx, topY - u * 0.04);
+    ctx.translate(cx, topReadingCenterY);
     for (let r = 0; r < 7; r++) {
       const rayAngle = ((r - 3) * 0.078) + Math.sin(motionTime * 0.6 + r) * 0.012;
-      const rayLength = u * 0.36;
-      const rayWidth = u * 0.038;
+      const rayLength = isPortrait ? u * 0.34 : u * 0.26;
+      const rayWidth = u * 0.036;
       const rayGrad = ctx.createLinearGradient(0, 0, 0, rayLength);
       rayGrad.addColorStop(0, '#5eead424');
       rayGrad.addColorStop(0.35, '#fde68a14');
@@ -482,13 +471,13 @@
     ctx.restore();
 
     // 2. Bottom Section: 3D Solar System & Planetary Orbits
-    const orbitAspect = 0.26;
+    const orbitAspect = isPortrait ? 0.26 : 0.20;
     const orbits = [
-      { r: u * 0.17, speed: 0.85, size: u * 0.008, color: '#b5a796' },
-      { r: u * 0.26, speed: 0.55, size: u * 0.012, color: '#e6bd7d' },
-      { r: u * 0.36, speed: 0.35, size: u * 0.014, color: '#4da6de', moon: true },
-      { r: u * 0.46, speed: 0.22, size: u * 0.010, color: '#e0583b' },
-      { r: u * 0.57, speed: 0.13, size: u * 0.022, color: '#deb887', ring: true }
+      { r: u * 0.16, speed: 0.85, size: u * 0.008, color: '#b5a796' },
+      { r: u * 0.24, speed: 0.55, size: u * 0.012, color: '#e6bd7d' },
+      { r: u * 0.33, speed: 0.35, size: u * 0.014, color: '#4da6de', moon: true },
+      { r: u * 0.42, speed: 0.22, size: u * 0.010, color: '#e0583b' },
+      { r: u * 0.52, speed: 0.13, size: u * 0.020, color: '#deb887', ring: true }
     ];
 
     // Orbits tracks
@@ -598,7 +587,12 @@
         isSnap = true;
         const p = transProgress;
         const snap = 1 - Math.pow(1 - p, 4) + Math.sin(p * Math.PI) * 0.07 * Math.exp(-3 * p);
-        slideIndex = state.tasbihFromIndex + (state.tasbihToIndex - state.tasbihFromIndex) * snap;
+        const from = state.tasbihFromIndex || 0;
+        const to = state.tasbihToIndex || 0;
+        let diff = to - from;
+        if (diff > 50) diff -= 100;
+        else if (diff < -50) diff += 100;
+        slideIndex = from + diff * snap;
       } else {
         state.tasbihTransitionStart = 0;
       }
@@ -649,76 +643,158 @@
     ctx.stroke();
     ctx.restore();
 
-    // Continuous looping beads across the screen (never cut off at 99)
+    // Continuous looping beads across the screen with exact equal spacing for all 100 elements
     const beadSpacing = u * 0.116;
     const baseBeadR = u * 0.034;
     const baseSlot = Math.round(slideIndex);
-    for (let k = -7; k <= 7; k++) {
+    for (let k = -8; k <= 8; k++) {
       const s = baseSlot + k;
-      const i = ((s % 99) + 99) % 99; // Wrapped continuous Asmaul Husna index 0..98
       const rel = s - slideIndex;
       const bx = cx + rel * beadSpacing;
-      if (bx < -75 || bx > w + 75) continue;
+      if (bx < -90 || bx > w + 90) continue;
       const by = getStrandY(bx);
-      const distCenter = Math.abs(bx - cx);
-      const inReticle = distCenter < beadSpacing * 0.65;
-      let scale = 1;
-      let focusAlpha = 0;
-      if (inReticle) {
-        focusAlpha = Math.max(0, 1 - distCenter / (beadSpacing * 0.65));
-        scale = 1 + 0.18 * Math.cos((1 - focusAlpha) * Math.PI / 2);
-      }
-      const br = baseBeadR * scale;
-      ctx.save();
-      // Bead shadow
-      ctx.fillStyle = '#02070f88';
-      ctx.beginPath();
-      ctx.ellipse(bx, by + br * 0.45, br * 0.95, br * 0.45, 0, 0, Math.PI * 2);
-      ctx.fill();
+      const modSlot = ((s % 100) + 100) % 100;
 
-      // Active center bead halo
-      if (inReticle && focusAlpha > 0.4) {
-        const haloR = br * 2.2;
-        const halo = ctx.createRadialGradient(bx, by, br * 0.2, bx, by, haloR);
-        halo.addColorStop(0, '#5eead455');
-        halo.addColorStop(0.6, '#38bdf822');
-        halo.addColorStop(1, '#00000000');
-        ctx.fillStyle = halo;
+      if (modSlot === 99) {
+        // --- 1. IMAM HEAD BEAD & SILK TASSEL (Clean uniform gap, equal to other beads) ---
+        const headR = baseBeadR * 1.18;
+        const distCenter = Math.abs(bx - cx);
+        const inReticle = distCenter < beadSpacing * 0.65;
+        let scale = 1;
+        if (inReticle) {
+          const focusAlpha = Math.max(0, 1 - distCenter / (beadSpacing * 0.65));
+          scale = 1 + 0.15 * Math.cos((1 - focusAlpha) * Math.PI / 2);
+        }
+        const effR = headR * scale;
+        const vel = isSnap ? (state.tasbihToIndex - state.tasbihFromIndex) * Math.sin(transProgress * Math.PI) * 1.5 : 0;
+        const inertiaSway = -vel * 0.24;
+        const ambientSway = Math.sin(motionTime * 2.2) * 0.05;
+        const totalSway = inertiaSway + ambientSway;
+
+        ctx.save();
+        // Shadow
+        ctx.fillStyle = '#02070f88';
         ctx.beginPath();
-        ctx.arc(bx, by, haloR, 0, Math.PI * 2);
+        ctx.ellipse(bx, by + effR * 0.45, effR * 0.95, effR * 0.45, 0, 0, Math.PI * 2);
         ctx.fill();
+
+        // Ruby red bead
+        const rubyGrad = ctx.createRadialGradient(
+          bx - effR * 0.35, by - effR * 0.35, effR * 0.08,
+          bx, by, effR * 1.15
+        );
+        rubyGrad.addColorStop(0, '#ffa8a8');
+        rubyGrad.addColorStop(0.28, '#ef4444');
+        rubyGrad.addColorStop(0.68, '#b91c1c');
+        rubyGrad.addColorStop(1, '#450a0a');
+        ctx.fillStyle = rubyGrad;
+        ctx.beginPath();
+        ctx.arc(bx, by, effR, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Specular highlight
+        ctx.fillStyle = '#ffffffdd';
+        ctx.beginPath();
+        ctx.arc(bx - effR * 0.32, by - effR * 0.32, effR * 0.22, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.strokeStyle = '#f87171aa';
+        ctx.lineWidth = Math.max(1, u * 0.0012);
+        ctx.stroke();
+
+        // Golden cap
+        const capW = effR * 0.88, capH = effR * 0.42;
+        const capY = by + effR * 0.74;
+        const goldCap = ctx.createLinearGradient(bx - capW / 2, capY, bx + capW / 2, capY);
+        goldCap.addColorStop(0, '#78350f');
+        goldCap.addColorStop(0.35, '#fde68a');
+        goldCap.addColorStop(0.7, '#d97706');
+        goldCap.addColorStop(1, '#b45309');
+        ctx.fillStyle = goldCap;
+        ctx.fillRect(bx - capW / 2, capY, capW, capH);
+        ctx.strokeStyle = '#fef3c7';
+        ctx.lineWidth = Math.max(0.8, u * 0.0009);
+        ctx.strokeRect(bx - capW / 2, capY, capW, capH);
+
+        // Silk threads with physics inertia sway
+        ctx.strokeStyle = '#ef4444cc';
+        ctx.lineWidth = Math.max(1.2, u * 0.0016);
+        for (let st = 0; st < 16; st++) {
+          const sOffset = (st - 7.5) * effR * 0.09;
+          const sWave = Math.sin(motionTime * 3 + st * 0.4) * effR * 0.08;
+          const swayX = Math.sin(totalSway) * effR * 2.2;
+          ctx.beginPath();
+          ctx.moveTo(bx + sOffset * 0.4, capY + capH);
+          ctx.bezierCurveTo(
+            bx + sOffset + swayX * 0.4, capY + capH + effR * 0.8,
+            bx + sOffset + swayX * 0.8 + sWave, capY + capH + effR * 1.6,
+            bx + sOffset * 0.8 + swayX, capY + capH + effR * (2.4 + (st % 4) * 0.15)
+          );
+          ctx.stroke();
+        }
+        ctx.restore();
+      } else {
+        // --- 2. ASMAUL HUSNA JEWEL BEAD (modSlot 0..98) ---
+        const distCenter = Math.abs(bx - cx);
+        const inReticle = distCenter < beadSpacing * 0.65;
+        let scale = 1;
+        let focusAlpha = 0;
+        if (inReticle) {
+          focusAlpha = Math.max(0, 1 - distCenter / (beadSpacing * 0.65));
+          scale = 1 + 0.18 * Math.cos((1 - focusAlpha) * Math.PI / 2);
+        }
+        const br = baseBeadR * scale;
+        ctx.save();
+        // Bead shadow
+        ctx.fillStyle = '#02070f88';
+        ctx.beginPath();
+        ctx.ellipse(bx, by + br * 0.45, br * 0.95, br * 0.45, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Active center bead halo
+        if (inReticle && focusAlpha > 0.4) {
+          const haloR = br * 2.2;
+          const halo = ctx.createRadialGradient(bx, by, br * 0.2, bx, by, haloR);
+          halo.addColorStop(0, '#5eead455');
+          halo.addColorStop(0.6, '#38bdf822');
+          halo.addColorStop(1, '#00000000');
+          ctx.fillStyle = halo;
+          ctx.beginPath();
+          ctx.arc(bx, by, haloR, 0, Math.PI * 2);
+          ctx.fill();
+        }
+
+        // Lustrous jewel bead (celestial turquoise/cyan with gold rim)
+        const beadGrad = ctx.createRadialGradient(
+          bx - br * 0.35, by - br * 0.35, br * 0.08,
+          bx, by, br * 1.15
+        );
+        beadGrad.addColorStop(0, '#ffffff');
+        beadGrad.addColorStop(0.22, '#99f6e4');
+        beadGrad.addColorStop(0.55, '#2dd4bf');
+        beadGrad.addColorStop(0.85, '#0f766e');
+        beadGrad.addColorStop(1, '#042f2e');
+        ctx.fillStyle = beadGrad;
+        ctx.beginPath();
+        ctx.arc(bx, by, br, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.fillStyle = '#ffffffdd';
+        ctx.beginPath();
+        ctx.arc(bx - br * 0.32, by - br * 0.32, br * 0.22, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.strokeStyle = '#5eead466';
+        ctx.lineWidth = Math.max(0.8, u * 0.001);
+        ctx.stroke();
+        ctx.restore();
       }
-
-      // Lustrous jewel bead (celestial turquoise/cyan with gold rim)
-      const beadGrad = ctx.createRadialGradient(
-        bx - br * 0.35, by - br * 0.35, br * 0.08,
-        bx, by, br * 1.15
-      );
-      beadGrad.addColorStop(0, '#ffffff');
-      beadGrad.addColorStop(0.22, '#99f6e4');
-      beadGrad.addColorStop(0.55, '#2dd4bf');
-      beadGrad.addColorStop(0.85, '#0f766e');
-      beadGrad.addColorStop(1, '#042f2e');
-      ctx.fillStyle = beadGrad;
-      ctx.beginPath();
-      ctx.arc(bx, by, br, 0, Math.PI * 2);
-      ctx.fill();
-
-      ctx.fillStyle = '#ffffffdd';
-      ctx.beginPath();
-      ctx.arc(bx - br * 0.32, by - br * 0.32, br * 0.22, 0, Math.PI * 2);
-      ctx.fill();
-
-      ctx.strokeStyle = '#5eead466';
-      ctx.lineWidth = Math.max(0.8, u * 0.001);
-      ctx.stroke();
-      ctx.restore();
     }
 
     // Traditional Ornate Separators (Pul / Marqam) at 33-34 and 66-67
     [32.5, 65.5].forEach(sepSlot => {
       const diff = sepSlot - slideIndex;
-      const wrappedDiff = ((diff % 99) + 99 + 49.5) % 99 - 49.5;
+      const wrappedDiff = ((diff % 100) + 100 + 50) % 100 - 50;
       if (Math.abs(wrappedDiff) < 6.5) {
         const sepX = cx + wrappedDiff * beadSpacing;
         if (sepX >= -60 && sepX <= w + 60) {
@@ -772,56 +848,6 @@
       }
     });
 
-    // Imam Head Bead & Tassel at the loop junction (between 98 and 0)
-    const junctionDiff = -0.5 - slideIndex;
-    const wrappedJunction = ((junctionDiff % 99) + 99 + 49.5) % 99 - 49.5;
-    if (Math.abs(wrappedJunction) < 6.5) {
-      const headX = cx + wrappedJunction * beadSpacing;
-      if (headX > -100 && headX < w + 100) {
-        const headY = getStrandY(headX);
-        const headR = baseBeadR * 1.25;
-        const vel = isSnap ? (state.tasbihToIndex - state.tasbihFromIndex) * Math.sin(transProgress * Math.PI) * 1.6 : 0;
-        const inertiaSway = -vel * 0.26;
-        const ambientSway = Math.sin(motionTime * 2.2) * 0.04;
-        const totalSway = inertiaSway + ambientSway;
-        ctx.save();
-        const rubyGrad = ctx.createRadialGradient(
-          headX - headR * 0.32, headY - headR * 0.32, headR * 0.08,
-          headX, headY, headR
-        );
-        rubyGrad.addColorStop(0, '#ff9999');
-        rubyGrad.addColorStop(0.3, '#ef4444');
-        rubyGrad.addColorStop(0.7, '#b91c1c');
-        rubyGrad.addColorStop(1, '#450a0a');
-        ctx.fillStyle = rubyGrad;
-        ctx.beginPath();
-        ctx.arc(headX, headY, headR, 0, Math.PI * 2);
-        ctx.fill();
-
-        const capW = headR * 0.9, capH = headR * 0.45;
-        const capY = headY + headR * 0.75;
-        ctx.fillStyle = '#d4af37';
-        ctx.fillRect(headX - capW / 2, capY, capW, capH);
-
-        ctx.strokeStyle = '#ef4444cc';
-        ctx.lineWidth = Math.max(1.2, u * 0.0016);
-        for (let s = 0; s < 16; s++) {
-          const sOffset = (s - 7.5) * headR * 0.09;
-          const sWave = Math.sin(motionTime * 3 + s * 0.4) * headR * 0.08;
-          const swayX = Math.sin(totalSway) * headR * 2.2;
-          ctx.beginPath();
-          ctx.moveTo(headX + sOffset * 0.4, capY + capH);
-          ctx.bezierCurveTo(
-            headX + sOffset + swayX * 0.4, capY + capH + headR * 0.8,
-            headX + sOffset + swayX * 0.8 + sWave, capY + capH + headR * 1.6,
-            headX + sOffset * 0.8 + swayX, capY + capH + headR * (2.4 + (s % 4) * 0.15)
-          );
-          ctx.stroke();
-        }
-        ctx.restore();
-      }
-    }
-
     // Floating +1 Pop-up
     if (isSnap || (now - (state.tasbihTransitionStart || 0)) < 700) {
       const fp = clamp((now - (state.tasbihTransitionStart || (now - 1000))) / 650, 0, 1);
@@ -843,8 +869,8 @@
     }
 
     // Synced Circular Counter Progress Badge
-    const badgeY = strandCenterY + u * 0.145;
-    const badgeR = u * 0.068;
+    const badgeY = strandCenterY + (isPortrait ? u * 0.145 : u * 0.125);
+    const badgeR = isPortrait ? u * 0.068 : u * 0.058;
     ctx.save();
     ctx.fillStyle = '#0b1626cc';
     ctx.beginPath();
@@ -881,36 +907,46 @@
     ctx.fillText('/ 99', cx, badgeY + u * 0.016);
     ctx.restore();
 
-    // 4. Top Section: Asmaul Husna Calligraphy & Meaning
+    // 4. Top Section: Asmaul Husna Reading (Unified Arabic, Transliteration, Meaning)
     ctx.save();
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    let arabicSize = u * 0.108 * (state.size / 100);
+
+    let arabicSize = (isPortrait ? u * 0.105 : Math.min(u * 0.088, h * 0.11)) * (state.size / 100);
     ctx.font = '700 ' + arabicSize + 'px "Amiri",serif';
-    while (ctx.measureText(item[1]).width > w * 0.82 && arabicSize > u * 0.05) {
+    while (ctx.measureText(item[1]).width > w * 0.82 && arabicSize > u * 0.045) {
       arabicSize *= 0.94;
       ctx.font = '700 ' + arabicSize + 'px "Amiri",serif';
     }
+
+    const arabicY = topReadingCenterY;
     const glowBloom = isSnap ? Math.sin(transProgress * Math.PI) * u * 0.025 : 0;
     ctx.shadowColor = '#5eead488';
     ctx.shadowBlur = u * 0.015 + glowBloom;
     ctx.fillStyle = '#ffffff';
-    ctx.fillText(item[1], cx, topY - u * 0.04, w * 0.85);
+    ctx.fillText(item[1], cx, arabicY, w * 0.85);
     ctx.shadowBlur = 0;
 
+    // Accent Diamond Divider
+    const diamondY = arabicY + arabicSize * 0.52 + state.arabicTextGap * (u * 0.0004);
     ctx.fillStyle = '#f59e0b';
-    ctx.font = '600 ' + Math.max(10, u * 0.014) + 'px "DM Sans",sans-serif';
-    ctx.fillText('◆', cx, topY + u * 0.038);
+    ctx.font = '600 ' + Math.max(9, u * 0.013) + 'px "DM Sans",sans-serif';
+    ctx.fillText('◆', cx, diamondY);
 
+    // Latin Transliteration
+    const transliterationY = diamondY + Math.max(16, u * 0.024) + state.arabicTextGap * (u * 0.001);
     if (state.transliteration) {
       ctx.fillStyle = '#f8fafc';
-      ctx.font = '600 ' + Math.max(16, u * 0.027) + 'px "DM Sans",sans-serif';
-      ctx.fillText(item[0], cx, topY + u * 0.075, w * 0.85);
+      ctx.font = '600 ' + Math.max(15, u * 0.025) + 'px "DM Sans",sans-serif';
+      ctx.fillText(item[0], cx, transliterationY, w * 0.85);
     }
+
+    // Indonesian Meaning
     if (state.translation) {
+      const meaningY = transliterationY + (state.transliteration ? Math.max(14, u * 0.020) * 1.5 : 0) + state.textMeaningGap * (u * 0.001);
       ctx.fillStyle = '#94a3b8';
-      ctx.font = '400 ' + Math.max(13, u * 0.021) + 'px "DM Sans",sans-serif';
-      ctx.fillText(item[2], cx, topY + u * 0.115, w * 0.85);
+      ctx.font = '400 ' + Math.max(12, u * 0.019) + 'px "DM Sans",sans-serif';
+      ctx.fillText(item[2], cx, meaningY, w * 0.85);
     }
     ctx.restore();
   }
