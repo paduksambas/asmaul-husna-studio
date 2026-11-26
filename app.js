@@ -1050,33 +1050,48 @@
     }
     ctx.restore();
 
-    // 3. Silky Polished Specular Lacquer (Pernis Mengkilap Halus & Lembut)
-    // Soft wide satin sheen
+    // 3. Daana Studio Softbox Specular Lacquer (Pernis Jendela Softbox Khas Daana)
+    // Soft wide satin glow
     const satinGlow = ctx.createRadialGradient(lightX, lightY, r * 0.05, lightX, lightY, r * 0.65);
-    satinGlow.addColorStop(0, 'rgba(255, 248, 230, 0.38)');
+    satinGlow.addColorStop(0, 'rgba(255, 248, 230, 0.40)');
     satinGlow.addColorStop(0.35, 'rgba(255, 235, 195, 0.16)');
     satinGlow.addColorStop(0.70, 'rgba(240, 195, 130, 0.05)');
     satinGlow.addColorStop(1, 'rgba(240, 195, 130, 0)');
     ctx.fillStyle = satinGlow;
     ctx.fillRect(bx - r, by - r, r * 2, r * 2);
 
-    // High-gloss specular hotspot
-    const specHotspot = ctx.createRadialGradient(lightX, lightY, 0, lightX, lightY, r * 0.30);
-    specHotspot.addColorStop(0, 'rgba(255, 255, 250, 0.85)');
-    specHotspot.addColorStop(0.30, 'rgba(255, 248, 225, 0.45)');
-    specHotspot.addColorStop(0.65, 'rgba(255, 235, 185, 0.10)');
-    specHotspot.addColorStop(1, 'rgba(255, 220, 150, 0)');
-    ctx.fillStyle = specHotspot;
-    ctx.fillRect(bx - r, by - r, r * 2, r * 2);
-
-    // Smooth glossy rim sheen ribbon
+    // Analytical Rounded-Rectangle Softbox Window Reflection (Ciri Khas Render SkSL Daana)
     ctx.save();
-    ctx.lineCap = 'round';
-    ctx.strokeStyle = 'rgba(255, 252, 240, 0.50)';
-    ctx.lineWidth = Math.max(1.5, r * 0.07);
+    ctx.translate(lightX, lightY);
+    ctx.rotate(-0.32);
+    const boxW = r * 0.18;
+    const boxH = r * 0.36;
+    const boxR = r * 0.08;
+
+    // Diffused softbox ambient glow
+    const boxAura = ctx.createRadialGradient(0, 0, 0, 0, 0, r * 0.35);
+    boxAura.addColorStop(0, 'rgba(255, 252, 242, 0.55)');
+    boxAura.addColorStop(0.40, 'rgba(255, 245, 215, 0.22)');
+    boxAura.addColorStop(1, 'rgba(255, 230, 170, 0)');
+    ctx.fillStyle = boxAura;
+    ctx.fillRect(-r * 0.4, -r * 0.4, r * 0.8, r * 0.8);
+
+    // High-gloss rounded-rectangle window reflection
     ctx.beginPath();
-    ctx.arc(bx + r * 0.05, by - r * 0.05, r * 0.78, -Math.PI * 0.36, -Math.PI * 0.09);
-    ctx.stroke();
+    if (typeof ctx.roundRect === 'function') {
+      ctx.roundRect(-boxW / 2, -boxH / 2, boxW, boxH, boxR);
+    } else {
+      ctx.rect(-boxW / 2, -boxH / 2, boxW, boxH);
+    }
+    const boxGrad = ctx.createLinearGradient(-boxW / 2, -boxH / 2, boxW / 2, boxH / 2);
+    boxGrad.addColorStop(0, 'rgba(255, 255, 255, 0.95)');
+    boxGrad.addColorStop(0.45, 'rgba(255, 252, 245, 0.80)');
+    boxGrad.addColorStop(1, 'rgba(255, 240, 210, 0.38)');
+    ctx.fillStyle = boxGrad;
+    ctx.shadowColor = 'rgba(255, 255, 255, 0.70)';
+    ctx.shadowBlur = r * 0.12;
+    ctx.fill();
+    ctx.shadowBlur = 0;
     ctx.restore();
 
     // Soft warm ambient bounce rim light on dark limb
@@ -1089,7 +1104,20 @@
     ctx.stroke();
     ctx.restore();
 
-    // 4. Center Hole (lubang tembus tali halus)
+    // 4. Pole Ambient Occlusion Shadows (Bayangan Kontak Antar Butir)
+    const occTop = ctx.createRadialGradient(bx, by - r, 0, bx, by - r, r * 0.36);
+    occTop.addColorStop(0, 'rgba(10, 3, 1, 0.68)');
+    occTop.addColorStop(1, 'rgba(10, 3, 1, 0)');
+    ctx.fillStyle = occTop;
+    ctx.fillRect(bx - r, by - r, r * 2, r * 0.40);
+
+    const occBot = ctx.createRadialGradient(bx, by + r, 0, bx, by + r, r * 0.36);
+    occBot.addColorStop(0, 'rgba(10, 3, 1, 0.68)');
+    occBot.addColorStop(1, 'rgba(10, 3, 1, 0)');
+    ctx.fillStyle = occBot;
+    ctx.fillRect(bx - r, by + r * 0.60, r * 2, r * 0.40);
+
+    // 5. Center Hole (lubang tembus tali halus)
     ctx.fillStyle = '#120502';
     ctx.beginPath();
     ctx.ellipse(bx, by - r + r * 0.05, r * 0.14, r * 0.055, 0, 0, Math.PI * 2);
@@ -1236,8 +1264,8 @@
     const isPortrait = h > w;
     const isLandscape = w > h * 1.25;
 
-    // 1. Deep cinematic pitch-black background
-    ctx.fillStyle = '#050505';
+    // 1. Deep cinematic pitch-black background (Daana dark-room void)
+    ctx.fillStyle = '#000000';
     ctx.fillRect(0, 0, w, h);
 
     // Dynamic placement
@@ -1247,16 +1275,18 @@
     const imamH = beadR * 2.85;
     const imamY = isPortrait ? h * 0.685 : h * 0.64;
 
-    // Subtle studio vignette glow around the beads
-    const vig = ctx.createRadialGradient(cordX, h * 0.55, 0, cordX, h * 0.55, u * 0.90);
-    vig.addColorStop(0, 'rgba(46, 28, 12, 0.14)');
-    vig.addColorStop(1, 'rgba(0, 0, 0, 0)');
-    ctx.fillStyle = vig;
+    // Daana Central "Lamplight" spotlight pool pooled around the central pulling gap (spot = exp(-fy*fy))
+    const spotY = imamY - imamH * 0.5 - beadR * 1.5;
+    const spotGrad = ctx.createRadialGradient(cordX, spotY, 0, cordX, spotY, u * 0.85);
+    spotGrad.addColorStop(0, 'rgba(255, 215, 145, 0.12)');
+    spotGrad.addColorStop(0.35, 'rgba(180, 115, 50, 0.04)');
+    spotGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+    ctx.fillStyle = spotGrad;
     ctx.fillRect(0, 0, w, h);
 
-    // 2. Vertical Braided Cord (Tali Kepang Sutra Emas)
+    // 2. Vertical 2-Ply Braided Cord (Tali Kepang Sutra Khas Daana)
     ctx.save();
-    const cordW = Math.max(3.5, u * 0.0075);
+    const cordW = Math.max(3.2, u * 0.0070);
     // Base shadow
     ctx.strokeStyle = '#000000';
     ctx.lineWidth = cordW + 2.5;
@@ -1265,20 +1295,20 @@
     ctx.lineTo(cordX, h);
     ctx.stroke();
 
-    // Braided rope stitches
-    const stitchH = cordW * 1.7;
+    // 2-ply twisted cord stitches
+    const stitchH = cordW * 1.8;
     for (let sy = 0; sy < h; sy += stitchH) {
       const isAlt = (Math.floor(sy / stitchH) % 2 === 0);
-      ctx.strokeStyle = isAlt ? '#d4a259' : '#7d5225';
+      ctx.strokeStyle = isAlt ? '#d59c48' : '#6b421a';
       ctx.lineWidth = cordW;
       ctx.beginPath();
       ctx.moveTo(cordX - cordW * 0.35, sy);
       ctx.lineTo(cordX + cordW * 0.35, sy + stitchH);
       ctx.stroke();
 
-      // Highlight silk thread
-      ctx.strokeStyle = 'rgba(255, 235, 185, 0.45)';
-      ctx.lineWidth = cordW * 0.25;
+      // Highlight silk sheen
+      ctx.strokeStyle = 'rgba(255, 240, 195, 0.40)';
+      ctx.lineWidth = cordW * 0.22;
       ctx.beginPath();
       ctx.moveTo(cordX, sy + stitchH * 0.2);
       ctx.lineTo(cordX + cordW * 0.25, sy + stitchH * 0.65);
@@ -1298,13 +1328,13 @@
       }
     }
 
-    // Iconic visible bare cord gap above the Minaret Imam Head (~1.6 bead diameters)
+    // Iconic visible bare cord gap above the Minaret Imam Head (~1.55-1.8 bead diameters)
     const cordGap = beadR * 1.80;
     const activeY = imamY - imamH * 0.5 - cordGap - beadR + slideY;
 
     // 4. Draw Olive Wood Beads
-    // Beads above the bare cord gap (matching reference photo: 3 full beads + 1 top peek bead):
-    // Active resting bead above the bare cord gap
+    // Beads above the bare cord gap:
+    // Active resting bead above the bare cord gap (brightest in the lamplight spotlight)
     drawPhotorealisticOliveBead(cordX, activeY, beadR, 0.45, (state.index || 0));
     // Upper beads
     drawPhotorealisticOliveBead(cordX, activeY - beadR * 2.14 + slideY * 0.8, beadR, 1.85, (state.index || 0) + 1);
@@ -1315,9 +1345,24 @@
     // Carved Minaret Imam Head
     drawOliveWoodImam(cordX, imamY, imamW, imamH);
 
-    // Beads below the imam head (1 full bead + 1 bottom bead partially off-screen):
+    // Beads below the imam head:
     drawPhotorealisticOliveBead(cordX, imamY + imamH * 0.5 + beadR * 1.05, beadR, 2.10, (state.index || 0) + 4);
     drawPhotorealisticOliveBead(cordX, imamY + imamH * 0.5 + beadR * 3.12, beadR, 0.75, (state.index || 0) + 5);
+
+    // Daana Endless Strand Edge Vignette (Top and bottom 18% fade into void black)
+    const topVig = ctx.createLinearGradient(0, 0, 0, h * 0.18);
+    topVig.addColorStop(0, 'rgba(0, 0, 0, 0.94)');
+    topVig.addColorStop(0.70, 'rgba(0, 0, 0, 0.45)');
+    topVig.addColorStop(1, 'rgba(0, 0, 0, 0)');
+    ctx.fillStyle = topVig;
+    ctx.fillRect(cordX - beadR * 1.5, 0, beadR * 3, h * 0.18);
+
+    const botVig = ctx.createLinearGradient(0, h * 0.84, 0, h);
+    botVig.addColorStop(0, 'rgba(0, 0, 0, 0)');
+    botVig.addColorStop(0.60, 'rgba(0, 0, 0, 0.60)');
+    botVig.addColorStop(1, 'rgba(0, 0, 0, 0.96)');
+    ctx.fillStyle = botVig;
+    ctx.fillRect(cordX - beadR * 1.5, h * 0.84, beadR * 3, h * 0.16);
 
     // Floating +1 Pop-up
     if (state.tasbihTransitionStart || (now - (state.tasbihTransitionStart || 0)) < 650) {
@@ -1334,7 +1379,7 @@
       }
     }
 
-    // 5. Left Column Editorial Typography (Persis Foto Referensi)
+    // 5. Left Column Editorial Typography (Persis Sistem Daana: Bone/Olive Wood Theme)
     const marginL = isPortrait ? w * 0.11 : w * 0.08;
     const textMaxW = cordX - marginL - u * 0.06;
 
@@ -1342,15 +1387,15 @@
     ctx.textAlign = 'left';
     ctx.textBaseline = 'middle';
 
-    // Top Header Tagline
+    // Top Header Tagline (Daana: OLIVE WOOD ⌄)
     const headerY = h * 0.082;
-    ctx.fillStyle = '#8e7c65';
-    ctx.font = '500 ' + Math.max(10, u * 0.016) + 'px "DM Sans", sans-serif';
-    ctx.letterSpacing = '1.8px';
-    ctx.fillText('OLIVE WOOD · 99 BEADS  ⌄', marginL, headerY);
+    ctx.fillStyle = '#83745b';
+    ctx.font = '500 ' + Math.max(10, u * 0.015) + 'px "DM Sans", "Marcellus", sans-serif';
+    ctx.letterSpacing = '2.2px';
+    ctx.fillText('OLIVE WOOD  ⌄', marginL, headerY);
     ctx.letterSpacing = '0px';
 
-    // Arabic Calligraphy
+    // Arabic Calligraphy (Daana bone-white with warm aura)
     const arabicY = h * 0.35 + state.arabicVerticalOffset * (u * 0.0025);
     let fontAr = u * 0.096 * (state.size / 100);
     ctx.font = '700 ' + Math.max(36, fontAr) + 'px "Amiri", serif';
@@ -1358,60 +1403,61 @@
       fontAr *= 0.94;
       ctx.font = '700 ' + fontAr + 'px "Amiri", serif';
     }
-    ctx.shadowColor = 'rgba(235, 195, 115, 0.40)';
-    ctx.shadowBlur = u * 0.022;
-    ctx.fillStyle = '#ffffff';
+    ctx.shadowColor = 'rgba(220, 202, 166, 0.40)';
+    ctx.shadowBlur = u * 0.020;
+    ctx.fillStyle = '#dccaa6';
     ctx.fillText(item[1], marginL, arabicY);
     ctx.shadowBlur = 0;
 
-    // Transliteration
+    // Transliteration (Daana secondary bone ink: #a49375)
     const transY = arabicY + Math.max(30, u * 0.055 + state.arabicTextGap * (u * 0.001));
     if (state.transliteration) {
-      ctx.fillStyle = '#c5af8a';
-      ctx.font = '600 ' + Math.max(11, u * 0.022) + 'px "DM Sans", sans-serif';
-      ctx.letterSpacing = '2.2px';
+      ctx.fillStyle = '#a49375';
+      ctx.font = '500 ' + Math.max(10, u * 0.019) + 'px "DM Sans", "Marcellus", sans-serif';
+      ctx.letterSpacing = '2.6px';
       ctx.fillText(item[0].toUpperCase() + '  ⌄', marginL, transY);
       ctx.letterSpacing = '0px';
     }
 
-    // Giant Counter Number (Iconic centerpiece from reference!)
+    // Giant Counter Number (Daana iconic Cormorant Garamond serif numeral in #ecc98c)
     const countY = transY + Math.max(74, u * 0.170);
     const countNum = String(state.index + 1);
-    ctx.fillStyle = '#e8d8b6';
-    ctx.font = '700 ' + Math.max(76, u * 0.215) + 'px "Playfair Display", "Georgia", "Amiri", serif';
+    ctx.fillStyle = '#ecc98c';
+    ctx.font = '600 ' + Math.max(76, u * 0.220) + 'px "Playfair Display", "Cormorant Garamond", "Amiri", serif';
     ctx.fillText(countNum, marginL, countY);
 
-    // Meaning / Translation Subtitle
+    // Meaning / Translation Subtitle (Daana: OF 99 or meaning)
     const meaningY = countY + Math.max(38, u * 0.078 + state.textMeaningGap * (u * 0.001));
     if (state.translation) {
-      ctx.fillStyle = '#9b876f';
-      ctx.font = '600 ' + Math.max(9, u * 0.017) + 'px "DM Sans", sans-serif';
-      ctx.letterSpacing = '2.8px';
+      ctx.fillStyle = '#83745b';
+      ctx.font = '500 ' + Math.max(9, u * 0.016) + 'px "DM Sans", sans-serif';
+      ctx.letterSpacing = '2.4px';
       ctx.fillText(item[2].toUpperCase(), marginL, meaningY, textMaxW);
       ctx.letterSpacing = '0px';
     }
 
-    // Three Golden Diamonds
+    // Three Diamonds Set Indicators (Daana: ◇ ◇ ◇)
     const diamondY = meaningY + Math.max(20, u * 0.038);
-    ctx.fillStyle = '#d4a257';
+    const dSize = u * 0.0075;
+    ctx.strokeStyle = '#a49375';
+    ctx.lineWidth = Math.max(1.2, u * 0.0018);
     for (let d = 0; d < 3; d++) {
       const dx = marginL + d * (u * 0.032);
-      const dSize = u * 0.0075;
       ctx.save();
       ctx.translate(dx, diamondY);
       ctx.rotate(Math.PI / 4);
-      ctx.fillRect(-dSize / 2, -dSize / 2, dSize, dSize);
+      ctx.strokeRect(-dSize / 2, -dSize / 2, dSize, dSize);
       ctx.restore();
     }
 
-    // Bottom Control Indicators
+    // Bottom Control Indicators (Daana: ◇ SOUND, ◇ HAPTICS RESET)
     const botY1 = h * 0.88;
     const botY2 = h * 0.93;
-    ctx.fillStyle = '#85725a';
-    ctx.font = '600 ' + Math.max(9, u * 0.015) + 'px "DM Sans", sans-serif';
-    ctx.letterSpacing = '1.8px';
-    ctx.fillText('◆  SOUND', marginL, botY1);
-    ctx.fillText('◆  HAPTICS      RESET', marginL, botY2);
+    ctx.fillStyle = '#83745b';
+    ctx.font = '500 ' + Math.max(9, u * 0.015) + 'px "DM Sans", "Marcellus", sans-serif';
+    ctx.letterSpacing = '2.0px';
+    ctx.fillText('◇  SOUND', marginL, botY1);
+    ctx.fillText('◇  HAPTICS      RESET', marginL, botY2);
     ctx.letterSpacing = '0px';
 
     ctx.restore();
