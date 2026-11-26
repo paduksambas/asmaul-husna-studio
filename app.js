@@ -1324,6 +1324,42 @@
     drawPhotorealisticBead(bx, by, r, knotAngle, beadSeed, state.tasbihStyle);
   }
 
+  const daanaImamProfile = [
+    [0.000, 0.039],
+    [0.015, 0.099],
+    [0.039, 0.145],
+    [0.063, 0.178],
+    [0.087, 0.191],
+    [0.112, 0.191],
+    [0.136, 0.178],
+    [0.160, 0.145],
+    [0.184, 0.151],
+    [0.233, 0.164],
+    [0.257, 0.204],
+    [0.282, 0.211],
+    [0.306, 0.197],
+    [0.330, 0.197],
+    [0.379, 0.224],
+    [0.427, 0.250],
+    [0.476, 0.276],
+    [0.524, 0.316],
+    [0.573, 0.342],
+    [0.621, 0.368],
+    [0.670, 0.388],
+    [0.718, 0.408],
+    [0.767, 0.454],
+    [0.791, 0.500],
+    [0.806, 0.487],
+    [0.820, 0.447],
+    [0.864, 0.454],
+    [0.888, 0.467],
+    [0.913, 0.454],
+    [0.937, 0.440],
+    [0.961, 0.410],
+    [0.980, 0.355],
+    [1.000, 0.280]
+  ];
+
   function drawMinaretImam(ix, iy, iw, ih, styleKey) {
     const matKey = (styleKey === 'amber_spine' || styleKey === 'feroza_spine') ? styleKey : 'olive_spine';
     const container = daanaTextures[matKey];
@@ -1334,49 +1370,18 @@
     ctx.shadowBlur = iw * 0.45;
     ctx.shadowOffsetY = iw * 0.18;
 
-    // Classical Turned Minaret Contour (Flared cone with finial knob & stepped base)
+    // Authentic Daana Minaret Lathe Contour (100% mathematical overlay match)
     ctx.beginPath();
-    // 1. Top knob tip
-    ctx.moveTo(ix, iy - ih * 0.48);
-    // Top knob right hemisphere
-    ctx.bezierCurveTo(ix + iw * 0.16, iy - ih * 0.48, ix + iw * 0.16, iy - ih * 0.40, ix + iw * 0.10, iy - ih * 0.38);
-    // Neck collar ring
-    ctx.lineTo(ix + iw * 0.12, iy - ih * 0.35);
-    ctx.lineTo(ix + iw * 0.10, iy - ih * 0.32);
-    // Conical tower body flaring smoothly
-    ctx.bezierCurveTo(
-      ix + iw * 0.12, iy - ih * 0.12,
-      ix + iw * 0.22, iy + ih * 0.08,
-      ix + iw * 0.38, iy + ih * 0.22
-    );
-    // Stepped groove waist
-    ctx.lineTo(ix + iw * 0.34, iy + ih * 0.25);
-    // Teardrop bulbous bell
-    ctx.bezierCurveTo(
-      ix + iw * 0.42, iy + ih * 0.30,
-      ix + iw * 0.42, iy + ih * 0.40,
-      ix + iw * 0.22, iy + ih * 0.45
-    );
-    // Bottom ring foot
-    ctx.lineTo(ix + iw * 0.14, iy + ih * 0.48);
-    ctx.lineTo(ix, iy + ih * 0.48);
-    // Left side (mirror)
-    ctx.lineTo(ix - iw * 0.14, iy + ih * 0.48);
-    ctx.bezierCurveTo(
-      ix - iw * 0.22, iy + ih * 0.45,
-      ix - iw * 0.42, iy + ih * 0.40,
-      ix - iw * 0.42, iy + ih * 0.30
-    );
-    ctx.lineTo(ix - iw * 0.34, iy + ih * 0.25);
-    ctx.bezierCurveTo(
-      ix - iw * 0.38, iy + ih * 0.22,
-      ix - iw * 0.22, iy + ih * 0.08,
-      ix - iw * 0.12, iy - ih * 0.12
-    );
-    ctx.lineTo(ix - iw * 0.10, iy - ih * 0.32);
-    ctx.lineTo(ix - iw * 0.12, iy - ih * 0.35);
-    ctx.lineTo(ix - iw * 0.10, iy - ih * 0.38);
-    ctx.bezierCurveTo(ix - iw * 0.16, iy - ih * 0.40, ix - iw * 0.16, iy - ih * 0.48, ix, iy - ih * 0.48);
+    const topY = iy - ih * 0.5;
+    // Right side: top to bottom
+    ctx.moveTo(ix + daanaImamProfile[0][1] * iw, topY + daanaImamProfile[0][0] * ih);
+    for (let i = 1; i < daanaImamProfile.length; i++) {
+      ctx.lineTo(ix + daanaImamProfile[i][1] * iw, topY + daanaImamProfile[i][0] * ih);
+    }
+    // Left side: bottom to top (mirror)
+    for (let i = daanaImamProfile.length - 1; i >= 0; i--) {
+      ctx.lineTo(ix - daanaImamProfile[i][1] * iw, topY + daanaImamProfile[i][0] * ih);
+    }
     ctx.closePath();
 
     ctx.save();
@@ -1390,16 +1395,16 @@
       amberGrad.addColorStop(0.70, '#9e3c04');
       amberGrad.addColorStop(1.0, '#360901');
       ctx.fillStyle = amberGrad;
-      ctx.fillRect(ix - iw, iy - ih, iw * 2, ih * 2);
+      ctx.fillRect(ix - iw, topY, iw * 2, ih);
 
       // Internal dark crimson silk cord bore
       ctx.fillStyle = '#631107';
-      ctx.fillRect(ix - iw * 0.06, iy - ih * 0.5, iw * 0.12, ih);
+      ctx.fillRect(ix - iw * 0.06, topY, iw * 0.12, ih);
 
       if (container && container.imam && container.imam.complete && container.imam.naturalWidth > 0) {
         ctx.save();
-        ctx.globalAlpha = 0.85;
-        ctx.drawImage(container.imam, 0, 0, container.imam.naturalWidth, container.imam.naturalHeight, ix - iw * 0.52, iy - ih * 0.48, iw * 1.04, ih * 0.96);
+        ctx.globalAlpha = 0.88;
+        ctx.drawImage(container.imam, 0, 0, container.imam.naturalWidth, container.imam.naturalHeight, ix - iw * 0.52, topY, iw * 1.04, ih);
         ctx.restore();
       }
 
@@ -1411,7 +1416,7 @@
       aShade.addColorStop(0.80, 'rgba(60, 15, 3, 0.65)');
       aShade.addColorStop(1.0, 'rgba(20, 5, 1, 0.90)');
       ctx.fillStyle = aShade;
-      ctx.fillRect(ix - iw, iy - ih, iw * 2, ih * 2);
+      ctx.fillRect(ix - iw, topY, iw * 2, ih);
     } else if (matKey === 'feroza_spine') {
       // Antique Burnished Sterling Silver Minaret with Engraved Granulation
       const silvGrad = ctx.createLinearGradient(ix - iw * 0.5, iy, ix + iw * 0.5, iy);
@@ -1421,10 +1426,10 @@
       silvGrad.addColorStop(0.80, '#3a4e55');
       silvGrad.addColorStop(1.0, '#101719');
       ctx.fillStyle = silvGrad;
-      ctx.fillRect(ix - iw, iy - ih, iw * 2, ih * 2);
+      ctx.fillRect(ix - iw, topY, iw * 2, ih);
 
       if (container && container.imam && container.imam.complete && container.imam.naturalWidth > 0) {
-        ctx.drawImage(container.imam, 0, 0, container.imam.naturalWidth, container.imam.naturalHeight, ix - iw * 0.52, iy - ih * 0.48, iw * 1.04, ih * 0.96);
+        ctx.drawImage(container.imam, 0, 0, container.imam.naturalWidth, container.imam.naturalHeight, ix - iw * 0.52, topY, iw * 1.04, ih);
       }
 
       const sShade = ctx.createLinearGradient(ix - iw * 0.5, iy, ix + iw * 0.5, iy);
@@ -1434,7 +1439,7 @@
       sShade.addColorStop(0.82, 'rgba(20, 35, 40, 0.65)');
       sShade.addColorStop(1.0, 'rgba(5, 12, 15, 0.90)');
       ctx.fillStyle = sShade;
-      ctx.fillRect(ix - iw, iy - ih, iw * 2, ih * 2);
+      ctx.fillRect(ix - iw, topY, iw * 2, ih);
     } else {
       // Turned Olive Wood
       const baseGrad = ctx.createLinearGradient(ix - iw * 0.5, iy, ix + iw * 0.5, iy);
@@ -1446,44 +1451,102 @@
       baseGrad.addColorStop(1.0, '#3a1807');
 
       if (container && container.imam && container.imam.complete && container.imam.naturalWidth > 0) {
-        ctx.drawImage(container.imam, 0, 0, container.imam.naturalWidth, container.imam.naturalHeight, ix - iw * 0.52, iy - ih * 0.48, iw * 1.04, ih * 0.96);
+        ctx.drawImage(container.imam, 0, 0, container.imam.naturalWidth, container.imam.naturalHeight, ix - iw * 0.52, topY, iw * 1.04, ih);
       } else {
         ctx.fillStyle = baseGrad;
-        ctx.fillRect(ix - iw, iy - ih, iw * 2, ih * 2);
+        ctx.fillRect(ix - iw, topY, iw * 2, ih);
       }
 
       // 3D Turned Wood Shading Gradient Overlay (Light on left, shadow on right)
       const imamShade = ctx.createLinearGradient(ix - iw * 0.5, iy, ix + iw * 0.5, iy);
-      imamShade.addColorStop(0, 'rgba(255, 245, 215, 0.24)');
-      imamShade.addColorStop(0.20, 'rgba(255, 230, 160, 0.36)');
-      imamShade.addColorStop(0.50, 'rgba(160, 80, 20, 0.10)');
+      imamShade.addColorStop(0, 'rgba(255, 245, 215, 0.22)');
+      imamShade.addColorStop(0.18, 'rgba(255, 235, 170, 0.38)');
+      imamShade.addColorStop(0.48, 'rgba(160, 80, 20, 0.08)');
       imamShade.addColorStop(0.75, 'rgba(50, 18, 5, 0.55)');
-      imamShade.addColorStop(1.0, 'rgba(15, 4, 1, 0.88)');
+      imamShade.addColorStop(1.0, 'rgba(12, 3, 1, 0.92)');
       ctx.fillStyle = imamShade;
-      ctx.fillRect(ix - iw, iy - ih, iw * 2, ih * 2);
+      ctx.fillRect(ix - iw, topY, iw * 2, ih);
     }
 
-    // Silky specular highlight streak along the LEFT flank (aligning with beads and photo)
+    // 1. Glossy Softbox Sheen Streak along the left flank of the conical spire (hugs the exact conical flare)
     ctx.save();
-    const specGrad = ctx.createLinearGradient(ix - iw * 0.42, iy, ix - iw * 0.05, iy);
-    specGrad.addColorStop(0, 'rgba(255, 252, 240, 0)');
-    specGrad.addColorStop(0.55, 'rgba(255, 250, 235, 0.55)');
-    specGrad.addColorStop(1, 'rgba(255, 230, 180, 0)');
-    ctx.fillStyle = specGrad;
-    ctx.fillRect(ix - iw * 0.5, iy - ih * 0.48, iw * 0.5, ih * 0.96);
-
-    // Crisp highlight sheen ribbon on left flank
+    const coneSheen = ctx.createLinearGradient(ix - iw * 0.11, topY + ih * 0.33, ix - iw * 0.25, topY + ih * 0.76);
+    coneSheen.addColorStop(0, 'rgba(255, 255, 255, 0)');
+    coneSheen.addColorStop(0.20, 'rgba(255, 252, 245, 0.75)');
+    coneSheen.addColorStop(0.50, 'rgba(255, 255, 255, 0.88)');
+    coneSheen.addColorStop(0.80, 'rgba(255, 245, 210, 0.60)');
+    coneSheen.addColorStop(1, 'rgba(255, 245, 210, 0)');
+    ctx.strokeStyle = coneSheen;
+    ctx.lineWidth = Math.max(3.2, iw * 0.095);
     ctx.lineCap = 'round';
-    ctx.strokeStyle = 'rgba(255, 252, 242, 0.52)';
-    ctx.lineWidth = Math.max(1.5, iw * 0.045);
     ctx.beginPath();
-    ctx.moveTo(ix - iw * 0.16, iy - ih * 0.28);
-    ctx.bezierCurveTo(
-      ix - iw * 0.12, iy - ih * 0.05,
-      ix - iw * 0.16, iy + ih * 0.12,
-      ix - iw * 0.24, iy + ih * 0.32
-    );
+    ctx.moveTo(ix - iw * 0.11, topY + ih * 0.33);
+    ctx.lineTo(ix - iw * 0.25, topY + ih * 0.76);
     ctx.stroke();
+
+    // Razor-sharp softbox reflection core
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.92)';
+    ctx.lineWidth = Math.max(1.2, iw * 0.035);
+    ctx.beginPath();
+    ctx.moveTo(ix - iw * 0.11, topY + ih * 0.36);
+    ctx.lineTo(ix - iw * 0.25, topY + ih * 0.73);
+    ctx.stroke();
+
+    // 2. Top Knob Softbox Specular Glint
+    const knobSheen = ctx.createRadialGradient(ix - iw * 0.08, topY + ih * 0.085, 0, ix - iw * 0.08, topY + ih * 0.085, iw * 0.15);
+    knobSheen.addColorStop(0, 'rgba(255, 255, 255, 0.90)');
+    knobSheen.addColorStop(0.45, 'rgba(255, 245, 215, 0.45)');
+    knobSheen.addColorStop(1, 'rgba(255, 245, 215, 0)');
+    ctx.fillStyle = knobSheen;
+    ctx.beginPath();
+    ctx.arc(ix - iw * 0.08, topY + ih * 0.085, iw * 0.15, 0, Math.PI * 2);
+    ctx.fill();
+
+    // 3. Collar Ring Specular Glint
+    const collarSheen = ctx.createLinearGradient(ix - iw * 0.18, topY + ih * 0.275, ix - iw * 0.04, topY + ih * 0.275);
+    collarSheen.addColorStop(0, 'rgba(255, 255, 255, 0)');
+    collarSheen.addColorStop(0.40, 'rgba(255, 252, 240, 0.70)');
+    collarSheen.addColorStop(1, 'rgba(255, 252, 240, 0)');
+    ctx.strokeStyle = collarSheen;
+    ctx.lineWidth = Math.max(1.5, iw * 0.035);
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.moveTo(ix - iw * 0.18, topY + ih * 0.275);
+    ctx.lineTo(ix - iw * 0.04, topY + ih * 0.275);
+    ctx.stroke();
+
+    // 4. Skirt Flange Ridge Lathe Glint
+    const ridgeSheen = ctx.createLinearGradient(ix - iw * 0.46, topY + ih * 0.791, ix + iw * 0.05, topY + ih * 0.791);
+    ridgeSheen.addColorStop(0, 'rgba(255, 255, 255, 0)');
+    ridgeSheen.addColorStop(0.35, 'rgba(255, 252, 242, 0.85)');
+    ridgeSheen.addColorStop(0.70, 'rgba(255, 240, 200, 0.35)');
+    ridgeSheen.addColorStop(1, 'rgba(255, 240, 200, 0)');
+    ctx.strokeStyle = ridgeSheen;
+    ctx.lineWidth = Math.max(1.8, iw * 0.045);
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.moveTo(ix - iw * 0.44, topY + ih * 0.791);
+    ctx.lineTo(ix - iw * 0.05, topY + ih * 0.791);
+    ctx.stroke();
+
+    // 5. Lower Bulb Softbox Specular Highlight
+    const bulbSheen = ctx.createRadialGradient(ix - iw * 0.18, topY + ih * 0.888, 0, ix - iw * 0.18, topY + ih * 0.888, iw * 0.24);
+    bulbSheen.addColorStop(0, 'rgba(255, 255, 255, 0.80)');
+    bulbSheen.addColorStop(0.45, 'rgba(255, 242, 205, 0.35)');
+    bulbSheen.addColorStop(1, 'rgba(255, 242, 205, 0)');
+    ctx.fillStyle = bulbSheen;
+    ctx.beginPath();
+    ctx.arc(ix - iw * 0.18, topY + ih * 0.888, iw * 0.24, 0, Math.PI * 2);
+    ctx.fill();
+
+    // 6. Bottom Dome Tangent Contact Ambient Occlusion Shadow
+    const bottomAO = ctx.createLinearGradient(ix, topY + ih * 0.94, ix, topY + ih);
+    bottomAO.addColorStop(0, 'rgba(0, 0, 0, 0)');
+    bottomAO.addColorStop(0.60, 'rgba(10, 4, 1, 0.45)');
+    bottomAO.addColorStop(1.0, 'rgba(5, 2, 0, 0.85)');
+    ctx.fillStyle = bottomAO;
+    ctx.fillRect(ix - iw * 0.5, topY + ih * 0.94, iw, ih * 0.06);
+
     ctx.restore();
 
     ctx.restore(); // restore clip
@@ -1510,12 +1573,14 @@
     // Dynamic placement
     const cordX = isPortrait ? w * 0.70 : (isLandscape ? w * 0.74 : w * 0.68);
     const beadR = isPortrait ? u * 0.088 : u * 0.074;
-    const imamW = beadR * 1.34;
-    const imamH = beadR * 2.85;
-    const imamY = isPortrait ? h * 0.685 : h * 0.64;
+    const imamW = beadR * 1.52;
+    const imamH = imamW * 2.71;
+    const imamY = isPortrait ? h * 0.665 : h * 0.62;
 
     // Daana Central "Lamplight" spotlight pool pooled around the central pulling gap (spot = exp(-fy*fy))
-    const spotY = imamY - imamH * 0.5 - beadR * 1.5;
+    const topY = imamY - imamH * 0.5;
+    const botY = imamY + imamH * 0.5;
+    const spotY = topY - beadR * 1.2;
     const spotGrad = ctx.createRadialGradient(cordX, spotY, 0, cordX, spotY, u * 0.85);
     spotGrad.addColorStop(0, mat.spotlight);
     spotGrad.addColorStop(0.35, mat.spotlightMid);
@@ -1525,7 +1590,7 @@
 
     // 2. Vertical 2-Ply Braided Cord (Tali Kepang Sutra Khas Daana)
     ctx.save();
-    const cordW = Math.max(3.6, u * 0.0078);
+    const cordW = Math.max(3.0, u * 0.0068);
     // Base shadow
     ctx.strokeStyle = '#000000';
     ctx.lineWidth = cordW + 2.5;
@@ -1557,9 +1622,9 @@
 
     // 3. Daana 240 Hz Physics & Animation Simulation
     // Gap and layout parameters
-    const cordGap = beadR * 1.80;
-    const restUpperY = imamY - imamH * 0.5 - cordGap - beadR;
-    const lowerLandingY = imamY - imamH * 0.5 - beadR * 0.85;
+    const cordGap = beadR * 1.85;
+    const restUpperY = topY - cordGap - beadR;
+    const lowerLandingY = topY - beadR * 0.20;
 
     let upperShiftY = 0;
     let travellingBead = null;
@@ -1629,10 +1694,11 @@
     // Carved Minaret Imam Head (receives underdamped spring-damper impact rebound)
     drawMinaretImam(cordX, imamY + stackBounceY, imamW, imamH, activeStyle);
 
-    // Beads below the imam head (touch directly under the imam base)
-    const footY = imamY + imamH * 0.48 + stackBounceY;
-    drawPhotorealisticBead(cordX, footY + beadR * 0.98, beadR, 2.10 + stackRotJitter, (state.index || 0) + 4, activeStyle);
-    drawPhotorealisticBead(cordX, footY + beadR * 2.96 + stackBounceY * 0.65, beadR, 0.75 + stackRotJitter * 0.5, (state.index || 0) + 5, activeStyle);
+    // Beads below the imam head (touch directly under the imam base with 0px gap)
+    const footY = botY + stackBounceY;
+    const lowerY1 = footY + beadR * 0.92;
+    drawPhotorealisticBead(cordX, lowerY1, beadR, 2.10 + stackRotJitter, (state.index || 0) + 4, activeStyle);
+    drawPhotorealisticBead(cordX, lowerY1 + beadR * 1.98 + stackBounceY * 0.65, beadR, 0.75 + stackRotJitter * 0.5, (state.index || 0) + 5, activeStyle);
 
     // Daana Endless Strand Edge Vignette (Top and bottom 18% fade into void black)
     const topVig = ctx.createLinearGradient(0, 0, 0, h * 0.18);
