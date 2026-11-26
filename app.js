@@ -954,6 +954,53 @@
     ctx.restore();
   }
 
+  const oliveTextures = {
+    beads: [],
+    imam: null,
+    marker: null,
+    loaded: false
+  };
+
+  function initOliveTextures() {
+    const basePath = './assets/tasbih/olive-wood/';
+    let loadedCount = 0;
+    const total = 10;
+    for (let i = 1; i <= 8; i++) {
+      const img = new Image();
+      img.src = `${basePath}bead-${i}.jpg`;
+      img.onload = () => {
+        loadedCount++;
+        if (loadedCount >= total) {
+          oliveTextures.loaded = true;
+          draw(0);
+        }
+      };
+      oliveTextures.beads.push(img);
+    }
+    const imamImg = new Image();
+    imamImg.src = `${basePath}imam.jpg`;
+    imamImg.onload = () => {
+      loadedCount++;
+      if (loadedCount >= total) {
+        oliveTextures.loaded = true;
+        draw(0);
+      }
+    };
+    oliveTextures.imam = imamImg;
+
+    const markerImg = new Image();
+    markerImg.src = `${basePath}marker.jpg`;
+    markerImg.onload = () => {
+      loadedCount++;
+      if (loadedCount >= total) {
+        oliveTextures.loaded = true;
+        draw(0);
+      }
+    };
+    oliveTextures.marker = markerImg;
+  }
+  initOliveTextures();
+
   function drawPhotorealisticOliveBead(bx, by, r, knotAngle, beadSeed) {
     ctx.save();
     // Drop shadow behind bead
@@ -983,72 +1030,71 @@
     baseGrad.addColorStop(0.84, '#5e290e'); // Warm roasted walnut
     baseGrad.addColorStop(0.95, '#2a1005'); // Deep shade
     baseGrad.addColorStop(1.0, '#100401');  // Rim ambient occlusion
-    ctx.fillStyle = baseGrad;
-    ctx.fillRect(bx - r, by - r, r * 2, r * 2);
 
-    // 2. Smooth Natural Woodgrain (Serat Kayu Halus, Lembut & Menyatu)
     const seed = (typeof beadSeed === 'number') ? beadSeed : 1;
-    ctx.save();
-    ctx.translate(bx, by);
-    ctx.rotate((knotAngle || 0) + Math.sin(seed * 2.1) * 0.15);
-    ctx.lineCap = 'round';
-    ctx.lineJoin = 'round';
+    const texIdx = Math.abs(seed) % 8;
+    const texImg = oliveTextures.beads[texIdx];
 
-    const grainCount = 14;
-    for (let g = 0; g < grainCount; g++) {
-      const gy = -r * 0.90 + (g / (grainCount - 1)) * (r * 1.80);
-      const waveFreq = 0.050 + ((g + seed) % 3) * 0.018;
-      const waveAmp = r * (0.065 + ((g + seed) % 4) * 0.028);
+    if (texImg && texImg.complete && texImg.naturalWidth > 0) {
+      // Authentic Daana High-Resolution 1024x512 Olive Wood Texture Map
+      ctx.save();
+      ctx.translate(bx, by);
+      ctx.rotate((knotAngle || 0) + Math.sin(seed * 2.1) * 0.18);
+      // Map full texture seamlessly onto the sphere
+      ctx.drawImage(texImg, 0, 0, texImg.naturalWidth, texImg.naturalHeight, -r * 1.05, -r * 1.05, r * 2.1, r * 2.1);
+      ctx.restore();
 
-      // Path for this grain strand (spherical curvature mapped)
-      const points = [];
-      for (let px = -r; px <= r; px += 2) {
-        const normX = px / r;
-        const sphereCurve = (1 - Math.sqrt(Math.max(0, 1 - normX * normX))) * (r * 0.16) * Math.sign(gy || 1);
-        const py = gy + Math.sin(px * waveFreq + g * 1.25 + seed) * waveAmp + Math.cos(px * 0.032 + g) * (waveAmp * 0.35) + sphereCurve;
-        points.push([px, py]);
+      // 3D Spherical Volume & Warm Lighting Gradient Overlay
+      const sphereShade = ctx.createRadialGradient(lightX, lightY, r * 0.05, bx, by, r * 1.02);
+      sphereShade.addColorStop(0, 'rgba(255, 245, 210, 0.30)'); // Warm highlight wash
+      sphereShade.addColorStop(0.35, 'rgba(235, 175, 90, 0.10)'); // Amber body
+      sphereShade.addColorStop(0.65, 'rgba(90, 40, 12, 0.35)');  // Warm shadow
+      sphereShade.addColorStop(0.88, 'rgba(28, 10, 3, 0.75)');   // Deep shade
+      sphereShade.addColorStop(1.0, 'rgba(12, 3, 1, 0.92)');    // Ambient occlusion rim
+      ctx.fillStyle = sphereShade;
+      ctx.fillRect(bx - r, by - r, r * 2, r * 2);
+    } else {
+      // Procedural fallback
+      ctx.fillStyle = baseGrad;
+      ctx.fillRect(bx - r, by - r, r * 2, r * 2);
+
+      // Smooth Natural Woodgrain (Serat Kayu Halus, Lembut & Menyatu)
+      ctx.save();
+      ctx.translate(bx, by);
+      ctx.rotate((knotAngle || 0) + Math.sin(seed * 2.1) * 0.15);
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+
+      const grainCount = 14;
+      for (let g = 0; g < grainCount; g++) {
+        const gy = -r * 0.90 + (g / (grainCount - 1)) * (r * 1.80);
+        const waveFreq = 0.050 + ((g + seed) % 3) * 0.018;
+        const waveAmp = r * (0.065 + ((g + seed) % 4) * 0.028);
+
+        const points = [];
+        for (let px = -r; px <= r; px += 2) {
+          const normX = px / r;
+          const sphereCurve = (1 - Math.sqrt(Math.max(0, 1 - normX * normX))) * (r * 0.16) * Math.sign(gy || 1);
+          const py = gy + Math.sin(px * waveFreq + g * 1.25 + seed) * waveAmp + Math.cos(px * 0.032 + g) * (waveAmp * 0.35) + sphereCurve;
+          points.push([px, py]);
+        }
+
+        ctx.beginPath();
+        ctx.strokeStyle = (g % 2 === 0) ? 'rgba(110, 52, 18, 0.18)' : 'rgba(140, 75, 28, 0.15)';
+        ctx.lineWidth = Math.max(2.5, r * (0.075 + (g % 3) * 0.025));
+        ctx.moveTo(points[0][0], points[0][1]);
+        for (let i = 1; i < points.length; i++) ctx.lineTo(points[i][0], points[i][1]);
+        ctx.stroke();
+
+        ctx.beginPath();
+        ctx.strokeStyle = (g % 2 === 0) ? 'rgba(32, 12, 4, 0.32)' : 'rgba(52, 22, 7, 0.26)';
+        ctx.lineWidth = Math.max(1.0, r * (0.026 + (g % 3) * 0.012));
+        ctx.moveTo(points[0][0], points[0][1]);
+        for (let i = 1; i < points.length; i++) ctx.lineTo(points[i][0], points[i][1]);
+        ctx.stroke();
       }
-
-      // Pass A: Soft diffusion halo (feathered edge blending into wood)
-      ctx.beginPath();
-      ctx.strokeStyle = (g % 2 === 0) ? 'rgba(110, 52, 18, 0.18)' : 'rgba(140, 75, 28, 0.15)';
-      ctx.lineWidth = Math.max(2.5, r * (0.075 + (g % 3) * 0.025));
-      ctx.moveTo(points[0][0], points[0][1]);
-      for (let i = 1; i < points.length; i++) {
-        ctx.lineTo(points[i][0], points[i][1]);
-      }
-      ctx.stroke();
-
-      // Pass B: Smooth rich core vein
-      ctx.beginPath();
-      ctx.strokeStyle = (g % 2 === 0) ? 'rgba(32, 12, 4, 0.32)' : 'rgba(52, 22, 7, 0.26)';
-      ctx.lineWidth = Math.max(1.0, r * (0.026 + (g % 3) * 0.012));
-      ctx.moveTo(points[0][0], points[0][1]);
-      for (let i = 1; i < points.length; i++) {
-        ctx.lineTo(points[i][0], points[i][1]);
-      }
-      ctx.stroke();
+      ctx.restore();
     }
-
-    // Smooth Signature Olive Burl Knot Swirl
-    const knotX = r * (0.14 + Math.sin(seed * 3.4) * 0.08);
-    const knotY = -r * (0.06 + Math.cos(seed * 2.8) * 0.06);
-    for (let kr = r * 0.09; kr <= r * 0.36; kr += r * 0.075) {
-      // Soft halo
-      ctx.beginPath();
-      ctx.strokeStyle = 'rgba(120, 58, 20, 0.18)';
-      ctx.lineWidth = r * 0.065;
-      ctx.ellipse(knotX, knotY, kr * 1.35, kr * 0.85, 0.38, 0, Math.PI * 2);
-      ctx.stroke();
-
-      // Core swirl
-      ctx.beginPath();
-      ctx.strokeStyle = 'rgba(30, 11, 3, 0.28)';
-      ctx.lineWidth = r * 0.028;
-      ctx.ellipse(knotX, knotY, kr * 1.35, kr * 0.85, 0.38, 0, Math.PI * 2);
-      ctx.stroke();
-    }
-    ctx.restore();
 
     // 3. Daana Studio Softbox Specular Lacquer (Pernis Jendela Softbox Khas Daana)
     // Soft wide satin glow
@@ -1187,49 +1233,66 @@
     baseGrad.addColorStop(0.80, '#f2bf74');
     baseGrad.addColorStop(0.92, '#fdf0cb');
     baseGrad.addColorStop(1.0, '#3a1807');
-    ctx.fillStyle = baseGrad;
-    ctx.fillRect(ix - iw, iy - ih, iw * 2, ih * 2);
 
-    // Smooth wavy longitudinal woodgrain flowing down the turned minaret
-    ctx.save();
-    ctx.lineCap = 'round';
-    ctx.lineJoin = 'round';
-    for (let g = 0; g < 16; g++) {
-      const xRatio = -0.42 + (g / 15) * 0.84;
-      const pts = [];
-      for (let py = -ih * 0.46; py <= ih * 0.45; py += 3) {
-        const pNorm = (py + ih * 0.46) / (ih * 0.91);
-        let flare = 0.22;
-        if (pNorm > 0.20 && pNorm <= 0.78) {
-          flare = 0.20 + Math.pow((pNorm - 0.20) / 0.58, 1.4) * 0.72;
-        } else if (pNorm > 0.78) {
-          flare = 0.72 - ((pNorm - 0.78) / 0.22) * 0.45;
+    if (oliveTextures.imam && oliveTextures.imam.complete && oliveTextures.imam.naturalWidth > 0) {
+      // Authentic Daana 1024x1024 Turned Minaret Imam Photo Texture
+      ctx.drawImage(oliveTextures.imam, 0, 0, oliveTextures.imam.naturalWidth, oliveTextures.imam.naturalHeight, ix - iw * 0.52, iy - ih * 0.48, iw * 1.04, ih * 0.96);
+
+      // 3D Turned Wood Shading Gradient Overlay (Warm amber to shadow, non-destructive)
+      const imamShade = ctx.createLinearGradient(ix - iw * 0.5, iy, ix + iw * 0.5, iy);
+      imamShade.addColorStop(0, 'rgba(20, 8, 2, 0.70)');
+      imamShade.addColorStop(0.20, 'rgba(65, 28, 8, 0.30)');
+      imamShade.addColorStop(0.50, 'rgba(235, 175, 80, 0.08)');
+      imamShade.addColorStop(0.78, 'rgba(255, 235, 180, 0.28)');
+      imamShade.addColorStop(0.90, 'rgba(255, 248, 220, 0.35)');
+      imamShade.addColorStop(1.0, 'rgba(30, 12, 3, 0.65)');
+      ctx.fillStyle = imamShade;
+      ctx.fillRect(ix - iw, iy - ih, iw * 2, ih * 2);
+    } else {
+      ctx.fillStyle = baseGrad;
+      ctx.fillRect(ix - iw, iy - ih, iw * 2, ih * 2);
+
+      // Smooth wavy longitudinal woodgrain flowing down the turned minaret
+      ctx.save();
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+      for (let g = 0; g < 16; g++) {
+        const xRatio = -0.42 + (g / 15) * 0.84;
+        const pts = [];
+        for (let py = -ih * 0.46; py <= ih * 0.45; py += 3) {
+          const pNorm = (py + ih * 0.46) / (ih * 0.91);
+          let flare = 0.22;
+          if (pNorm > 0.20 && pNorm <= 0.78) {
+            flare = 0.20 + Math.pow((pNorm - 0.20) / 0.58, 1.4) * 0.72;
+          } else if (pNorm > 0.78) {
+            flare = 0.72 - ((pNorm - 0.78) / 0.22) * 0.45;
+          }
+          const wave = Math.sin(py * 0.065 + g * 1.3) * (iw * 0.038);
+          pts.push([ix + (iw * xRatio * flare) + wave, iy + py]);
         }
-        const wave = Math.sin(py * 0.065 + g * 1.3) * (iw * 0.038);
-        pts.push([ix + (iw * xRatio * flare) + wave, iy + py]);
-      }
 
-      // Soft diffusion halo
-      ctx.beginPath();
-      ctx.strokeStyle = (g % 2 === 0) ? 'rgba(110, 52, 18, 0.20)' : 'rgba(140, 75, 28, 0.16)';
-      ctx.lineWidth = Math.max(2.0, iw * (0.065 + (g % 3) * 0.02));
-      ctx.moveTo(pts[0][0], pts[0][1]);
-      for (let i = 1; i < pts.length; i++) {
-        ctx.lineTo(pts[i][0], pts[i][1]);
-      }
-      ctx.stroke();
+        // Soft diffusion halo
+        ctx.beginPath();
+        ctx.strokeStyle = (g % 2 === 0) ? 'rgba(110, 52, 18, 0.20)' : 'rgba(140, 75, 28, 0.16)';
+        ctx.lineWidth = Math.max(2.0, iw * (0.065 + (g % 3) * 0.02));
+        ctx.moveTo(pts[0][0], pts[0][1]);
+        for (let i = 1; i < pts.length; i++) {
+          ctx.lineTo(pts[i][0], pts[i][1]);
+        }
+        ctx.stroke();
 
-      // Smooth core vein
-      ctx.beginPath();
-      ctx.strokeStyle = (g % 2 === 0) ? 'rgba(30, 11, 4, 0.35)' : 'rgba(52, 22, 7, 0.28)';
-      ctx.lineWidth = Math.max(0.9, iw * (0.025 + (g % 3) * 0.010));
-      ctx.moveTo(pts[0][0], pts[0][1]);
-      for (let i = 1; i < pts.length; i++) {
-        ctx.lineTo(pts[i][0], pts[i][1]);
+        // Smooth core vein
+        ctx.beginPath();
+        ctx.strokeStyle = (g % 2 === 0) ? 'rgba(30, 11, 4, 0.35)' : 'rgba(52, 22, 7, 0.28)';
+        ctx.lineWidth = Math.max(0.9, iw * (0.025 + (g % 3) * 0.010));
+        ctx.moveTo(pts[0][0], pts[0][1]);
+        for (let i = 1; i < pts.length; i++) {
+          ctx.lineTo(pts[i][0], pts[i][1]);
+        }
+        ctx.stroke();
       }
-      ctx.stroke();
+      ctx.restore();
     }
-    ctx.restore();
 
     // Silky specular highlight streak along the right flank
     ctx.save();
