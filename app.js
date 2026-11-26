@@ -1316,38 +1316,83 @@
     }
     ctx.restore();
 
-    // 3. Dynamic Bead Sliding Motion (Ease-out bounce snap on count change)
-    let slideY = 0;
+    // 3. Daana 240 Hz Physics & Animation Simulation
+    // Gap and layout parameters
+    const cordGap = beadR * 1.80;
+    const restUpperY = imamY - imamH * 0.5 - cordGap - beadR;
+    const lowerLandingY = imamY - imamH * 0.5 - beadR * 0.85;
+
+    let upperShiftY = 0;
+    let travellingBead = null;
+    let stackBounceY = 0;
+    let stackRotJitter = 0;
+    let numeralDy = 0;
+    let numeralAlpha = 1.0;
+
+    const isDragging = (state.oliveDrag && state.oliveDrag.active);
+    const dragOffset = isDragging ? state.oliveDrag.dy : 0;
+    const dragX = isDragging ? state.oliveDrag.dx : 0;
+
     if (state.tasbihTransitionStart) {
-      const p = clamp((now - state.tasbihTransitionStart) / 580, 0, 1);
-      if (p < 1) {
-        const ease = 1 - Math.pow(1 - p, 3) + Math.sin(p * Math.PI) * 0.05 * Math.exp(-3 * p);
-        slideY = (1 - ease) * (-beadR * 2.20);
+      const elapsed = now - state.tasbihTransitionStart;
+      const flightDuration = 150; // 150ms flight across gap under gravity
+
+      // A. Numeral Transition (170ms vertical slide 7px + fade 30% to 100%)
+      const numP = clamp(elapsed / 170, 0, 1);
+      const numEase = 1 - Math.pow(1 - numP, 3);
+      numeralDy = -7 * (1 - numEase);
+      numeralAlpha = 0.30 + 0.70 * numEase;
+
+      // B. Free-flight phase (gravity acceleration g = 125 * bead)
+      if (elapsed < flightDuration) {
+        const fp = elapsed / flightDuration;
+        const fallEase = fp * fp;
+        const flightY = restUpperY + (lowerLandingY - restUpperY) * fallEase;
+        const flightRot = 0.45 + fallEase * Math.PI * 1.6;
+        const flightX = cordX + Math.sin(fp * Math.PI) * (beadR * 0.12);
+
+        travellingBead = { x: flightX, y: flightY, rot: flightRot };
+        upperShiftY = (1 - Math.pow(fp, 1.8)) * (-beadR * 2.14);
       } else {
-        state.tasbihTransitionStart = 0;
+        // C. Impact & Spring-Damper Rebound on Lower Stack (omega = 34, zeta = 0.82)
+        const tRebound = (elapsed - flightDuration) / 1000;
+        if (tRebound < 0.40) {
+          stackBounceY = (beadR * 0.16) * Math.exp(-0.82 * 34 * tRebound) * Math.sin(34 * tRebound);
+          stackRotJitter = Math.sin(tRebound * 42) * Math.exp(-tRebound / 0.10) * 0.22;
+        } else {
+          state.tasbihTransitionStart = 0;
+        }
       }
     }
 
-    // Iconic visible bare cord gap above the Minaret Imam Head (~1.55-1.8 bead diameters)
-    const cordGap = beadR * 1.80;
-    const activeY = imamY - imamH * 0.5 - cordGap - beadR + slideY;
-
     // 4. Draw Olive Wood Beads
-    // Beads above the bare cord gap:
-    // Active resting bead above the bare cord gap (brightest in the lamplight spotlight)
-    drawPhotorealisticOliveBead(cordX, activeY, beadR, 0.45, (state.index || 0));
-    // Upper beads
-    drawPhotorealisticOliveBead(cordX, activeY - beadR * 2.14 + slideY * 0.8, beadR, 1.85, (state.index || 0) + 1);
-    drawPhotorealisticOliveBead(cordX, activeY - beadR * 4.28 + slideY * 0.6, beadR, 2.95, (state.index || 0) + 2);
-    // Top bead peeking in at top edge
-    drawPhotorealisticOliveBead(cordX, activeY - beadR * 6.42 + slideY * 0.4, beadR, 0.95, (state.index || 0) + 3);
+    let activeY = restUpperY + upperShiftY;
+    let activeX = cordX;
+    let activeRot = 0.45;
 
-    // Carved Minaret Imam Head
-    drawOliveWoodImam(cordX, imamY, imamW, imamH);
+    if (isDragging) {
+      activeY = restUpperY + clamp(dragOffset, -beadR * 0.35, cordGap + beadR * 0.85);
+      activeX = cordX + clamp(dragX * 0.28, -beadR * 0.22, beadR * 0.22);
+      activeRot = 0.45 + (dragOffset / (beadR * 2)) * Math.PI * 0.8;
+    }
 
-    // Beads below the imam head:
-    drawPhotorealisticOliveBead(cordX, imamY + imamH * 0.5 + beadR * 1.05, beadR, 2.10, (state.index || 0) + 4);
-    drawPhotorealisticOliveBead(cordX, imamY + imamH * 0.5 + beadR * 3.12, beadR, 0.75, (state.index || 0) + 5);
+    // Beads above the bare cord gap (upper stack with elastic slide):
+    drawPhotorealisticOliveBead(activeX, activeY, beadR, activeRot, (state.index || 0));
+    drawPhotorealisticOliveBead(cordX, activeY - beadR * 2.14, beadR, 1.85, (state.index || 0) + 1);
+    drawPhotorealisticOliveBead(cordX, activeY - beadR * 4.28, beadR, 2.95, (state.index || 0) + 2);
+    drawPhotorealisticOliveBead(cordX, activeY - beadR * 6.42, beadR, 0.95, (state.index || 0) + 3);
+
+    // Free-falling travelling bead across gap
+    if (travellingBead) {
+      drawPhotorealisticOliveBead(travellingBead.x, travellingBead.y, beadR, travellingBead.rot, (state.index || 0));
+    }
+
+    // Carved Minaret Imam Head (receives underdamped spring-damper impact rebound)
+    drawOliveWoodImam(cordX, imamY + stackBounceY, imamW, imamH);
+
+    // Beads below the imam head (absorb shockwave jitter and stack bounce):
+    drawPhotorealisticOliveBead(cordX, imamY + imamH * 0.5 + beadR * 1.05 + stackBounceY, beadR, 2.10 + stackRotJitter, (state.index || 0) + 4);
+    drawPhotorealisticOliveBead(cordX, imamY + imamH * 0.5 + beadR * 3.12 + stackBounceY * 0.65, beadR, 0.75 + stackRotJitter * 0.5, (state.index || 0) + 5);
 
     // Daana Endless Strand Edge Vignette (Top and bottom 18% fade into void black)
     const topVig = ctx.createLinearGradient(0, 0, 0, h * 0.18);
@@ -1419,12 +1464,15 @@
       ctx.letterSpacing = '0px';
     }
 
-    // Giant Counter Number (Daana iconic Cormorant Garamond serif numeral in #ecc98c)
+    // Giant Counter Number (Daana iconic 170ms vertical slide 7px + fade)
     const countY = transY + Math.max(74, u * 0.170);
     const countNum = String(state.index + 1);
+    ctx.save();
+    ctx.globalAlpha = numeralAlpha;
     ctx.fillStyle = '#ecc98c';
     ctx.font = '600 ' + Math.max(76, u * 0.220) + 'px "Playfair Display", "Cormorant Garamond", "Amiri", serif';
-    ctx.fillText(countNum, marginL, countY);
+    ctx.fillText(countNum, marginL, countY + numeralDy);
+    ctx.restore();
 
     // Meaning / Translation Subtitle (Daana: OF 99 or meaning)
     const meaningY = countY + Math.max(38, u * 0.078 + state.textMeaningGap * (u * 0.001));
@@ -1436,17 +1484,24 @@
       ctx.letterSpacing = '0px';
     }
 
-    // Three Diamonds Set Indicators (Daana: ◇ ◇ ◇)
+    // Three Diamonds Set Indicators (Daana: ◇ ◇ ◇ with progressive fill)
     const diamondY = meaningY + Math.max(20, u * 0.038);
     const dSize = u * 0.0075;
-    ctx.strokeStyle = '#a49375';
-    ctx.lineWidth = Math.max(1.2, u * 0.0018);
+    const progressCount = state.index + 1;
     for (let d = 0; d < 3; d++) {
       const dx = marginL + d * (u * 0.032);
+      const isComplete = (d === 0 && progressCount >= 33) || (d === 1 && progressCount >= 66) || (d === 2 && progressCount >= 99);
       ctx.save();
       ctx.translate(dx, diamondY);
       ctx.rotate(Math.PI / 4);
-      ctx.strokeRect(-dSize / 2, -dSize / 2, dSize, dSize);
+      if (isComplete) {
+        ctx.fillStyle = '#ecc98c';
+        ctx.fillRect(-dSize / 2, -dSize / 2, dSize, dSize);
+      } else {
+        ctx.strokeStyle = '#a49375';
+        ctx.lineWidth = Math.max(1.2, u * 0.0018);
+        ctx.strokeRect(-dSize / 2, -dSize / 2, dSize, dSize);
+      }
       ctx.restore();
     }
 
@@ -3043,7 +3098,96 @@
     byId('closeHelp').addEventListener('click',dismissHelp);
     byId('gotItButton').addEventListener('click',dismissHelp);
     byId('helpModal').addEventListener('click',e=>{if(e.target===byId('helpModal'))dismissHelp();});
-    document.addEventListener('keydown',e=>{if(e.key==='Escape'){byId('helpModal').classList.add('hidden');if(document.fullscreenElement)document.exitFullscreen();}});
+
+    // Daana Interactive Pointer Drag on Canvas
+    const stageEl = byId('canvasStage') || canvas;
+    state.oliveDrag = { active: false, startY: 0, startX: 0, dy: 0, dx: 0, lastY: 0, lastT: 0, vy: 0 };
+
+    stageEl.addEventListener('pointerdown', e => {
+      if (state.template !== 'tasbih') return;
+      state.oliveDrag.active = true;
+      state.oliveDrag.startY = e.clientY;
+      state.oliveDrag.startX = e.clientX;
+      state.oliveDrag.dy = 0;
+      state.oliveDrag.dx = 0;
+      state.oliveDrag.lastY = e.clientY;
+      state.oliveDrag.lastT = performance.now();
+      state.oliveDrag.vy = 0;
+      try { stageEl.setPointerCapture(e.pointerId); } catch (_) {}
+      ensureRenderLoop();
+    });
+
+    stageEl.addEventListener('pointermove', e => {
+      if (!state.oliveDrag.active) return;
+      const now = performance.now();
+      const dt = Math.max(1, now - state.oliveDrag.lastT);
+      state.oliveDrag.vy = (e.clientY - state.oliveDrag.lastY) / (dt / 1000);
+      state.oliveDrag.dy = e.clientY - state.oliveDrag.startY;
+      state.oliveDrag.dx = e.clientX - state.oliveDrag.startX;
+      state.oliveDrag.lastY = e.clientY;
+      state.oliveDrag.lastT = now;
+      ensureRenderLoop();
+      draw(0);
+    });
+
+    const finishDrag = e => {
+      if (!state.oliveDrag.active) return;
+      state.oliveDrag.active = false;
+      const thresholdY = Math.min(canvas.width, canvas.height) * 0.045; // ~26% of gap
+      if (state.oliveDrag.dy >= thresholdY || state.oliveDrag.vy >= 240) {
+        // Forward pull commit
+        const nextIdx = (state.index + 1) % 99;
+        beginNameTransition(nextIdx);
+        state.index = nextIdx;
+        renderNames(byId('searchInput').value);
+        updateCaptions();
+        persist();
+      } else if (state.oliveDrag.dy <= -thresholdY || state.oliveDrag.vy <= -240) {
+        // Undo pull commit
+        const prevIdx = (state.index + 98) % 99;
+        beginNameTransition(prevIdx);
+        state.index = prevIdx;
+        renderNames(byId('searchInput').value);
+        updateCaptions();
+        persist();
+      }
+      state.oliveDrag.dy = 0;
+      state.oliveDrag.dx = 0;
+      draw(0);
+    };
+
+    stageEl.addEventListener('pointerup', finishDrag);
+    stageEl.addEventListener('pointercancel', finishDrag);
+
+    // Daana Keyboard Shortcuts (Space / 'j' to pull forward, Backspace / 'k' to undo)
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Escape') {
+        byId('helpModal').classList.add('hidden');
+        if (document.fullscreenElement) document.exitFullscreen();
+        return;
+      }
+      if (state.template !== 'tasbih') return;
+      if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.isContentEditable)) return;
+      if (e.code === 'Space' || e.key === ' ' || e.key === 'j') {
+        e.preventDefault();
+        const nextIdx = (state.index + 1) % 99;
+        beginNameTransition(nextIdx);
+        state.index = nextIdx;
+        renderNames(byId('searchInput').value);
+        updateCaptions();
+        persist();
+        draw(0);
+      } else if (e.key === 'Backspace' || e.key === 'k') {
+        e.preventDefault();
+        const prevIdx = (state.index + 98) % 99;
+        beginNameTransition(prevIdx);
+        state.index = prevIdx;
+        renderNames(byId('searchInput').value);
+        updateCaptions();
+        persist();
+        draw(0);
+      }
+    });
   }
   function init() {
     if(!ctx){notify('Browser tidak mendukung kanvas HTML5.');return;}
