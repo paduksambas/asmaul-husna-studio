@@ -1553,6 +1553,55 @@
     ctx.restore(); // restore shadow
   }
 
+  function drawMarkerDisc(mx, my, r, styleKey) {
+    const mw = r * 1.85;
+    const mh = r * 0.60;
+    const matKey = (styleKey === 'amber_spine' || styleKey === 'feroza_spine') ? styleKey : 'olive_spine';
+    const container = daanaTextures[matKey];
+
+    ctx.save();
+    ctx.shadowColor = 'rgba(0, 0, 0, 0.85)';
+    ctx.shadowBlur = r * 0.35;
+    ctx.shadowOffsetY = r * 0.12;
+
+    // Lentil-shaped disc silhouette
+    ctx.beginPath();
+    ctx.ellipse(mx, my, mw * 0.5, mh * 0.5, 0, 0, Math.PI * 2);
+
+    ctx.save();
+    ctx.clip();
+
+    if (container && container.marker && container.marker.complete && container.marker.naturalWidth > 0) {
+      ctx.drawImage(container.marker, 0, 0, container.marker.naturalWidth, container.marker.naturalHeight, mx - mw * 0.5, my - mh * 0.5, mw, mh);
+    } else {
+      const g = ctx.createLinearGradient(mx - mw * 0.5, my, mx + mw * 0.5, my);
+      g.addColorStop(0, '#f2bf74');
+      g.addColorStop(0.5, '#be7430');
+      g.addColorStop(1, '#3a1807');
+      ctx.fillStyle = g;
+      ctx.fillRect(mx - mw * 0.5, my - mh * 0.5, mw, mh);
+    }
+
+    // 3D Rim bevel & shading
+    const rimShade = ctx.createLinearGradient(mx - mw * 0.5, my, mx + mw * 0.5, my);
+    rimShade.addColorStop(0, 'rgba(255, 255, 255, 0.40)');
+    rimShade.addColorStop(0.25, 'rgba(255, 235, 180, 0.20)');
+    rimShade.addColorStop(0.60, 'rgba(30, 10, 2, 0.35)');
+    rimShade.addColorStop(1, 'rgba(10, 3, 1, 0.90)');
+    ctx.fillStyle = rimShade;
+    ctx.fillRect(mx - mw * 0.5, my - mh * 0.5, mw, mh);
+
+    // Softbox rim highlight
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.75)';
+    ctx.lineWidth = Math.max(1.2, r * 0.04);
+    ctx.beginPath();
+    ctx.ellipse(mx - mw * 0.08, my, mw * 0.35, mh * 0.38, 0, Math.PI * 0.8, Math.PI * 1.5);
+    ctx.stroke();
+
+    ctx.restore(); // clip
+    ctx.restore(); // shadow
+  }
+
   function drawOliveWoodImam(ix, iy, iw, ih) {
     drawMinaretImam(ix, iy, iw, ih, state.tasbihStyle);
   }
@@ -1573,15 +1622,162 @@
     // Dynamic placement
     const cordX = isPortrait ? w * 0.70 : (isLandscape ? w * 0.74 : w * 0.68);
     const beadR = isPortrait ? u * 0.088 : u * 0.074;
+    const beadD = beadR * 2;
     const imamW = beadR * 1.52;
     const imamH = imamW * 2.71;
-    const imamY = isPortrait ? h * 0.665 : h * 0.62;
 
-    // Daana Central "Lamplight" spotlight pool pooled around the central pulling gap (spot = exp(-fy*fy))
-    const topY = imamY - imamH * 0.5;
-    const botY = imamY + imamH * 0.5;
-    const spotY = topY - beadR * 1.2;
-    const spotGrad = ctx.createRadialGradient(cordX, spotY, 0, cordX, spotY, u * 0.85);
+    // Daana Central "Lamplight" pulling gap geometry
+    const cordGap = (activeStyle === 'amber_spine' ? 1.9 : 1.55) * beadD;
+    const gapCenter = isPortrait ? h * 0.50 : h * 0.48;
+    const gapTop = gapCenter - cordGap * 0.5;
+    const gapBottom = gapCenter + cordGap * 0.5;
+
+    // Piece classification along the 99 Asmaul Husna rosary cycle
+    function getPieceInfo(idx) {
+      const k = ((idx % 99) + 99) % 99;
+      const isImam = (state.tasbihActivePiece === 'imam') ? (idx === state.index) : (k === 0);
+      const isMarker = !isImam && (k === 33 || k === 66);
+      const type = isImam ? 2 : (isMarker ? 1 : 0);
+      const pieceH = (type === 2) ? imamH : (type === 1 ? beadR * 0.64 : beadR * 1.96);
+      const half = pieceH * 0.5;
+      return { type, pieceH, half, k };
+    }
+
+    function drawStrandPiece(pType, px, py, r, rot, seed, style) {
+      if (pType === 2) {
+        drawMinaretImam(px, py, imamW, imamH, style);
+      } else if (pType === 1) {
+        drawMarkerDisc(px, py, r, style);
+      } else {
+        drawPhotorealisticBead(px, py, r, rot, seed, style);
+      }
+    }
+
+    const activePiece = getPieceInfo(state.index || 0);
+    const totalFlightDist = cordGap + activePiece.pieceH;
+
+    // Numeral slide & fade transition (170ms)
+    let numeralDy = 0;
+    let numeralAlpha = 1.0;
+    if (state.tasbihLandingPulse && (now - state.tasbihLandingPulse) < 170) {
+      const elapsed = now - state.tasbihLandingPulse;
+      const numP = clamp(elapsed / 170, 0, 1);
+      const numEase = 1 - Math.pow(1 - numP, 3);
+      numeralDy = -7 * (1 - numEase);
+      numeralAlpha = 0.30 + 0.70 * numEase;
+    }
+
+    // Initialize or retrieve Daana physics simulation state
+    if (!state.tasbihSim) {
+      state.tasbihSim = {
+        mode: 0, // 0 = idle/drag, 1 = free falling, 2 = returning home
+        s: 0,
+        v: 0,
+        rot: 0.45,
+        lateralX: 0,
+        topShift: 0,
+        topShiftV: 0,
+        bottomBounceY: 0,
+        bottomBounceV: 0,
+        bottomJitterRot: 0,
+        spotlightSwell: 0,
+        lastTime: now
+      };
+    }
+    const sim = state.tasbihSim;
+    sim.activeH = activePiece.pieceH;
+    const dt = clamp((now - (sim.lastTime || now)) / 1000, 0.001, 0.05);
+    sim.lastTime = now;
+
+    // Physics Update Loop (Exact 240Hz Daana Formulas)
+    // A. Bottom pile underdamped spring-damper (omega = 34 rad/s, zeta = 0.82)
+    const botAcc = -1156 * sim.bottomBounceY - 55.76 * sim.bottomBounceV;
+    sim.bottomBounceV += botAcc * dt;
+    sim.bottomBounceY += sim.bottomBounceV * dt;
+    sim.bottomJitterRot *= Math.exp(-dt / 0.10);
+    sim.spotlightSwell *= Math.exp(-dt / 0.90);
+
+    // B. Top pile spring response (fills slot during flight)
+    const targetTopShift = (sim.mode === 1) ? (activePiece.pieceH * 0.85) : 0;
+    const topAcc = -1156 * (sim.topShift - targetTopShift) - 55.76 * sim.topShiftV;
+    sim.topShiftV += topAcc * dt;
+    sim.topShift += sim.topShiftV * dt;
+
+    // C. Pointer Drag tracking
+    const isDragging = (state.oliveDrag && state.oliveDrag.active);
+    if (isDragging) {
+      sim.mode = 0;
+      const dy = state.oliveDrag.dy;
+      const dx = state.oliveDrag.dx;
+      const n = 0.11 * beadD;
+      if (dy >= 0) {
+        sim.s = dy;
+      } else {
+        // Soft rubber band clamp when pulling backwards into top pile
+        sim.s = -n * (1 - 1 / (1 + (-dy) / (1.6 * n)));
+      }
+      sim.lateralX = clamp(dx * 0.28, -0.15 * beadD, 0.15 * beadD);
+      sim.rot = 0.45 + (sim.s / beadD) * Math.PI * 1.2;
+    }
+
+    // D. Code-triggered transition (from Next button, Space key, or audio timeline)
+    if (state.tasbihTransitionStart && sim.mode === 0 && !isDragging) {
+      sim.mode = 1;
+      sim.v = Math.max(7.5 * beadD, 450);
+      sim.s = 4;
+      state.tasbihTransitionStart = 0;
+    }
+
+    // E. Free-flight physics (g = 125 * bead px/s²)
+    if (sim.mode === 1) {
+      const g = 125 * beadD;
+      sim.v += g * dt;
+      sim.s += sim.v * dt;
+      sim.rot += (sim.v / beadD) * dt * 2.5;
+
+      if (sim.s >= totalFlightDist) {
+        // Landing Impact!
+        sim.s = totalFlightDist;
+        const impactV = sim.v;
+        sim.bottomBounceV = 0.25 * impactV;
+        sim.bottomBounceY = 0;
+        sim.bottomJitterRot = (Math.random() - 0.5) * 0.32;
+        sim.spotlightSwell = 1.0;
+
+        const snd = (activePiece.type === 2) ? 'imam' : (activePiece.type === 1 ? 'marker' : 'count');
+        playTasbihBeadSound(snd);
+
+        // Advance count
+        const nextIdx = (state.index + 1) % 99;
+        state.index = nextIdx;
+        if (byId('searchInput')) renderNames(byId('searchInput').value);
+        updateCaptions();
+        persist();
+
+        sim.mode = 0;
+        sim.s = 0;
+        sim.v = 0;
+        sim.lateralX = 0;
+        sim.topShift = 0;
+        sim.topShiftV = 0;
+        state.tasbihLandingPulse = now;
+      }
+    } else if (sim.mode === 2) {
+      // Returning home (uncommitted rollback)
+      const g = 125 * beadD * 0.5;
+      sim.v -= g * dt;
+      sim.s += sim.v * dt;
+      if (sim.s <= 0) {
+        sim.s = 0;
+        sim.v = 0;
+        sim.mode = 0;
+        sim.lateralX = 0;
+      }
+    }
+
+    // Dynamic Spotlight with impact pulse swell (Daana lamp swell)
+    const swellPulse = 1.0 + 0.32 * (sim.spotlightSwell || 0);
+    const spotGrad = ctx.createRadialGradient(cordX, gapCenter, 0, cordX, gapCenter, u * 0.85 * swellPulse);
     spotGrad.addColorStop(0, mat.spotlight);
     spotGrad.addColorStop(0.35, mat.spotlightMid);
     spotGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
@@ -1591,7 +1787,6 @@
     // 2. Vertical 2-Ply Braided Cord (Tali Kepang Sutra Khas Daana)
     ctx.save();
     const cordW = Math.max(3.0, u * 0.0068);
-    // Base shadow
     ctx.strokeStyle = '#000000';
     ctx.lineWidth = cordW + 2.5;
     ctx.beginPath();
@@ -1599,7 +1794,6 @@
     ctx.lineTo(cordX, h);
     ctx.stroke();
 
-    // 2-ply twisted cord stitches
     const stitchH = cordW * 1.8;
     for (let sy = 0; sy < h; sy += stitchH) {
       const isAlt = (Math.floor(sy / stitchH) % 2 === 0);
@@ -1610,7 +1804,6 @@
       ctx.lineTo(cordX + cordW * 0.35, sy + stitchH);
       ctx.stroke();
 
-      // Highlight silk sheen
       ctx.strokeStyle = 'rgba(255, 240, 195, 0.40)';
       ctx.lineWidth = cordW * 0.22;
       ctx.beginPath();
@@ -1620,85 +1813,32 @@
     }
     ctx.restore();
 
-    // 3. Daana 240 Hz Physics & Animation Simulation
-    // Gap and layout parameters
-    const cordGap = beadR * 1.85;
-    const restUpperY = topY - cordGap - beadR;
-    const lowerLandingY = topY - beadR * 0.20;
+    // 3. Draw Rosary Strand Pieces (Continuous Physical Rosary)
+    const topRestY = gapTop - activePiece.half;
+    const activeY = topRestY + sim.s;
+    const activeX = cordX + sim.lateralX;
+    const activeRot = sim.rot;
 
-    let upperShiftY = 0;
-    let travellingBead = null;
-    let stackBounceY = 0;
-    let stackRotJitter = 0;
-    let numeralDy = 0;
-    let numeralAlpha = 1.0;
-
-    const isDragging = (state.oliveDrag && state.oliveDrag.active);
-    const dragOffset = isDragging ? state.oliveDrag.dy : 0;
-    const dragX = isDragging ? state.oliveDrag.dx : 0;
-
-    if (state.tasbihTransitionStart) {
-      const elapsed = now - state.tasbihTransitionStart;
-      const flightDuration = 150; // 150ms flight across gap under gravity
-
-      // A. Numeral Transition (170ms vertical slide 7px + fade 30% to 100%)
-      const numP = clamp(elapsed / 170, 0, 1);
-      const numEase = 1 - Math.pow(1 - numP, 3);
-      numeralDy = -7 * (1 - numEase);
-      numeralAlpha = 0.30 + 0.70 * numEase;
-
-      // B. Free-flight phase (gravity acceleration g = 125 * bead)
-      if (elapsed < flightDuration) {
-        const fp = elapsed / flightDuration;
-        const fallEase = fp * fp;
-        const flightY = restUpperY + (lowerLandingY - restUpperY) * fallEase;
-        const flightRot = 0.45 + fallEase * Math.PI * 1.6;
-        const flightX = cordX + Math.sin(fp * Math.PI) * (beadR * 0.12);
-
-        travellingBead = { x: flightX, y: flightY, rot: flightRot };
-        upperShiftY = (1 - Math.pow(fp, 1.8)) * (-beadR * 1.98);
-      } else {
-        // C. Impact & Spring-Damper Rebound on Lower Stack (omega = 34, zeta = 0.82)
-        const tRebound = (elapsed - flightDuration) / 1000;
-        if (tRebound < 0.40) {
-          stackBounceY = (beadR * 0.16) * Math.exp(-0.82 * 34 * tRebound) * Math.sin(34 * tRebound);
-          stackRotJitter = Math.sin(tRebound * 42) * Math.exp(-tRebound / 0.10) * 0.22;
-        } else {
-          state.tasbihTransitionStart = 0;
-        }
-      }
+    // A. Top Pile (Pieces waiting above the gap)
+    let currTopY = topRestY - activePiece.half + sim.topShift;
+    for (let step = 1; step <= 5; step++) {
+      const p = getPieceInfo((state.index || 0) + step);
+      currTopY -= p.half;
+      drawStrandPiece(p.type, cordX, currTopY, beadR, 1.85 + step * 0.9, (state.index || 0) + step, activeStyle);
+      currTopY -= p.half;
     }
 
-    // 4. Draw Beads
-    let activeY = restUpperY + upperShiftY;
-    let activeX = cordX;
-    let activeRot = 0.45;
-
-    if (isDragging) {
-      activeY = restUpperY + clamp(dragOffset, -beadR * 0.35, cordGap + beadR * 0.85);
-      activeX = cordX + clamp(dragX * 0.28, -beadR * 0.22, beadR * 0.22);
-      activeRot = 0.45 + (dragOffset / (beadR * 2)) * Math.PI * 0.8;
+    // B. Bottom Pile (Pieces resting below the gap)
+    let currBotY = gapBottom + sim.bottomBounceY;
+    for (let step = 1; step <= 5; step++) {
+      const p = getPieceInfo((state.index || 0) - step);
+      currBotY += p.half;
+      drawStrandPiece(p.type, cordX, currBotY, beadR, 2.10 + step * 0.8 + sim.bottomJitterRot, (state.index || 0) - step, activeStyle);
+      currBotY += p.half;
     }
 
-    // Beads above the bare cord gap (upper stack with natural touching contact)
-    drawPhotorealisticBead(activeX, activeY, beadR, activeRot, (state.index || 0), activeStyle);
-    drawPhotorealisticBead(cordX, activeY - beadR * 1.98, beadR, 1.85, (state.index || 0) + 1, activeStyle);
-    drawPhotorealisticBead(cordX, activeY - beadR * 3.96, beadR, 2.95, (state.index || 0) + 2, activeStyle);
-    drawPhotorealisticBead(cordX, activeY - beadR * 5.94, beadR, 0.95, (state.index || 0) + 3, activeStyle);
-
-    // Free-falling travelling bead across gap
-    if (travellingBead) {
-      drawPhotorealisticBead(travellingBead.x, travellingBead.y, beadR, travellingBead.rot, (state.index || 0), activeStyle);
-    }
-
-    // Carved Minaret Imam Head (receives underdamped spring-damper impact rebound)
-    drawMinaretImam(cordX, imamY + stackBounceY, imamW, imamH, activeStyle);
-
-    // Beads below the imam head (touch directly under the imam base with 0px gap)
-    const footY = botY + stackBounceY;
-    const lowerY1 = footY + beadR * 0.92;
-    drawPhotorealisticBead(cordX, lowerY1, beadR, 2.10 + stackRotJitter, (state.index || 0) + 4, activeStyle);
-    drawPhotorealisticBead(cordX, lowerY1 + beadR * 1.98 + stackBounceY * 0.65, beadR, 0.75 + stackRotJitter * 0.5, (state.index || 0) + 5, activeStyle);
+    // C. The Active Piece (Being dragged or in flight across the gap)
+    drawStrandPiece(activePiece.type, activeX, activeY, beadR, activeRot, (state.index || 0), activeStyle);
 
     // Daana Endless Strand Edge Vignette (Top and bottom 18% fade into void black)
     const topVig = ctx.createLinearGradient(0, 0, 0, h * 0.18);
@@ -1716,18 +1856,16 @@
     ctx.fillRect(cordX - beadR * 1.5, h * 0.84, beadR * 3, h * 0.16);
 
     // Floating +1 Pop-up
-    if (state.tasbihTransitionStart || (now - (state.tasbihTransitionStart || 0)) < 650) {
-      const fp = clamp((now - (state.tasbihTransitionStart || (now - 1000))) / 600, 0, 1);
-      if (fp < 1) {
-        const popY = activeY - beadR * 1.2 - fp * u * 0.045;
-        const popX = cordX - beadR * 1.35;
-        ctx.save();
-        ctx.globalAlpha = 1 - Math.pow(fp, 1.3);
-        ctx.fillStyle = mat.countColor;
-        ctx.font = '600 ' + Math.max(14, u * 0.024) + 'px "DM Sans", sans-serif';
-        ctx.fillText('+1', popX, popY);
-        ctx.restore();
-      }
+    if (state.tasbihLandingPulse && (now - state.tasbihLandingPulse) < 650) {
+      const fp = clamp((now - state.tasbihLandingPulse) / 600, 0, 1);
+      const popY = gapBottom - beadR * 1.2 - fp * u * 0.045;
+      const popX = cordX - beadR * 1.35;
+      ctx.save();
+      ctx.globalAlpha = 1 - Math.pow(fp, 1.3);
+      ctx.fillStyle = mat.countColor;
+      ctx.font = '600 ' + Math.max(14, u * 0.024) + 'px "DM Sans", sans-serif';
+      ctx.fillText('+1', popX, popY);
+      ctx.restore();
     }
 
     // 5. Left Column Editorial Typography (Persis Sistem Daana: 100% Identik)
@@ -3415,7 +3553,7 @@
     const stageEl = byId('canvasStage') || canvas;
     state.oliveDrag = { active: false, startY: 0, startX: 0, dy: 0, dx: 0, lastY: 0, lastT: 0, vy: 0 };
 
-    stageEl.addEventListener('pointerdown', e => {
+    const onPointerDown = e => {
       if (state.template !== 'tasbih') return;
       state.oliveDrag.active = true;
       state.oliveDrag.startY = e.clientY;
@@ -3425,51 +3563,83 @@
       state.oliveDrag.lastY = e.clientY;
       state.oliveDrag.lastT = performance.now();
       state.oliveDrag.vy = 0;
-      try { stageEl.setPointerCapture(e.pointerId); } catch (_) {}
+      try { e.target.setPointerCapture(e.pointerId); } catch (_) {}
       ensureRenderLoop();
-    });
+    };
 
-    stageEl.addEventListener('pointermove', e => {
+    const onPointerMove = e => {
       if (!state.oliveDrag.active) return;
       const now = performance.now();
       const dt = Math.max(1, now - state.oliveDrag.lastT);
-      state.oliveDrag.vy = (e.clientY - state.oliveDrag.lastY) / (dt / 1000);
-      state.oliveDrag.dy = e.clientY - state.oliveDrag.startY;
-      state.oliveDrag.dx = e.clientX - state.oliveDrag.startX;
+      const rect = canvas.getBoundingClientRect();
+      const scaleY = rect.height > 0 ? (canvas.height / rect.height) : 1;
+      const scaleX = rect.width > 0 ? (canvas.width / rect.width) : 1;
+      state.oliveDrag.vy = ((e.clientY - state.oliveDrag.lastY) * scaleY) / (dt / 1000);
+      state.oliveDrag.dy = (e.clientY - state.oliveDrag.startY) * scaleY;
+      state.oliveDrag.dx = (e.clientX - state.oliveDrag.startX) * scaleX;
       state.oliveDrag.lastY = e.clientY;
       state.oliveDrag.lastT = now;
       ensureRenderLoop();
       draw(0);
-    });
+    };
 
     const finishDrag = e => {
       if (!state.oliveDrag.active) return;
       state.oliveDrag.active = false;
-      const thresholdY = Math.min(canvas.width, canvas.height) * 0.045; // ~26% of gap
-      if (state.oliveDrag.dy >= thresholdY || state.oliveDrag.vy >= 240) {
-        // Forward pull commit
-        const nextIdx = (state.index + 1) % 99;
-        beginNameTransition(nextIdx);
-        state.index = nextIdx;
-        renderNames(byId('searchInput').value);
-        updateCaptions();
-        persist();
-      } else if (state.oliveDrag.dy <= -thresholdY || state.oliveDrag.vy <= -240) {
+      const sim = state.tasbihSim;
+      const u = Math.min(canvas.width, canvas.height);
+      const isPortrait = canvas.height > canvas.width;
+      const beadR = isPortrait ? u * 0.088 : u * 0.074;
+      const beadD = beadR * 2;
+      const thresholdY = beadD * 0.55; // ~26% of gap
+      if (sim && (sim.s >= thresholdY || state.oliveDrag.vy >= 240)) {
+        // Forward pull commit: initiate Daana free-fall physics
+        sim.mode = 1;
+        sim.v = Math.max(state.oliveDrag.vy, 7.5 * beadD);
+      } else if (sim && (sim.s <= -thresholdY || state.oliveDrag.vy <= -240)) {
         // Undo pull commit
         const prevIdx = (state.index + 98) % 99;
         beginNameTransition(prevIdx);
         state.index = prevIdx;
-        renderNames(byId('searchInput').value);
+        if (byId('searchInput')) renderNames(byId('searchInput').value);
         updateCaptions();
         persist();
+        sim.mode = 0;
+        sim.s = 0;
+        sim.v = 0;
+      } else if (sim) {
+        // Uncommitted drag rollback to home slot (mode = 2)
+        sim.mode = 2;
+        sim.v = Math.min(state.oliveDrag.vy, 0);
       }
       state.oliveDrag.dy = 0;
       state.oliveDrag.dx = 0;
       draw(0);
     };
 
+    stageEl.addEventListener('pointerdown', onPointerDown);
+    canvas.addEventListener('pointerdown', onPointerDown);
+    stageEl.addEventListener('pointermove', onPointerMove);
+    canvas.addEventListener('pointermove', onPointerMove);
     stageEl.addEventListener('pointerup', finishDrag);
     stageEl.addEventListener('pointercancel', finishDrag);
+    canvas.addEventListener('pointerup', finishDrag);
+    canvas.addEventListener('pointercancel', finishDrag);
+
+    // Button to test/toggle Imam Head mode at the pulling gap
+    const btnImamTest = byId('btnTasbihImamTest');
+    if (btnImamTest) {
+      btnImamTest.addEventListener('click', () => {
+        state.tasbihActivePiece = (state.tasbihActivePiece === 'imam') ? 'auto' : 'imam';
+        btnImamTest.classList.toggle('active', state.tasbihActivePiece === 'imam');
+        if (state.tasbihSim) {
+          state.tasbihSim.mode = 0;
+          state.tasbihSim.s = 0;
+          state.tasbihSim.v = 0;
+        }
+        draw(0);
+      });
+    }
 
     // Daana Keyboard Shortcuts (Space / 'j' to pull forward, Backspace / 'k' to undo)
     document.addEventListener('keydown', e => {
