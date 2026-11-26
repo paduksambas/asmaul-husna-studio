@@ -57,7 +57,7 @@
       if (themes[s.theme]) state.theme = s.theme;
       if (formats[s.format]) state.format = s.format;
       if (s.template === 'tasbih' || s.animation === 'tasbih') state.template = 'tasbih';
-      if (['flow','circular','olive_spine'].includes(s.tasbihStyle)) state.tasbihStyle = s.tasbihStyle;
+      if (['flow','circular','olive_spine','amber_spine','feroza_spine'].includes(s.tasbihStyle)) state.tasbihStyle = s.tasbihStyle;
       if (['float','zoom','shimmer','none','wheel'].includes(s.animation)) state.animation = s.animation;
       if (Number.isFinite(s.duration)) state.duration = clamp(s.duration,5,60);
       if (typeof s.builtinMusicEnabled === 'boolean') state.builtinMusicEnabled = s.builtinMusicEnabled;
@@ -103,9 +103,13 @@
     if (state.template === 'tasbih') {
       byId('renderHint').textContent = state.tasbihStyle === 'olive_spine'
         ? 'Tasbih: Olive Wood Vertikal · kayu zaitun alami, imam minaret & tipografi editorial'
-        : state.tasbihStyle === 'flow'
-          ? 'Tasbih: Aliran Kosmis & Snap · fisika snap, reticle, rumbai inersia & orbit planet aktif'
-          : 'Tasbih: Untaian Melingkar 3D · perspektif 3D, nafas, dan pendaran aura aktif';
+        : state.tasbihStyle === 'amber_spine'
+          ? 'Tasbih: Baltic Amber Vertikal · ambar madu translusen, lorong tali internal & kilau kaustik'
+          : state.tasbihStyle === 'feroza_spine'
+            ? 'Tasbih: Feroza & Perak Vertikal · batu pirus Persia urat emas & imam perak kuno'
+            : state.tasbihStyle === 'flow'
+              ? 'Tasbih: Aliran Kosmis & Snap · fisika snap, reticle, rumbai inersia & orbit planet aktif'
+              : 'Tasbih: Untaian Melingkar 3D · perspektif 3D, nafas, dan pendaran aura aktif';
     } else {
       byId('renderHint').textContent = state.animation === 'none'
         ? 'Animasi dinonaktifkan'
@@ -166,11 +170,39 @@
     }
     ctx.closePath(); ctx.stroke(); ctx.restore();
   }
-  function playTasbihBeadSound() {
+  function playTasbihBeadSound(soundType = 'count') {
     try {
       const ctx = ensureSpeechAudioContext();
       if (!ctx) return;
       if (ctx.state === 'suspended') ctx.resume().catch(() => {});
+      loadDaanaAudioBuffers();
+
+      const activeStyle = (state.tasbihStyle === 'amber_spine' || state.tasbihStyle === 'feroza_spine')
+        ? state.tasbihStyle
+        : 'olive_spine';
+
+      const buffers = daanaAudioBuffers[activeStyle];
+      let pool = buffers ? buffers[soundType] : null;
+      if (!pool || pool.length === 0) pool = buffers ? buffers.count : null;
+
+      if (pool && pool.length > 0) {
+        const buf = pool[Math.floor(Math.random() * pool.length)];
+        const src = ctx.createBufferSource();
+        src.buffer = buf;
+        if (src.detune) {
+          src.detune.setValueAtTime((Math.random() - 0.5) * 60, ctx.currentTime);
+        }
+        const gain = ctx.createGain();
+        gain.gain.setValueAtTime(0.85, ctx.currentTime);
+        src.connect(gain);
+        gain.connect(ctx.destination);
+        if (state.audioDestination) {
+          try { gain.connect(state.audioDestination); } catch (_) {}
+        }
+        src.start(0);
+        return;
+      }
+
       const now = ctx.currentTime;
       // 1. Crisp tactile snap click (bandpass filtered impulse)
       const osc = ctx.createOscillator();
@@ -223,11 +255,14 @@
     if (nextIndex === state.index) return;
     const now = performance.now();
     if (state.template === 'tasbih') {
+      const isUndo = ((state.index - nextIndex + 99) % 99 === 1);
+      const isImam = (nextIndex === 0 || nextIndex === 98);
+      const isMarker = (nextIndex === 33 || nextIndex === 66);
       state.tasbihFromIndex = state.index;
       state.tasbihToIndex = nextIndex;
       state.tasbihTransitionStart = now;
       state.transitionStart = now;
-      playTasbihBeadSound();
+      playTasbihBeadSound(isUndo ? 'undo' : (isImam ? 'imam' : (isMarker ? 'marker' : 'count')));
       ensureRenderLoop();
     }
     // In wheel mode, rotate only the three reading labels around a vertical loop.
@@ -954,54 +989,142 @@
     ctx.restore();
   }
 
-  const oliveTextures = {
-    beads: [],
-    imam: null,
-    marker: null,
-    loaded: false
+  const daanaMaterials = {
+    olive_spine: {
+      name: 'OLIVE WOOD · 99 BEADS  ⌄',
+      path: './assets/tasbih/olive-wood/',
+      dirName: 'olive-wood',
+      cordAlt1: '#d59c48',
+      cordAlt2: '#6b421a',
+      spotlight: 'rgba(255, 215, 145, 0.12)',
+      spotlightMid: 'rgba(180, 115, 50, 0.04)',
+      headerColor: '#83745b',
+      arabicColor: '#dccaa6',
+      arabicShadow: 'rgba(220, 202, 166, 0.40)',
+      transColor: '#a49375',
+      countColor: '#ecc98c',
+      meaningColor: '#83745b',
+      diamondColor: '#ecc98c',
+      diamondStroke: '#a49375',
+      botColor: '#83745b'
+    },
+    amber_spine: {
+      name: 'BALTIC AMBER · 99 BEADS  ⌄',
+      path: './assets/tasbih/baltic-amber/',
+      dirName: 'baltic-amber',
+      cordAlt1: '#9c2415',
+      cordAlt2: '#5a0f07',
+      spotlight: 'rgba(255, 185, 75, 0.14)',
+      spotlightMid: 'rgba(200, 95, 20, 0.05)',
+      headerColor: '#b48f59',
+      arabicColor: '#ffd98c',
+      arabicShadow: 'rgba(255, 205, 120, 0.45)',
+      transColor: '#d69e4f',
+      countColor: '#f0ad35',
+      meaningColor: '#a8783d',
+      diamondColor: '#f0ad35',
+      diamondStroke: '#c98a32',
+      botColor: '#b48f59'
+    },
+    feroza_spine: {
+      name: 'FEROZA & SILVER · 99 BEADS  ⌄',
+      path: './assets/tasbih/turquoise/',
+      dirName: 'turquoise',
+      cordAlt1: '#1b3b4f',
+      cordAlt2: '#0d202c',
+      spotlight: 'rgba(100, 215, 240, 0.12)',
+      spotlightMid: 'rgba(30, 110, 140, 0.04)',
+      headerColor: '#78959f',
+      arabicColor: '#dff6fa',
+      arabicShadow: 'rgba(180, 240, 255, 0.40)',
+      transColor: '#6bbec9',
+      countColor: '#3fc2d6',
+      meaningColor: '#6e8d97',
+      diamondColor: '#3fc2d6',
+      diamondStroke: '#5ba8b5',
+      botColor: '#78959f'
+    }
   };
 
-  function initOliveTextures() {
-    const basePath = './assets/tasbih/olive-wood/';
-    let loadedCount = 0;
-    const total = 10;
-    for (let i = 1; i <= 8; i++) {
-      const img = new Image();
-      img.src = `${basePath}bead-${i}.jpg`;
-      img.onload = () => {
-        loadedCount++;
-        if (loadedCount >= total) {
-          oliveTextures.loaded = true;
-          draw(0);
-        }
+  const daanaTextures = {
+    olive_spine: { beads: [], imam: null, marker: null, loaded: false },
+    amber_spine: { beads: [], imam: null, marker: null, loaded: false },
+    feroza_spine: { beads: [], imam: null, marker: null, loaded: false }
+  };
+  const oliveTextures = daanaTextures.olive_spine;
+
+  const daanaAudioBuffers = {
+    olive_spine: { count: [], undo: [], marker: [], imam: [] },
+    amber_spine: { count: [], undo: [], marker: [], imam: [] },
+    feroza_spine: { count: [], undo: [], marker: [], imam: [] }
+  };
+
+  function initDaanaTextures() {
+    for (const [key, mat] of Object.entries(daanaMaterials)) {
+      const container = daanaTextures[key];
+      let loaded = 0;
+      for (let i = 1; i <= 8; i++) {
+        const img = new Image();
+        img.src = `${mat.path}bead-${i}.jpg`;
+        img.onload = () => {
+          loaded++;
+          if (loaded >= 10) { container.loaded = true; draw(0); }
+        };
+        container.beads.push(img);
+      }
+      const imamImg = new Image();
+      imamImg.src = `${mat.path}imam.jpg`;
+      imamImg.onload = () => {
+        loaded++;
+        if (loaded >= 10) { container.loaded = true; draw(0); }
       };
-      oliveTextures.beads.push(img);
+      container.imam = imamImg;
+
+      const markerImg = new Image();
+      markerImg.src = `${mat.path}marker.jpg`;
+      markerImg.onload = () => {
+        loaded++;
+        if (loaded >= 10) { container.loaded = true; draw(0); }
+      };
+      container.marker = markerImg;
     }
-    const imamImg = new Image();
-    imamImg.src = `${basePath}imam.jpg`;
-    imamImg.onload = () => {
-      loadedCount++;
-      if (loadedCount >= total) {
-        oliveTextures.loaded = true;
-        draw(0);
-      }
-    };
-    oliveTextures.imam = imamImg;
-
-    const markerImg = new Image();
-    markerImg.src = `${basePath}marker.jpg`;
-    markerImg.onload = () => {
-      loadedCount++;
-      if (loadedCount >= total) {
-        oliveTextures.loaded = true;
-        draw(0);
-      }
-    };
-    oliveTextures.marker = markerImg;
   }
-  initOliveTextures();
+  initDaanaTextures();
 
-  function drawPhotorealisticOliveBead(bx, by, r, knotAngle, beadSeed) {
+  let daanaAudioLoading = false;
+  async function loadDaanaAudioBuffers() {
+    if (daanaAudioLoading) return;
+    const audioCtx = ensureSpeechAudioContext();
+    if (!audioCtx) return;
+    daanaAudioLoading = true;
+    for (const [key, mat] of Object.entries(daanaMaterials)) {
+      const basePath = `${mat.path}sounds/`;
+      const loadType = async (typeName, count) => {
+        const list = [];
+        for (let i = 1; i <= count; i++) {
+          try {
+            const resp = await fetch(`${basePath}${typeName}-${i}.wav`);
+            if (resp.ok) {
+              const arrayBuf = await resp.arrayBuffer();
+              const audioBuf = await audioCtx.decodeAudioData(arrayBuf);
+              list.push(audioBuf);
+            }
+          } catch (_) {}
+        }
+        daanaAudioBuffers[key][typeName] = list;
+      };
+      loadType('count', 6);
+      loadType('undo', 3);
+      loadType('marker', 2);
+      loadType('imam', 2);
+    }
+  }
+
+  function drawPhotorealisticBead(bx, by, r, knotAngle, beadSeed, styleKey) {
+    const matKey = (styleKey === 'amber_spine' || styleKey === 'feroza_spine') ? styleKey : 'olive_spine';
+    const mat = daanaMaterials[matKey];
+    const container = daanaTextures[matKey];
+
     ctx.save();
     // Drop shadow behind bead
     ctx.beginPath();
@@ -1009,7 +1132,7 @@
     ctx.shadowColor = 'rgba(0, 0, 0, 0.85)';
     ctx.shadowBlur = r * 0.45;
     ctx.shadowOffsetY = r * 0.16;
-    ctx.fillStyle = '#1c0c04';
+    ctx.fillStyle = '#0a0502';
     ctx.fill();
     ctx.shadowBlur = 0;
     ctx.shadowOffsetY = 0;
@@ -1019,85 +1142,120 @@
     ctx.arc(bx, by, r, 0, Math.PI * 2);
     ctx.clip();
 
-    // 1. Base 3D wood sphere lighting (Smooth spherical radial gradient)
-    const lightX = bx + r * 0.32;
-    const lightY = by - r * 0.34;
-    const baseGrad = ctx.createRadialGradient(lightX, lightY, r * 0.04, bx, by, r * 1.05);
-    baseGrad.addColorStop(0, '#fdf2cc');    // Creamy silk highlight
-    baseGrad.addColorStop(0.14, '#f5cb78'); // Warm golden amber
-    baseGrad.addColorStop(0.38, '#d18a3a'); // Honey timber
-    baseGrad.addColorStop(0.62, '#9e531f'); // Rich olive heartwood
-    baseGrad.addColorStop(0.84, '#5e290e'); // Warm roasted walnut
-    baseGrad.addColorStop(0.95, '#2a1005'); // Deep shade
-    baseGrad.addColorStop(1.0, '#100401');  // Rim ambient occlusion
+    const lightX = bx - r * 0.30;
+    const lightY = by - r * 0.32;
 
     const seed = (typeof beadSeed === 'number') ? beadSeed : 1;
     const texIdx = Math.abs(seed) % 8;
-    const texImg = oliveTextures.beads[texIdx];
+    const texImg = container ? container.beads[texIdx] : null;
 
-    if (texImg && texImg.complete && texImg.naturalWidth > 0) {
-      // Authentic Daana High-Resolution 1024x512 Olive Wood Texture Map
-      ctx.save();
-      ctx.translate(bx, by);
-      ctx.rotate((knotAngle || 0) + Math.sin(seed * 2.1) * 0.18);
-      // Map full texture seamlessly onto the sphere
-      ctx.drawImage(texImg, 0, 0, texImg.naturalWidth, texImg.naturalHeight, -r * 1.05, -r * 1.05, r * 2.1, r * 2.1);
-      ctx.restore();
+    if (matKey === 'amber_spine') {
+      // 1. Baltic Amber: Deep cognac base
+      const amberBase = ctx.createRadialGradient(lightX, lightY, r * 0.05, bx, by, r * 1.05);
+      amberBase.addColorStop(0, '#ffd66b');
+      amberBase.addColorStop(0.25, '#f59e1b');
+      amberBase.addColorStop(0.60, '#c45107');
+      amberBase.addColorStop(0.85, '#681c03');
+      amberBase.addColorStop(1.0, '#240601');
+      ctx.fillStyle = amberBase;
+      ctx.fillRect(bx - r, by - r, r * 2, r * 2);
 
-      // 3D Spherical Volume & Warm Lighting Gradient Overlay
-      const sphereShade = ctx.createRadialGradient(lightX, lightY, r * 0.05, bx, by, r * 1.02);
-      sphereShade.addColorStop(0, 'rgba(255, 245, 210, 0.30)'); // Warm highlight wash
-      sphereShade.addColorStop(0.35, 'rgba(235, 175, 90, 0.10)'); // Amber body
-      sphereShade.addColorStop(0.65, 'rgba(90, 40, 12, 0.35)');  // Warm shadow
-      sphereShade.addColorStop(0.88, 'rgba(28, 10, 3, 0.75)');   // Deep shade
-      sphereShade.addColorStop(1.0, 'rgba(12, 3, 1, 0.92)');    // Ambient occlusion rim
-      ctx.fillStyle = sphereShade;
+      // 2. Internal Dark Crimson Cord Bore visible through transparent amber
+      ctx.fillStyle = '#5c1006';
+      ctx.fillRect(bx - r * 0.08, by - r, r * 0.16, r * 2);
+      const cordGlow = ctx.createRadialGradient(bx, by, r * 0.05, bx, by, r * 0.55);
+      cordGlow.addColorStop(0, 'rgba(180, 35, 10, 0.50)');
+      cordGlow.addColorStop(1, 'rgba(180, 35, 10, 0)');
+      ctx.fillStyle = cordGlow;
+      ctx.fillRect(bx - r, by - r, r * 2, r * 2);
+
+      // 3. Amber texture overlay with rich translucency
+      if (texImg && texImg.complete && texImg.naturalWidth > 0) {
+        ctx.save();
+        ctx.translate(bx, by);
+        ctx.rotate((knotAngle || 0) + Math.sin(seed * 2.1) * 0.18);
+        ctx.globalAlpha = 0.88;
+        ctx.drawImage(texImg, 0, 0, texImg.naturalWidth, texImg.naturalHeight, -r * 1.05, -r * 1.05, r * 2.1, r * 2.1);
+        ctx.restore();
+      }
+
+      // 4. Caustic internal refraction glow on bottom-right
+      const caustic = ctx.createRadialGradient(bx + r * 0.28, by + r * 0.28, r * 0.02, bx + r * 0.28, by + r * 0.28, r * 0.65);
+      caustic.addColorStop(0, 'rgba(255, 230, 130, 0.55)');
+      caustic.addColorStop(0.40, 'rgba(255, 150, 30, 0.25)');
+      caustic.addColorStop(1, 'rgba(200, 70, 0, 0)');
+      ctx.fillStyle = caustic;
+      ctx.fillRect(bx - r, by - r, r * 2, r * 2);
+
+      // 5. Volume shading overlay
+      const amberShade = ctx.createRadialGradient(lightX, lightY, r * 0.05, bx + r * 0.25, by + r * 0.25, r * 1.15);
+      amberShade.addColorStop(0, 'rgba(255, 250, 220, 0.35)');
+      amberShade.addColorStop(0.35, 'rgba(255, 180, 50, 0.10)');
+      amberShade.addColorStop(0.70, 'rgba(100, 30, 5, 0.40)');
+      amberShade.addColorStop(1.0, 'rgba(20, 5, 1, 0.88)');
+      ctx.fillStyle = amberShade;
+      ctx.fillRect(bx - r, by - r, r * 2, r * 2);
+    } else if (matKey === 'feroza_spine') {
+      // 1. Turquoise Base
+      const tqBase = ctx.createRadialGradient(lightX, lightY, r * 0.05, bx, by, r * 1.05);
+      tqBase.addColorStop(0, '#a8f0f8');
+      tqBase.addColorStop(0.20, '#42c5d8');
+      tqBase.addColorStop(0.55, '#168092');
+      tqBase.addColorStop(0.85, '#0b4752');
+      tqBase.addColorStop(1.0, '#041f24');
+      ctx.fillStyle = tqBase;
+      ctx.fillRect(bx - r, by - r, r * 2, r * 2);
+
+      // 2. Turquoise Texture Map
+      if (texImg && texImg.complete && texImg.naturalWidth > 0) {
+        ctx.save();
+        ctx.translate(bx, by);
+        ctx.rotate((knotAngle || 0) + Math.sin(seed * 2.1) * 0.18);
+        ctx.drawImage(texImg, 0, 0, texImg.naturalWidth, texImg.naturalHeight, -r * 1.05, -r * 1.05, r * 2.1, r * 2.1);
+        ctx.restore();
+      }
+
+      // 3. Spherical Volume & Matrix Shading
+      const tqShade = ctx.createRadialGradient(lightX, lightY, r * 0.05, bx + r * 0.25, by + r * 0.25, r * 1.15);
+      tqShade.addColorStop(0, 'rgba(230, 255, 255, 0.32)');
+      tqShade.addColorStop(0.35, 'rgba(60, 195, 215, 0.10)');
+      tqShade.addColorStop(0.68, 'rgba(10, 65, 75, 0.42)');
+      tqShade.addColorStop(1.0, 'rgba(3, 20, 25, 0.90)');
+      ctx.fillStyle = tqShade;
       ctx.fillRect(bx - r, by - r, r * 2, r * 2);
     } else {
-      // Procedural fallback
-      ctx.fillStyle = baseGrad;
-      ctx.fillRect(bx - r, by - r, r * 2, r * 2);
+      // Olive Wood
+      const baseGrad = ctx.createRadialGradient(lightX, lightY, r * 0.04, bx + r * 0.22, by + r * 0.22, r * 1.15);
+      baseGrad.addColorStop(0, '#fdf2cc');
+      baseGrad.addColorStop(0.14, '#f5cb78');
+      baseGrad.addColorStop(0.38, '#d18a3a');
+      baseGrad.addColorStop(0.62, '#9e531f');
+      baseGrad.addColorStop(0.84, '#5e290e');
+      baseGrad.addColorStop(0.95, '#2a1005');
+      baseGrad.addColorStop(1.0, '#100401');
 
-      // Smooth Natural Woodgrain (Serat Kayu Halus, Lembut & Menyatu)
-      ctx.save();
-      ctx.translate(bx, by);
-      ctx.rotate((knotAngle || 0) + Math.sin(seed * 2.1) * 0.15);
-      ctx.lineCap = 'round';
-      ctx.lineJoin = 'round';
+      if (texImg && texImg.complete && texImg.naturalWidth > 0) {
+        ctx.save();
+        ctx.translate(bx, by);
+        ctx.rotate((knotAngle || 0) + Math.sin(seed * 2.1) * 0.18);
+        ctx.drawImage(texImg, 0, 0, texImg.naturalWidth, texImg.naturalHeight, -r * 1.05, -r * 1.05, r * 2.1, r * 2.1);
+        ctx.restore();
 
-      const grainCount = 14;
-      for (let g = 0; g < grainCount; g++) {
-        const gy = -r * 0.90 + (g / (grainCount - 1)) * (r * 1.80);
-        const waveFreq = 0.050 + ((g + seed) % 3) * 0.018;
-        const waveAmp = r * (0.065 + ((g + seed) % 4) * 0.028);
-
-        const points = [];
-        for (let px = -r; px <= r; px += 2) {
-          const normX = px / r;
-          const sphereCurve = (1 - Math.sqrt(Math.max(0, 1 - normX * normX))) * (r * 0.16) * Math.sign(gy || 1);
-          const py = gy + Math.sin(px * waveFreq + g * 1.25 + seed) * waveAmp + Math.cos(px * 0.032 + g) * (waveAmp * 0.35) + sphereCurve;
-          points.push([px, py]);
-        }
-
-        ctx.beginPath();
-        ctx.strokeStyle = (g % 2 === 0) ? 'rgba(110, 52, 18, 0.18)' : 'rgba(140, 75, 28, 0.15)';
-        ctx.lineWidth = Math.max(2.5, r * (0.075 + (g % 3) * 0.025));
-        ctx.moveTo(points[0][0], points[0][1]);
-        for (let i = 1; i < points.length; i++) ctx.lineTo(points[i][0], points[i][1]);
-        ctx.stroke();
-
-        ctx.beginPath();
-        ctx.strokeStyle = (g % 2 === 0) ? 'rgba(32, 12, 4, 0.32)' : 'rgba(52, 22, 7, 0.26)';
-        ctx.lineWidth = Math.max(1.0, r * (0.026 + (g % 3) * 0.012));
-        ctx.moveTo(points[0][0], points[0][1]);
-        for (let i = 1; i < points.length; i++) ctx.lineTo(points[i][0], points[i][1]);
-        ctx.stroke();
+        const sphereShade = ctx.createRadialGradient(lightX, lightY, r * 0.05, bx + r * 0.25, by + r * 0.25, r * 1.15);
+        sphereShade.addColorStop(0, 'rgba(255, 245, 210, 0.30)');
+        sphereShade.addColorStop(0.35, 'rgba(235, 175, 90, 0.10)');
+        sphereShade.addColorStop(0.65, 'rgba(90, 40, 12, 0.35)');
+        sphereShade.addColorStop(0.88, 'rgba(28, 10, 3, 0.75)');
+        sphereShade.addColorStop(1.0, 'rgba(12, 3, 1, 0.92)');
+        ctx.fillStyle = sphereShade;
+        ctx.fillRect(bx - r, by - r, r * 2, r * 2);
+      } else {
+        ctx.fillStyle = baseGrad;
+        ctx.fillRect(bx - r, by - r, r * 2, r * 2);
       }
-      ctx.restore();
     }
 
-    // 3. Daana Studio Softbox Specular Lacquer (Pernis Jendela Softbox Khas Daana)
-    // Soft wide satin glow
+    // Studio Softbox Window Specular Reflection on top-left (Daana SkSL characteristic)
     const satinGlow = ctx.createRadialGradient(lightX, lightY, r * 0.05, lightX, lightY, r * 0.65);
     satinGlow.addColorStop(0, 'rgba(255, 248, 230, 0.40)');
     satinGlow.addColorStop(0.35, 'rgba(255, 235, 195, 0.16)');
@@ -1106,15 +1264,13 @@
     ctx.fillStyle = satinGlow;
     ctx.fillRect(bx - r, by - r, r * 2, r * 2);
 
-    // Analytical Rounded-Rectangle Softbox Window Reflection (Ciri Khas Render SkSL Daana)
     ctx.save();
     ctx.translate(lightX, lightY);
-    ctx.rotate(-0.32);
+    ctx.rotate(0.32);
     const boxW = r * 0.18;
     const boxH = r * 0.36;
     const boxR = r * 0.08;
 
-    // Diffused softbox ambient glow
     const boxAura = ctx.createRadialGradient(0, 0, 0, 0, 0, r * 0.35);
     boxAura.addColorStop(0, 'rgba(255, 252, 242, 0.55)');
     boxAura.addColorStop(0.40, 'rgba(255, 245, 215, 0.22)');
@@ -1122,7 +1278,6 @@
     ctx.fillStyle = boxAura;
     ctx.fillRect(-r * 0.4, -r * 0.4, r * 0.8, r * 0.8);
 
-    // High-gloss rounded-rectangle window reflection
     ctx.beginPath();
     if (typeof ctx.roundRect === 'function') {
       ctx.roundRect(-boxW / 2, -boxH / 2, boxW, boxH, boxR);
@@ -1140,17 +1295,7 @@
     ctx.shadowBlur = 0;
     ctx.restore();
 
-    // Soft warm ambient bounce rim light on dark limb
-    ctx.save();
-    ctx.lineCap = 'round';
-    ctx.strokeStyle = 'rgba(235, 175, 105, 0.25)';
-    ctx.lineWidth = Math.max(1.2, r * 0.06);
-    ctx.beginPath();
-    ctx.arc(bx, by, r * 0.91, Math.PI * 0.62, Math.PI * 0.94);
-    ctx.stroke();
-    ctx.restore();
-
-    // 4. Pole Ambient Occlusion Shadows (Bayangan Kontak Antar Butir)
+    // Pole Ambient Occlusion Shadows
     const occTop = ctx.createRadialGradient(bx, by - r, 0, bx, by - r, r * 0.36);
     occTop.addColorStop(0, 'rgba(10, 3, 1, 0.68)');
     occTop.addColorStop(1, 'rgba(10, 3, 1, 0)');
@@ -1163,8 +1308,8 @@
     ctx.fillStyle = occBot;
     ctx.fillRect(bx - r, by + r * 0.60, r * 2, r * 0.40);
 
-    // 5. Center Hole (lubang tembus tali halus)
-    ctx.fillStyle = '#120502';
+    // Center Cord Hole
+    ctx.fillStyle = '#0a0301';
     ctx.beginPath();
     ctx.ellipse(bx, by - r + r * 0.05, r * 0.14, r * 0.055, 0, 0, Math.PI * 2);
     ctx.fill();
@@ -1175,144 +1320,168 @@
     ctx.restore(); // restore clip
   }
 
-  function drawOliveWoodImam(ix, iy, iw, ih) {
+  function drawPhotorealisticOliveBead(bx, by, r, knotAngle, beadSeed) {
+    drawPhotorealisticBead(bx, by, r, knotAngle, beadSeed, state.tasbihStyle);
+  }
+
+  function drawMinaretImam(ix, iy, iw, ih, styleKey) {
+    const matKey = (styleKey === 'amber_spine' || styleKey === 'feroza_spine') ? styleKey : 'olive_spine';
+    const container = daanaTextures[matKey];
+
     ctx.save();
     // Drop Shadow
     ctx.shadowColor = 'rgba(0, 0, 0, 0.88)';
     ctx.shadowBlur = iw * 0.45;
     ctx.shadowOffsetY = iw * 0.18;
 
-    // Classical Turned Olive Wood Minaret Contour (Flared cone with finial knob & stepped base)
+    // Classical Turned Minaret Contour (Flared cone with finial knob & stepped base)
     ctx.beginPath();
     // 1. Top knob tip
     ctx.moveTo(ix, iy - ih * 0.48);
     // Top knob right hemisphere
-    ctx.bezierCurveTo(ix + iw * 0.18, iy - ih * 0.48, ix + iw * 0.18, iy - ih * 0.38, ix + iw * 0.12, iy - ih * 0.36);
-    // Neck collar groove
+    ctx.bezierCurveTo(ix + iw * 0.16, iy - ih * 0.48, ix + iw * 0.16, iy - ih * 0.40, ix + iw * 0.10, iy - ih * 0.38);
+    // Neck collar ring
+    ctx.lineTo(ix + iw * 0.12, iy - ih * 0.35);
     ctx.lineTo(ix + iw * 0.10, iy - ih * 0.32);
-    // Flaring conical tower body (curves outward as it goes down)
+    // Conical tower body flaring smoothly
     ctx.bezierCurveTo(
-      ix + iw * 0.12, iy - ih * 0.10,
-      ix + iw * 0.24, iy + ih * 0.12,
-      ix + iw * 0.44, iy + ih * 0.24
+      ix + iw * 0.12, iy - ih * 0.12,
+      ix + iw * 0.22, iy + ih * 0.08,
+      ix + iw * 0.38, iy + ih * 0.22
     );
-    // Stepped rim groove
-    ctx.lineTo(ix + iw * 0.44, iy + ih * 0.28);
-    ctx.lineTo(ix + iw * 0.34, iy + ih * 0.30);
-    // Lower rounded teardrop cup
+    // Stepped groove waist
+    ctx.lineTo(ix + iw * 0.34, iy + ih * 0.25);
+    // Teardrop bulbous bell
     ctx.bezierCurveTo(
-      ix + iw * 0.30, iy + ih * 0.38,
-      ix + iw * 0.18, iy + ih * 0.46,
-      ix, iy + ih * 0.46
+      ix + iw * 0.42, iy + ih * 0.30,
+      ix + iw * 0.42, iy + ih * 0.40,
+      ix + iw * 0.22, iy + ih * 0.45
     );
+    // Bottom ring foot
+    ctx.lineTo(ix + iw * 0.14, iy + ih * 0.48);
+    ctx.lineTo(ix, iy + ih * 0.48);
     // Left side (mirror)
+    ctx.lineTo(ix - iw * 0.14, iy + ih * 0.48);
     ctx.bezierCurveTo(
-      ix - iw * 0.18, iy + ih * 0.46,
-      ix - iw * 0.30, iy + ih * 0.38,
-      ix - iw * 0.34, iy + ih * 0.30
+      ix - iw * 0.22, iy + ih * 0.45,
+      ix - iw * 0.42, iy + ih * 0.40,
+      ix - iw * 0.42, iy + ih * 0.30
     );
-    ctx.lineTo(ix - iw * 0.44, iy + ih * 0.28);
-    ctx.lineTo(ix - iw * 0.44, iy + ih * 0.24);
+    ctx.lineTo(ix - iw * 0.34, iy + ih * 0.25);
     ctx.bezierCurveTo(
-      ix - iw * 0.24, iy + ih * 0.12,
-      ix - iw * 0.12, iy - ih * 0.10,
-      ix - iw * 0.10, iy - ih * 0.32
+      ix - iw * 0.38, iy + ih * 0.22,
+      ix - iw * 0.22, iy + ih * 0.08,
+      ix - iw * 0.12, iy - ih * 0.12
     );
-    ctx.lineTo(ix - iw * 0.12, iy - ih * 0.36);
-    ctx.bezierCurveTo(ix - iw * 0.18, iy - ih * 0.38, ix - iw * 0.18, iy - ih * 0.48, ix, iy - ih * 0.48);
+    ctx.lineTo(ix - iw * 0.10, iy - ih * 0.32);
+    ctx.lineTo(ix - iw * 0.12, iy - ih * 0.35);
+    ctx.lineTo(ix - iw * 0.10, iy - ih * 0.38);
+    ctx.bezierCurveTo(ix - iw * 0.16, iy - ih * 0.40, ix - iw * 0.16, iy - ih * 0.48, ix, iy - ih * 0.48);
     ctx.closePath();
 
     ctx.save();
     ctx.clip();
 
-    // Base 3D wood turned shading (Rich warm honey amber wood matching beads)
-    const baseGrad = ctx.createLinearGradient(ix - iw * 0.5, iy, ix + iw * 0.5, iy);
-    baseGrad.addColorStop(0, '#1c0a03');
-    baseGrad.addColorStop(0.20, '#6c3311');
-    baseGrad.addColorStop(0.52, '#be7430');
-    baseGrad.addColorStop(0.80, '#f2bf74');
-    baseGrad.addColorStop(0.92, '#fdf0cb');
-    baseGrad.addColorStop(1.0, '#3a1807');
+    if (matKey === 'amber_spine') {
+      // Turned Baltic Amber Minaret
+      const amberGrad = ctx.createLinearGradient(ix - iw * 0.5, iy, ix + iw * 0.5, iy);
+      amberGrad.addColorStop(0, '#ffd975');
+      amberGrad.addColorStop(0.35, '#f59a16');
+      amberGrad.addColorStop(0.70, '#9e3c04');
+      amberGrad.addColorStop(1.0, '#360901');
+      ctx.fillStyle = amberGrad;
+      ctx.fillRect(ix - iw, iy - ih, iw * 2, ih * 2);
 
-    if (oliveTextures.imam && oliveTextures.imam.complete && oliveTextures.imam.naturalWidth > 0) {
-      // Authentic Daana 1024x1024 Turned Minaret Imam Photo Texture
-      ctx.drawImage(oliveTextures.imam, 0, 0, oliveTextures.imam.naturalWidth, oliveTextures.imam.naturalHeight, ix - iw * 0.52, iy - ih * 0.48, iw * 1.04, ih * 0.96);
+      // Internal dark crimson silk cord bore
+      ctx.fillStyle = '#631107';
+      ctx.fillRect(ix - iw * 0.06, iy - ih * 0.5, iw * 0.12, ih);
 
-      // 3D Turned Wood Shading Gradient Overlay (Warm amber to shadow, non-destructive)
-      const imamShade = ctx.createLinearGradient(ix - iw * 0.5, iy, ix + iw * 0.5, iy);
-      imamShade.addColorStop(0, 'rgba(20, 8, 2, 0.70)');
-      imamShade.addColorStop(0.20, 'rgba(65, 28, 8, 0.30)');
-      imamShade.addColorStop(0.50, 'rgba(235, 175, 80, 0.08)');
-      imamShade.addColorStop(0.78, 'rgba(255, 235, 180, 0.28)');
-      imamShade.addColorStop(0.90, 'rgba(255, 248, 220, 0.35)');
-      imamShade.addColorStop(1.0, 'rgba(30, 12, 3, 0.65)');
-      ctx.fillStyle = imamShade;
+      if (container && container.imam && container.imam.complete && container.imam.naturalWidth > 0) {
+        ctx.save();
+        ctx.globalAlpha = 0.85;
+        ctx.drawImage(container.imam, 0, 0, container.imam.naturalWidth, container.imam.naturalHeight, ix - iw * 0.52, iy - ih * 0.48, iw * 1.04, ih * 0.96);
+        ctx.restore();
+      }
+
+      // Amber Shading (Light on left, shadow on right)
+      const aShade = ctx.createLinearGradient(ix - iw * 0.5, iy, ix + iw * 0.5, iy);
+      aShade.addColorStop(0, 'rgba(255, 245, 210, 0.28)');
+      aShade.addColorStop(0.22, 'rgba(255, 225, 140, 0.35)');
+      aShade.addColorStop(0.55, 'rgba(160, 60, 10, 0.15)');
+      aShade.addColorStop(0.80, 'rgba(60, 15, 3, 0.65)');
+      aShade.addColorStop(1.0, 'rgba(20, 5, 1, 0.90)');
+      ctx.fillStyle = aShade;
+      ctx.fillRect(ix - iw, iy - ih, iw * 2, ih * 2);
+    } else if (matKey === 'feroza_spine') {
+      // Antique Burnished Sterling Silver Minaret with Engraved Granulation
+      const silvGrad = ctx.createLinearGradient(ix - iw * 0.5, iy, ix + iw * 0.5, iy);
+      silvGrad.addColorStop(0, '#ffffff');
+      silvGrad.addColorStop(0.20, '#d2e0e5');
+      silvGrad.addColorStop(0.52, '#7b959e');
+      silvGrad.addColorStop(0.80, '#3a4e55');
+      silvGrad.addColorStop(1.0, '#101719');
+      ctx.fillStyle = silvGrad;
+      ctx.fillRect(ix - iw, iy - ih, iw * 2, ih * 2);
+
+      if (container && container.imam && container.imam.complete && container.imam.naturalWidth > 0) {
+        ctx.drawImage(container.imam, 0, 0, container.imam.naturalWidth, container.imam.naturalHeight, ix - iw * 0.52, iy - ih * 0.48, iw * 1.04, ih * 0.96);
+      }
+
+      const sShade = ctx.createLinearGradient(ix - iw * 0.5, iy, ix + iw * 0.5, iy);
+      sShade.addColorStop(0, 'rgba(240, 255, 255, 0.35)');
+      sShade.addColorStop(0.22, 'rgba(220, 245, 250, 0.45)');
+      sShade.addColorStop(0.55, 'rgba(70, 95, 105, 0.15)');
+      sShade.addColorStop(0.82, 'rgba(20, 35, 40, 0.65)');
+      sShade.addColorStop(1.0, 'rgba(5, 12, 15, 0.90)');
+      ctx.fillStyle = sShade;
       ctx.fillRect(ix - iw, iy - ih, iw * 2, ih * 2);
     } else {
-      ctx.fillStyle = baseGrad;
-      ctx.fillRect(ix - iw, iy - ih, iw * 2, ih * 2);
+      // Turned Olive Wood
+      const baseGrad = ctx.createLinearGradient(ix - iw * 0.5, iy, ix + iw * 0.5, iy);
+      baseGrad.addColorStop(0, '#1c0a03');
+      baseGrad.addColorStop(0.20, '#6c3311');
+      baseGrad.addColorStop(0.52, '#be7430');
+      baseGrad.addColorStop(0.80, '#f2bf74');
+      baseGrad.addColorStop(0.92, '#fdf0cb');
+      baseGrad.addColorStop(1.0, '#3a1807');
 
-      // Smooth wavy longitudinal woodgrain flowing down the turned minaret
-      ctx.save();
-      ctx.lineCap = 'round';
-      ctx.lineJoin = 'round';
-      for (let g = 0; g < 16; g++) {
-        const xRatio = -0.42 + (g / 15) * 0.84;
-        const pts = [];
-        for (let py = -ih * 0.46; py <= ih * 0.45; py += 3) {
-          const pNorm = (py + ih * 0.46) / (ih * 0.91);
-          let flare = 0.22;
-          if (pNorm > 0.20 && pNorm <= 0.78) {
-            flare = 0.20 + Math.pow((pNorm - 0.20) / 0.58, 1.4) * 0.72;
-          } else if (pNorm > 0.78) {
-            flare = 0.72 - ((pNorm - 0.78) / 0.22) * 0.45;
-          }
-          const wave = Math.sin(py * 0.065 + g * 1.3) * (iw * 0.038);
-          pts.push([ix + (iw * xRatio * flare) + wave, iy + py]);
-        }
-
-        // Soft diffusion halo
-        ctx.beginPath();
-        ctx.strokeStyle = (g % 2 === 0) ? 'rgba(110, 52, 18, 0.20)' : 'rgba(140, 75, 28, 0.16)';
-        ctx.lineWidth = Math.max(2.0, iw * (0.065 + (g % 3) * 0.02));
-        ctx.moveTo(pts[0][0], pts[0][1]);
-        for (let i = 1; i < pts.length; i++) {
-          ctx.lineTo(pts[i][0], pts[i][1]);
-        }
-        ctx.stroke();
-
-        // Smooth core vein
-        ctx.beginPath();
-        ctx.strokeStyle = (g % 2 === 0) ? 'rgba(30, 11, 4, 0.35)' : 'rgba(52, 22, 7, 0.28)';
-        ctx.lineWidth = Math.max(0.9, iw * (0.025 + (g % 3) * 0.010));
-        ctx.moveTo(pts[0][0], pts[0][1]);
-        for (let i = 1; i < pts.length; i++) {
-          ctx.lineTo(pts[i][0], pts[i][1]);
-        }
-        ctx.stroke();
+      if (container && container.imam && container.imam.complete && container.imam.naturalWidth > 0) {
+        ctx.drawImage(container.imam, 0, 0, container.imam.naturalWidth, container.imam.naturalHeight, ix - iw * 0.52, iy - ih * 0.48, iw * 1.04, ih * 0.96);
+      } else {
+        ctx.fillStyle = baseGrad;
+        ctx.fillRect(ix - iw, iy - ih, iw * 2, ih * 2);
       }
-      ctx.restore();
+
+      // 3D Turned Wood Shading Gradient Overlay (Light on left, shadow on right)
+      const imamShade = ctx.createLinearGradient(ix - iw * 0.5, iy, ix + iw * 0.5, iy);
+      imamShade.addColorStop(0, 'rgba(255, 245, 215, 0.24)');
+      imamShade.addColorStop(0.20, 'rgba(255, 230, 160, 0.36)');
+      imamShade.addColorStop(0.50, 'rgba(160, 80, 20, 0.10)');
+      imamShade.addColorStop(0.75, 'rgba(50, 18, 5, 0.55)');
+      imamShade.addColorStop(1.0, 'rgba(15, 4, 1, 0.88)');
+      ctx.fillStyle = imamShade;
+      ctx.fillRect(ix - iw, iy - ih, iw * 2, ih * 2);
     }
 
-    // Silky specular highlight streak along the right flank
+    // Silky specular highlight streak along the LEFT flank (aligning with beads and photo)
     ctx.save();
-    const specGrad = ctx.createLinearGradient(ix + iw * 0.05, iy, ix + iw * 0.42, iy);
+    const specGrad = ctx.createLinearGradient(ix - iw * 0.42, iy, ix - iw * 0.05, iy);
     specGrad.addColorStop(0, 'rgba(255, 252, 240, 0)');
-    specGrad.addColorStop(0.65, 'rgba(255, 250, 235, 0.55)');
+    specGrad.addColorStop(0.55, 'rgba(255, 250, 235, 0.55)');
     specGrad.addColorStop(1, 'rgba(255, 230, 180, 0)');
     ctx.fillStyle = specGrad;
-    ctx.fillRect(ix, iy - ih * 0.48, iw * 0.5, ih * 0.96);
+    ctx.fillRect(ix - iw * 0.5, iy - ih * 0.48, iw * 0.5, ih * 0.96);
 
-    // Crisp highlight sheen ribbon
+    // Crisp highlight sheen ribbon on left flank
     ctx.lineCap = 'round';
     ctx.strokeStyle = 'rgba(255, 252, 242, 0.52)';
     ctx.lineWidth = Math.max(1.5, iw * 0.045);
     ctx.beginPath();
-    ctx.moveTo(ix + iw * 0.08, iy - ih * 0.28);
+    ctx.moveTo(ix - iw * 0.16, iy - ih * 0.28);
     ctx.bezierCurveTo(
-      ix + iw * 0.12, iy - ih * 0.05,
-      ix + iw * 0.22, iy + ih * 0.12,
-      ix + iw * 0.36, iy + ih * 0.24
+      ix - iw * 0.12, iy - ih * 0.05,
+      ix - iw * 0.16, iy + ih * 0.12,
+      ix - iw * 0.24, iy + ih * 0.32
     );
     ctx.stroke();
     ctx.restore();
@@ -1321,11 +1490,18 @@
     ctx.restore(); // restore shadow
   }
 
+  function drawOliveWoodImam(ix, iy, iw, ih) {
+    drawMinaretImam(ix, iy, iw, ih, state.tasbihStyle);
+  }
+
   function drawTasbihOliveSpineScene(t, item) {
     const w = canvas.width, h = canvas.height, cx = w / 2, cy = h / 2, u = Math.min(w, h);
     const now = performance.now();
     const isPortrait = h > w;
     const isLandscape = w > h * 1.25;
+
+    const activeStyle = (state.tasbihStyle === 'amber_spine' || state.tasbihStyle === 'feroza_spine') ? state.tasbihStyle : 'olive_spine';
+    const mat = daanaMaterials[activeStyle];
 
     // 1. Deep cinematic pitch-black background (Daana dark-room void)
     ctx.fillStyle = '#000000';
@@ -1341,15 +1517,15 @@
     // Daana Central "Lamplight" spotlight pool pooled around the central pulling gap (spot = exp(-fy*fy))
     const spotY = imamY - imamH * 0.5 - beadR * 1.5;
     const spotGrad = ctx.createRadialGradient(cordX, spotY, 0, cordX, spotY, u * 0.85);
-    spotGrad.addColorStop(0, 'rgba(255, 215, 145, 0.12)');
-    spotGrad.addColorStop(0.35, 'rgba(180, 115, 50, 0.04)');
+    spotGrad.addColorStop(0, mat.spotlight);
+    spotGrad.addColorStop(0.35, mat.spotlightMid);
     spotGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
     ctx.fillStyle = spotGrad;
     ctx.fillRect(0, 0, w, h);
 
     // 2. Vertical 2-Ply Braided Cord (Tali Kepang Sutra Khas Daana)
     ctx.save();
-    const cordW = Math.max(3.2, u * 0.0070);
+    const cordW = Math.max(3.6, u * 0.0078);
     // Base shadow
     ctx.strokeStyle = '#000000';
     ctx.lineWidth = cordW + 2.5;
@@ -1362,7 +1538,7 @@
     const stitchH = cordW * 1.8;
     for (let sy = 0; sy < h; sy += stitchH) {
       const isAlt = (Math.floor(sy / stitchH) % 2 === 0);
-      ctx.strokeStyle = isAlt ? '#d59c48' : '#6b421a';
+      ctx.strokeStyle = isAlt ? mat.cordAlt1 : mat.cordAlt2;
       ctx.lineWidth = cordW;
       ctx.beginPath();
       ctx.moveTo(cordX - cordW * 0.35, sy);
@@ -1415,7 +1591,7 @@
         const flightX = cordX + Math.sin(fp * Math.PI) * (beadR * 0.12);
 
         travellingBead = { x: flightX, y: flightY, rot: flightRot };
-        upperShiftY = (1 - Math.pow(fp, 1.8)) * (-beadR * 2.14);
+        upperShiftY = (1 - Math.pow(fp, 1.8)) * (-beadR * 1.98);
       } else {
         // C. Impact & Spring-Damper Rebound on Lower Stack (omega = 34, zeta = 0.82)
         const tRebound = (elapsed - flightDuration) / 1000;
@@ -1428,7 +1604,7 @@
       }
     }
 
-    // 4. Draw Olive Wood Beads
+    // 4. Draw Beads
     let activeY = restUpperY + upperShiftY;
     let activeX = cordX;
     let activeRot = 0.45;
@@ -1439,23 +1615,24 @@
       activeRot = 0.45 + (dragOffset / (beadR * 2)) * Math.PI * 0.8;
     }
 
-    // Beads above the bare cord gap (upper stack with elastic slide):
-    drawPhotorealisticOliveBead(activeX, activeY, beadR, activeRot, (state.index || 0));
-    drawPhotorealisticOliveBead(cordX, activeY - beadR * 2.14, beadR, 1.85, (state.index || 0) + 1);
-    drawPhotorealisticOliveBead(cordX, activeY - beadR * 4.28, beadR, 2.95, (state.index || 0) + 2);
-    drawPhotorealisticOliveBead(cordX, activeY - beadR * 6.42, beadR, 0.95, (state.index || 0) + 3);
+    // Beads above the bare cord gap (upper stack with natural touching contact)
+    drawPhotorealisticBead(activeX, activeY, beadR, activeRot, (state.index || 0), activeStyle);
+    drawPhotorealisticBead(cordX, activeY - beadR * 1.98, beadR, 1.85, (state.index || 0) + 1, activeStyle);
+    drawPhotorealisticBead(cordX, activeY - beadR * 3.96, beadR, 2.95, (state.index || 0) + 2, activeStyle);
+    drawPhotorealisticBead(cordX, activeY - beadR * 5.94, beadR, 0.95, (state.index || 0) + 3, activeStyle);
 
     // Free-falling travelling bead across gap
     if (travellingBead) {
-      drawPhotorealisticOliveBead(travellingBead.x, travellingBead.y, beadR, travellingBead.rot, (state.index || 0));
+      drawPhotorealisticBead(travellingBead.x, travellingBead.y, beadR, travellingBead.rot, (state.index || 0), activeStyle);
     }
 
     // Carved Minaret Imam Head (receives underdamped spring-damper impact rebound)
-    drawOliveWoodImam(cordX, imamY + stackBounceY, imamW, imamH);
+    drawMinaretImam(cordX, imamY + stackBounceY, imamW, imamH, activeStyle);
 
-    // Beads below the imam head (absorb shockwave jitter and stack bounce):
-    drawPhotorealisticOliveBead(cordX, imamY + imamH * 0.5 + beadR * 1.05 + stackBounceY, beadR, 2.10 + stackRotJitter, (state.index || 0) + 4);
-    drawPhotorealisticOliveBead(cordX, imamY + imamH * 0.5 + beadR * 3.12 + stackBounceY * 0.65, beadR, 0.75 + stackRotJitter * 0.5, (state.index || 0) + 5);
+    // Beads below the imam head (touch directly under the imam base)
+    const footY = imamY + imamH * 0.48 + stackBounceY;
+    drawPhotorealisticBead(cordX, footY + beadR * 0.98, beadR, 2.10 + stackRotJitter, (state.index || 0) + 4, activeStyle);
+    drawPhotorealisticBead(cordX, footY + beadR * 2.96 + stackBounceY * 0.65, beadR, 0.75 + stackRotJitter * 0.5, (state.index || 0) + 5, activeStyle);
 
     // Daana Endless Strand Edge Vignette (Top and bottom 18% fade into void black)
     const topVig = ctx.createLinearGradient(0, 0, 0, h * 0.18);
@@ -1480,14 +1657,14 @@
         const popX = cordX - beadR * 1.35;
         ctx.save();
         ctx.globalAlpha = 1 - Math.pow(fp, 1.3);
-        ctx.fillStyle = '#f8e6b8';
+        ctx.fillStyle = mat.countColor;
         ctx.font = '600 ' + Math.max(14, u * 0.024) + 'px "DM Sans", sans-serif';
         ctx.fillText('+1', popX, popY);
         ctx.restore();
       }
     }
 
-    // 5. Left Column Editorial Typography (Persis Sistem Daana: Bone/Olive Wood Theme)
+    // 5. Left Column Editorial Typography (Persis Sistem Daana: 100% Identik)
     const marginL = isPortrait ? w * 0.11 : w * 0.08;
     const textMaxW = cordX - marginL - u * 0.06;
 
@@ -1495,15 +1672,15 @@
     ctx.textAlign = 'left';
     ctx.textBaseline = 'middle';
 
-    // Top Header Tagline (Daana: OLIVE WOOD ⌄)
+    // Top Header Tagline (Daana: MATERIAL · 99 BEADS ⌄)
     const headerY = h * 0.082;
-    ctx.fillStyle = '#83745b';
+    ctx.fillStyle = mat.headerColor;
     ctx.font = '500 ' + Math.max(10, u * 0.015) + 'px "DM Sans", "Marcellus", sans-serif';
     ctx.letterSpacing = '2.2px';
-    ctx.fillText('OLIVE WOOD  ⌄', marginL, headerY);
+    ctx.fillText(mat.name, marginL, headerY);
     ctx.letterSpacing = '0px';
 
-    // Arabic Calligraphy (Daana bone-white with warm aura)
+    // Arabic Calligraphy (Daana warm ivory with soft aura)
     const arabicY = h * 0.35 + state.arabicVerticalOffset * (u * 0.0025);
     let fontAr = u * 0.096 * (state.size / 100);
     ctx.font = '700 ' + Math.max(36, fontAr) + 'px "Amiri", serif';
@@ -1511,16 +1688,16 @@
       fontAr *= 0.94;
       ctx.font = '700 ' + fontAr + 'px "Amiri", serif';
     }
-    ctx.shadowColor = 'rgba(220, 202, 166, 0.40)';
+    ctx.shadowColor = mat.arabicShadow;
     ctx.shadowBlur = u * 0.020;
-    ctx.fillStyle = '#dccaa6';
+    ctx.fillStyle = mat.arabicColor;
     ctx.fillText(item[1], marginL, arabicY);
     ctx.shadowBlur = 0;
 
-    // Transliteration (Daana secondary bone ink: #a49375)
+    // Transliteration (Daana secondary bone ink)
     const transY = arabicY + Math.max(30, u * 0.055 + state.arabicTextGap * (u * 0.001));
     if (state.transliteration) {
-      ctx.fillStyle = '#a49375';
+      ctx.fillStyle = mat.transColor;
       ctx.font = '500 ' + Math.max(10, u * 0.019) + 'px "DM Sans", "Marcellus", sans-serif';
       ctx.letterSpacing = '2.6px';
       ctx.fillText(item[0].toUpperCase() + '  ⌄', marginL, transY);
@@ -1529,25 +1706,27 @@
 
     // Giant Counter Number (Daana iconic 170ms vertical slide 7px + fade)
     const countY = transY + Math.max(74, u * 0.170);
-    const countNum = String(state.index + 1);
+    const isCompletedRound = (state.index === 98);
+    const countNum = isCompletedRound ? '100' : String(state.index + 1);
     ctx.save();
     ctx.globalAlpha = numeralAlpha;
-    ctx.fillStyle = '#ecc98c';
-    ctx.font = '600 ' + Math.max(76, u * 0.220) + 'px "Playfair Display", "Cormorant Garamond", "Amiri", serif';
+    ctx.fillStyle = mat.countColor;
+    ctx.font = '600 ' + Math.max(76, u * 0.220) + 'px "Daana Numerals", "Cormorant Garamond", "Playfair Display", serif';
     ctx.fillText(countNum, marginL, countY + numeralDy);
     ctx.restore();
 
-    // Meaning / Translation Subtitle (Daana: OF 99 or meaning)
+    // Meaning / Translation Subtitle (Daana: COMPLETE at 100 or transliterated meaning)
     const meaningY = countY + Math.max(38, u * 0.078 + state.textMeaningGap * (u * 0.001));
     if (state.translation) {
-      ctx.fillStyle = '#83745b';
+      ctx.fillStyle = mat.meaningColor;
       ctx.font = '500 ' + Math.max(9, u * 0.016) + 'px "DM Sans", sans-serif';
       ctx.letterSpacing = '2.4px';
-      ctx.fillText(item[2].toUpperCase(), marginL, meaningY, textMaxW);
+      const labelText = isCompletedRound ? 'COMPLETE' : item[2].toUpperCase();
+      ctx.fillText(labelText, marginL, meaningY, textMaxW);
       ctx.letterSpacing = '0px';
     }
 
-    // Three Diamonds Set Indicators (Daana: ◇ ◇ ◇ with progressive fill)
+    // Three Diamonds Set Indicators (Daana: ◆ ◆ ◆ with progressive fill)
     const diamondY = meaningY + Math.max(20, u * 0.038);
     const dSize = u * 0.0075;
     const progressCount = state.index + 1;
@@ -1558,31 +1737,35 @@
       ctx.translate(dx, diamondY);
       ctx.rotate(Math.PI / 4);
       if (isComplete) {
-        ctx.fillStyle = '#ecc98c';
+        ctx.fillStyle = mat.diamondColor;
         ctx.fillRect(-dSize / 2, -dSize / 2, dSize, dSize);
       } else {
-        ctx.strokeStyle = '#a49375';
+        ctx.strokeStyle = mat.diamondStroke;
         ctx.lineWidth = Math.max(1.2, u * 0.0018);
         ctx.strokeRect(-dSize / 2, -dSize / 2, dSize, dSize);
       }
       ctx.restore();
     }
 
-    // Bottom Control Indicators (Daana: ◇ SOUND, ◇ HAPTICS RESET)
+    // Bottom Control Indicators (Daana: ◆ SOUND, ◆ HAPTICS RESET)
     const botY1 = h * 0.88;
     const botY2 = h * 0.93;
-    ctx.fillStyle = '#83745b';
+    ctx.fillStyle = mat.botColor;
     ctx.font = '500 ' + Math.max(9, u * 0.015) + 'px "DM Sans", "Marcellus", sans-serif';
     ctx.letterSpacing = '2.0px';
-    ctx.fillText('◇  SOUND', marginL, botY1);
-    ctx.fillText('◇  HAPTICS      RESET', marginL, botY2);
+    ctx.fillText('◆  SOUND', marginL, botY1);
+    ctx.fillText('◆  HAPTICS      RESET', marginL, botY2);
     ctx.letterSpacing = '0px';
 
     ctx.restore();
   }
 
   function drawTasbihTemplate(t, item) {
-    if (state.tasbihStyle === 'olive_spine') {
+    if (state.tasbihStyle === 'olive_spine' || state.tasbihStyle === 'amber_spine' || state.tasbihStyle === 'feroza_spine') {
+      drawTasbihOliveSpineScene(t, item);
+      return;
+    }
+    if (state.tasbihStyle === 'flow') {
       drawTasbihOliveSpineScene(t, item);
       return;
     }

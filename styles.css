@@ -91,3 +91,4 @@
 .tasbih-style-card small{font-size:10px;line-height:1.4;color:#a89d88}
 .tasbih-style-card.active b{color:#f5cf7b}
 .tasbih-style-card.active small{color:#c5b8a0}
+@font-face{font-family:'Daana Numerals';src:url('./assets/fonts/cormorant-garamond-numerals.ttf') format('truetype');font-weight:300 700;font-style:normal}
