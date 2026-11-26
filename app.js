@@ -1163,10 +1163,10 @@
 
     // Dynamic placement
     const cordX = isPortrait ? w * 0.70 : (isLandscape ? w * 0.74 : w * 0.68);
-    const beadR = isPortrait ? u * 0.084 : u * 0.072;
-    const imamW = beadR * 1.38;
-    const imamH = beadR * 2.95;
-    const imamY = isPortrait ? h * 0.65 : h * 0.62;
+    const beadR = isPortrait ? u * 0.088 : u * 0.074;
+    const imamW = beadR * 1.34;
+    const imamH = beadR * 2.85;
+    const imamY = isPortrait ? h * 0.685 : h * 0.64;
 
     // Subtle studio vignette glow around the beads
     const vig = ctx.createRadialGradient(cordX, h * 0.55, 0, cordX, h * 0.55, u * 0.90);
@@ -1220,24 +1220,25 @@
     }
 
     // Iconic visible bare cord gap above the Minaret Imam Head (~1.6 bead diameters)
-    const cordGap = beadR * 1.75;
+    const cordGap = beadR * 1.80;
     const activeY = imamY - imamH * 0.5 - cordGap - beadR + slideY;
 
     // 4. Draw Olive Wood Beads
-    // Beads above the bare cord gap:
-    // Active resting bead
+    // Beads above the bare cord gap (matching reference photo: 3 full beads + 1 top peek bead):
+    // Active resting bead above the bare cord gap
     drawPhotorealisticOliveBead(cordX, activeY, beadR, 0.45);
     // Upper beads
     drawPhotorealisticOliveBead(cordX, activeY - beadR * 2.14 + slideY * 0.8, beadR, 1.85);
     drawPhotorealisticOliveBead(cordX, activeY - beadR * 4.28 + slideY * 0.6, beadR, 2.95);
+    // Top bead peeking in at top edge
     drawPhotorealisticOliveBead(cordX, activeY - beadR * 6.42 + slideY * 0.4, beadR, 0.95);
 
     // Carved Minaret Imam Head
     drawOliveWoodImam(cordX, imamY, imamW, imamH);
 
-    // Beads below the imam head
-    drawPhotorealisticOliveBead(cordX, imamY + imamH * 0.5 + beadR * 1.15, beadR, 2.10);
-    drawPhotorealisticOliveBead(cordX, imamY + imamH * 0.5 + beadR * 3.35, beadR, 0.75);
+    // Beads below the imam head (1 full bead + 1 bottom bead partially off-screen):
+    drawPhotorealisticOliveBead(cordX, imamY + imamH * 0.5 + beadR * 1.05, beadR, 2.10);
+    drawPhotorealisticOliveBead(cordX, imamY + imamH * 0.5 + beadR * 3.12, beadR, 0.75);
 
     // Floating +1 Pop-up
     if (state.tasbihTransitionStart || (now - (state.tasbihTransitionStart || 0)) < 650) {
