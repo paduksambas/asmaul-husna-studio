@@ -57,7 +57,7 @@
       if (themes[s.theme]) state.theme = s.theme;
       if (formats[s.format]) state.format = s.format;
       if (s.template === 'tasbih' || s.animation === 'tasbih') state.template = 'tasbih';
-      if (['flow','circular'].includes(s.tasbihStyle)) state.tasbihStyle = s.tasbihStyle;
+      if (['flow','circular','olive_spine'].includes(s.tasbihStyle)) state.tasbihStyle = s.tasbihStyle;
       if (['float','zoom','shimmer','none','wheel'].includes(s.animation)) state.animation = s.animation;
       if (Number.isFinite(s.duration)) state.duration = clamp(s.duration,5,60);
       if (typeof s.builtinMusicEnabled === 'boolean') state.builtinMusicEnabled = s.builtinMusicEnabled;
@@ -101,9 +101,11 @@
   }
   function updateRenderHint() {
     if (state.template === 'tasbih') {
-      byId('renderHint').textContent = state.tasbihStyle === 'flow'
-        ? 'Tasbih: Aliran Kosmis & Snap · fisika snap, reticle, rumbai inersia & orbit planet aktif'
-        : 'Tasbih: Untaian Melingkar 3D · perspektif 3D, nafas, dan pendaran aura aktif';
+      byId('renderHint').textContent = state.tasbihStyle === 'olive_spine'
+        ? 'Tasbih: Olive Wood Vertikal · kayu zaitun alami, imam minaret & tipografi editorial'
+        : state.tasbihStyle === 'flow'
+          ? 'Tasbih: Aliran Kosmis & Snap · fisika snap, reticle, rumbai inersia & orbit planet aktif'
+          : 'Tasbih: Untaian Melingkar 3D · perspektif 3D, nafas, dan pendaran aura aktif';
     } else {
       byId('renderHint').textContent = state.animation === 'none'
         ? 'Animasi dinonaktifkan'
@@ -951,7 +953,395 @@
     }
     ctx.restore();
   }
+
+  function drawPhotorealisticOliveBead(bx, by, r, knotAngle) {
+    ctx.save();
+    // Drop shadow behind bead
+    ctx.beginPath();
+    ctx.arc(bx, by, r, 0, Math.PI * 2);
+    ctx.shadowColor = 'rgba(0, 0, 0, 0.88)';
+    ctx.shadowBlur = r * 0.45;
+    ctx.shadowOffsetY = r * 0.16;
+    ctx.fillStyle = '#1c0c04';
+    ctx.fill();
+    ctx.shadowBlur = 0;
+    ctx.shadowOffsetY = 0;
+
+    // Clip to sphere
+    ctx.beginPath();
+    ctx.arc(bx, by, r, 0, Math.PI * 2);
+    ctx.clip();
+
+    // 1. Base 3D wood sphere lighting (Light source top-right at 45 deg)
+    const lightX = bx + r * 0.32;
+    const lightY = by - r * 0.35;
+    const baseGrad = ctx.createRadialGradient(lightX, lightY, r * 0.05, bx, by, r * 1.05);
+    baseGrad.addColorStop(0, '#f2be72');    // Highlight golden wood center
+    baseGrad.addColorStop(0.28, '#d6964a'); // Honey amber timber
+    baseGrad.addColorStop(0.58, '#a26227'); // Rich olive heartwood
+    baseGrad.addColorStop(0.85, '#5c2d0e'); // Deep espresso wood edge
+    baseGrad.addColorStop(1.0, '#1c0b03');  // Ambient occlusion rim
+    ctx.fillStyle = baseGrad;
+    ctx.fillRect(bx - r, by - r, r * 2, r * 2);
+
+    // 2. Organic Olive Woodgrain Rings (Urat Kayu Zaitun Alami)
+    ctx.save();
+    ctx.translate(bx, by);
+    ctx.rotate(knotAngle || 0);
+    const grainCount = 14;
+    for (let g = 0; g < grainCount; g++) {
+      const gy = -r * 0.92 + (g / (grainCount - 1)) * (r * 1.84);
+      const waveFreq = 0.07 + (g % 3) * 0.03;
+      const waveAmp = r * (0.09 + (g % 4) * 0.04);
+      ctx.beginPath();
+      ctx.strokeStyle = (g % 2 === 0) ? '#220e03' : '#3d1a08';
+      ctx.globalAlpha = 0.42 + (g % 5) * 0.09;
+      ctx.lineWidth = Math.max(1.2, r * (0.035 + (g % 3) * 0.02));
+      ctx.moveTo(-r, gy);
+      for (let px = -r; px <= r; px += 4) {
+        const py = gy + Math.sin(px * waveFreq + g) * waveAmp + Math.cos(px * 0.04) * (waveAmp * 0.5);
+        ctx.lineTo(px, py);
+      }
+      ctx.stroke();
+    }
+    // Signature Olive Wood knot swirl
+    ctx.save();
+    ctx.globalAlpha = 0.52;
+    ctx.strokeStyle = '#1e0b02';
+    ctx.lineWidth = r * 0.04;
+    const knotX = r * 0.18;
+    const knotY = -r * 0.08;
+    for (let kr = r * 0.10; kr <= r * 0.38; kr += r * 0.07) {
+      ctx.beginPath();
+      ctx.ellipse(knotX, knotY, kr * 1.4, kr * 0.85, 0.4, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+    ctx.restore();
+    ctx.restore();
+
+    // 3. Tactile 3D Specular Lacquer Highlights (Pernis Mengkilap Mewah)
+    const specHotspot = ctx.createRadialGradient(lightX, lightY, 0, lightX, lightY, r * 0.40);
+    specHotspot.addColorStop(0, 'rgba(255, 252, 240, 0.78)');
+    specHotspot.addColorStop(0.35, 'rgba(255, 240, 205, 0.38)');
+    specHotspot.addColorStop(0.75, 'rgba(255, 220, 165, 0.08)');
+    specHotspot.addColorStop(1, 'rgba(255, 210, 140, 0)');
+    ctx.fillStyle = specHotspot;
+    ctx.fillRect(bx - r, by - r, r * 2, r * 2);
+
+    // Elongated glossy sheen ribbon on upper-right rim
+    ctx.save();
+    ctx.strokeStyle = 'rgba(255, 250, 235, 0.55)';
+    ctx.lineWidth = Math.max(1.5, r * 0.075);
+    ctx.beginPath();
+    ctx.arc(bx + r * 0.05, by - r * 0.05, r * 0.78, -Math.PI * 0.38, -Math.PI * 0.08);
+    ctx.stroke();
+    ctx.restore();
+
+    // Warm bounce rim light on bottom-left shadow
+    ctx.save();
+    ctx.strokeStyle = 'rgba(225, 175, 110, 0.28)';
+    ctx.lineWidth = Math.max(1, r * 0.065);
+    ctx.beginPath();
+    ctx.arc(bx, by, r * 0.91, Math.PI * 0.60, Math.PI * 0.95);
+    ctx.stroke();
+    ctx.restore();
+
+    // 4. Center Hole (lubang tembus tali)
+    ctx.fillStyle = '#100502';
+    ctx.beginPath();
+    ctx.ellipse(bx, by - r + r * 0.05, r * 0.15, r * 0.06, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.ellipse(bx, by + r - r * 0.05, r * 0.15, r * 0.06, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.restore(); // restore clip
+  }
+
+  function drawOliveWoodImam(ix, iy, iw, ih) {
+    ctx.save();
+    // Drop Shadow
+    ctx.shadowColor = 'rgba(0, 0, 0, 0.88)';
+    ctx.shadowBlur = iw * 0.45;
+    ctx.shadowOffsetY = iw * 0.18;
+
+    // Classical Turned Olive Wood Minaret Contour
+    ctx.beginPath();
+    // 1. Top Finial Collar Sphere
+    const finialR = iw * 0.22;
+    ctx.arc(ix, iy - ih * 0.44, finialR, 0, Math.PI * 2);
+
+    // 2. Slender Neck to Flared Conical Bell Body
+    ctx.moveTo(ix - iw * 0.16, iy - ih * 0.38);
+    ctx.bezierCurveTo(
+      ix - iw * 0.18, iy - ih * 0.10,
+      ix - iw * 0.38, iy + ih * 0.12,
+      ix - iw * 0.45, iy + ih * 0.24
+    );
+    // Base stepped ring
+    ctx.lineTo(ix + iw * 0.45, iy + ih * 0.24);
+    ctx.bezierCurveTo(
+      ix + iw * 0.38, iy + ih * 0.12,
+      ix + iw * 0.18, iy - ih * 0.10,
+      ix + iw * 0.16, iy - ih * 0.38
+    );
+    ctx.closePath();
+
+    // 3. Lower Ring Groove & Rounded Teardrop Bulb
+    ctx.rect(ix - iw * 0.42, iy + ih * 0.24, iw * 0.84, ih * 0.07);
+    ctx.arc(ix, iy + ih * 0.38, iw * 0.34, 0, Math.PI * 2);
+
+    // Clip to shape for realistic olive woodgrain
+    ctx.save();
+    ctx.clip();
+
+    // Base 3D wood sphere & cylinder lighting
+    const baseGrad = ctx.createLinearGradient(ix - iw * 0.5, iy, ix + iw * 0.5, iy);
+    baseGrad.addColorStop(0, '#1c0a03');
+    baseGrad.addColorStop(0.20, '#663612');
+    baseGrad.addColorStop(0.55, '#c8873d');
+    baseGrad.addColorStop(0.82, '#f2bf74');
+    baseGrad.addColorStop(1.0, '#381806');
+    ctx.fillStyle = baseGrad;
+    ctx.fillRect(ix - iw, iy - ih, iw * 2, ih * 2);
+
+    // Organic wavy woodgrain rings flowing down the turned minaret
+    ctx.save();
+    for (let g = 0; g < 18; g++) {
+      const xRatio = -0.42 + (g / 17) * 0.84;
+      ctx.beginPath();
+      ctx.strokeStyle = (g % 2 === 0) ? '#240e04' : '#3d1b09';
+      ctx.globalAlpha = 0.38 + (g % 4) * 0.12;
+      ctx.lineWidth = Math.max(1.2, iw * (0.038 + (g % 3) * 0.02));
+
+      ctx.moveTo(ix + iw * xRatio * 0.32, iy - ih * 0.45);
+      for (let py = -ih * 0.45; py <= ih * 0.48; py += 6) {
+        const pNorm = (py + ih * 0.45) / (ih * 0.93);
+        const flare = 0.32 + Math.pow(pNorm, 1.8) * 0.65;
+        const wave = Math.sin(py * 0.08 + g * 1.2) * (iw * 0.05);
+        ctx.lineTo(ix + (iw * xRatio * flare) + wave, iy + py);
+      }
+      ctx.stroke();
+    }
+    ctx.restore();
+
+    // Glossy specular highlight streak along the right side of the minaret
+    ctx.save();
+    const specGrad = ctx.createLinearGradient(ix, iy, ix + iw * 0.5, iy);
+    specGrad.addColorStop(0, 'rgba(255, 252, 240, 0)');
+    specGrad.addColorStop(0.65, 'rgba(255, 250, 235, 0.68)');
+    specGrad.addColorStop(1, 'rgba(255, 230, 180, 0)');
+    ctx.fillStyle = specGrad;
+    ctx.fillRect(ix, iy - ih * 0.45, iw * 0.5, ih * 0.9);
+
+    // Highlight sheen ribbon
+    ctx.strokeStyle = 'rgba(255, 252, 242, 0.55)';
+    ctx.lineWidth = Math.max(1.8, iw * 0.06);
+    ctx.beginPath();
+    ctx.moveTo(ix + iw * 0.16, iy - ih * 0.32);
+    ctx.bezierCurveTo(
+      ix + iw * 0.19, iy - ih * 0.08,
+      ix + iw * 0.30, iy + ih * 0.10,
+      ix + iw * 0.34, iy + ih * 0.22
+    );
+    ctx.stroke();
+    ctx.restore();
+
+    ctx.restore(); // restore clip
+    ctx.restore(); // restore shadow
+  }
+
+  function drawTasbihOliveSpineScene(t, item) {
+    const w = canvas.width, h = canvas.height, cx = w / 2, cy = h / 2, u = Math.min(w, h);
+    const now = performance.now();
+    const isPortrait = h > w;
+    const isLandscape = w > h * 1.25;
+
+    // 1. Deep cinematic pitch-black background
+    ctx.fillStyle = '#050505';
+    ctx.fillRect(0, 0, w, h);
+
+    // Dynamic placement
+    const cordX = isPortrait ? w * 0.70 : (isLandscape ? w * 0.74 : w * 0.68);
+    const beadR = isPortrait ? u * 0.084 : u * 0.072;
+    const imamW = beadR * 1.38;
+    const imamH = beadR * 2.95;
+    const imamY = isPortrait ? h * 0.65 : h * 0.62;
+
+    // Subtle studio vignette glow around the beads
+    const vig = ctx.createRadialGradient(cordX, h * 0.55, 0, cordX, h * 0.55, u * 0.90);
+    vig.addColorStop(0, 'rgba(46, 28, 12, 0.14)');
+    vig.addColorStop(1, 'rgba(0, 0, 0, 0)');
+    ctx.fillStyle = vig;
+    ctx.fillRect(0, 0, w, h);
+
+    // 2. Vertical Braided Cord (Tali Kepang Sutra Emas)
+    ctx.save();
+    const cordW = Math.max(3.5, u * 0.0075);
+    // Base shadow
+    ctx.strokeStyle = '#000000';
+    ctx.lineWidth = cordW + 2.5;
+    ctx.beginPath();
+    ctx.moveTo(cordX, 0);
+    ctx.lineTo(cordX, h);
+    ctx.stroke();
+
+    // Braided rope stitches
+    const stitchH = cordW * 1.7;
+    for (let sy = 0; sy < h; sy += stitchH) {
+      const isAlt = (Math.floor(sy / stitchH) % 2 === 0);
+      ctx.strokeStyle = isAlt ? '#d4a259' : '#7d5225';
+      ctx.lineWidth = cordW;
+      ctx.beginPath();
+      ctx.moveTo(cordX - cordW * 0.35, sy);
+      ctx.lineTo(cordX + cordW * 0.35, sy + stitchH);
+      ctx.stroke();
+
+      // Highlight silk thread
+      ctx.strokeStyle = 'rgba(255, 235, 185, 0.45)';
+      ctx.lineWidth = cordW * 0.25;
+      ctx.beginPath();
+      ctx.moveTo(cordX, sy + stitchH * 0.2);
+      ctx.lineTo(cordX + cordW * 0.25, sy + stitchH * 0.65);
+      ctx.stroke();
+    }
+    ctx.restore();
+
+    // 3. Dynamic Bead Sliding Motion (Ease-out bounce snap on count change)
+    let slideY = 0;
+    if (state.tasbihTransitionStart) {
+      const p = clamp((now - state.tasbihTransitionStart) / 580, 0, 1);
+      if (p < 1) {
+        const ease = 1 - Math.pow(1 - p, 3) + Math.sin(p * Math.PI) * 0.05 * Math.exp(-3 * p);
+        slideY = (1 - ease) * (-beadR * 2.20);
+      } else {
+        state.tasbihTransitionStart = 0;
+      }
+    }
+
+    // Iconic visible bare cord gap above the Minaret Imam Head (~1.6 bead diameters)
+    const cordGap = beadR * 1.75;
+    const activeY = imamY - imamH * 0.5 - cordGap - beadR + slideY;
+
+    // 4. Draw Olive Wood Beads
+    // Beads above the bare cord gap:
+    // Active resting bead
+    drawPhotorealisticOliveBead(cordX, activeY, beadR, 0.45);
+    // Upper beads
+    drawPhotorealisticOliveBead(cordX, activeY - beadR * 2.14 + slideY * 0.8, beadR, 1.85);
+    drawPhotorealisticOliveBead(cordX, activeY - beadR * 4.28 + slideY * 0.6, beadR, 2.95);
+    drawPhotorealisticOliveBead(cordX, activeY - beadR * 6.42 + slideY * 0.4, beadR, 0.95);
+
+    // Carved Minaret Imam Head
+    drawOliveWoodImam(cordX, imamY, imamW, imamH);
+
+    // Beads below the imam head
+    drawPhotorealisticOliveBead(cordX, imamY + imamH * 0.5 + beadR * 1.15, beadR, 2.10);
+    drawPhotorealisticOliveBead(cordX, imamY + imamH * 0.5 + beadR * 3.35, beadR, 0.75);
+
+    // Floating +1 Pop-up
+    if (state.tasbihTransitionStart || (now - (state.tasbihTransitionStart || 0)) < 650) {
+      const fp = clamp((now - (state.tasbihTransitionStart || (now - 1000))) / 600, 0, 1);
+      if (fp < 1) {
+        const popY = activeY - beadR * 1.2 - fp * u * 0.045;
+        const popX = cordX - beadR * 1.35;
+        ctx.save();
+        ctx.globalAlpha = 1 - Math.pow(fp, 1.3);
+        ctx.fillStyle = '#f8e6b8';
+        ctx.font = '600 ' + Math.max(14, u * 0.024) + 'px "DM Sans", sans-serif';
+        ctx.fillText('+1', popX, popY);
+        ctx.restore();
+      }
+    }
+
+    // 5. Left Column Editorial Typography (Persis Foto Referensi)
+    const marginL = isPortrait ? w * 0.11 : w * 0.08;
+    const textMaxW = cordX - marginL - u * 0.06;
+
+    ctx.save();
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+
+    // Top Header Tagline
+    const headerY = h * 0.082;
+    ctx.fillStyle = '#8e7c65';
+    ctx.font = '500 ' + Math.max(10, u * 0.016) + 'px "DM Sans", sans-serif';
+    ctx.letterSpacing = '1.8px';
+    ctx.fillText('OLIVE WOOD · 99 BEADS  ⌄', marginL, headerY);
+    ctx.letterSpacing = '0px';
+
+    // Arabic Calligraphy
+    const arabicY = h * 0.35 + state.arabicVerticalOffset * (u * 0.0025);
+    let fontAr = u * 0.096 * (state.size / 100);
+    ctx.font = '700 ' + Math.max(36, fontAr) + 'px "Amiri", serif';
+    while (ctx.measureText(item[1]).width > textMaxW && fontAr > 22) {
+      fontAr *= 0.94;
+      ctx.font = '700 ' + fontAr + 'px "Amiri", serif';
+    }
+    ctx.shadowColor = 'rgba(235, 195, 115, 0.40)';
+    ctx.shadowBlur = u * 0.022;
+    ctx.fillStyle = '#ffffff';
+    ctx.fillText(item[1], marginL, arabicY);
+    ctx.shadowBlur = 0;
+
+    // Transliteration
+    const transY = arabicY + Math.max(30, u * 0.055 + state.arabicTextGap * (u * 0.001));
+    if (state.transliteration) {
+      ctx.fillStyle = '#c5af8a';
+      ctx.font = '600 ' + Math.max(11, u * 0.022) + 'px "DM Sans", sans-serif';
+      ctx.letterSpacing = '2.2px';
+      ctx.fillText(item[0].toUpperCase() + '  ⌄', marginL, transY);
+      ctx.letterSpacing = '0px';
+    }
+
+    // Giant Counter Number (Iconic centerpiece from reference!)
+    const countY = transY + Math.max(74, u * 0.170);
+    const countNum = String(state.index + 1);
+    ctx.fillStyle = '#e8d8b6';
+    ctx.font = '700 ' + Math.max(76, u * 0.215) + 'px "Playfair Display", "Georgia", "Amiri", serif';
+    ctx.fillText(countNum, marginL, countY);
+
+    // Meaning / Translation Subtitle
+    const meaningY = countY + Math.max(38, u * 0.078 + state.textMeaningGap * (u * 0.001));
+    if (state.translation) {
+      ctx.fillStyle = '#9b876f';
+      ctx.font = '600 ' + Math.max(9, u * 0.017) + 'px "DM Sans", sans-serif';
+      ctx.letterSpacing = '2.8px';
+      ctx.fillText(item[2].toUpperCase(), marginL, meaningY, textMaxW);
+      ctx.letterSpacing = '0px';
+    }
+
+    // Three Golden Diamonds
+    const diamondY = meaningY + Math.max(20, u * 0.038);
+    ctx.fillStyle = '#d4a257';
+    for (let d = 0; d < 3; d++) {
+      const dx = marginL + d * (u * 0.032);
+      const dSize = u * 0.0075;
+      ctx.save();
+      ctx.translate(dx, diamondY);
+      ctx.rotate(Math.PI / 4);
+      ctx.fillRect(-dSize / 2, -dSize / 2, dSize, dSize);
+      ctx.restore();
+    }
+
+    // Bottom Control Indicators
+    const botY1 = h * 0.88;
+    const botY2 = h * 0.93;
+    ctx.fillStyle = '#85725a';
+    ctx.font = '600 ' + Math.max(9, u * 0.015) + 'px "DM Sans", sans-serif';
+    ctx.letterSpacing = '1.8px';
+    ctx.fillText('◆  SOUND', marginL, botY1);
+    ctx.fillText('◆  HAPTICS      RESET', marginL, botY2);
+    ctx.letterSpacing = '0px';
+
+    ctx.restore();
+  }
+
   function drawTasbihTemplate(t, item) {
+    if (state.tasbihStyle === 'olive_spine') {
+      drawTasbihOliveSpineScene(t, item);
+      return;
+    }
     if (state.tasbihStyle === 'flow') {
       drawTasbihFlowScene(t, item);
       return;

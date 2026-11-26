@@ -1,12 +1,16 @@
 import { readFile } from 'node:fs/promises';
 import assert from 'node:assert/strict';
 
-const [app, html, names, styles] = await Promise.all([
+const [appRaw, htmlRaw, namesRaw, stylesRaw] = await Promise.all([
   readFile(new URL('../app.js', import.meta.url), 'utf8'),
   readFile(new URL('../index.html', import.meta.url), 'utf8'),
   readFile(new URL('../asmaul-husna.js', import.meta.url), 'utf8'),
   readFile(new URL('../styles.css', import.meta.url), 'utf8')
 ]);
+const app = appRaw.replace(/\r\n/g, '\n');
+const html = htmlRaw.replace(/\r\n/g, '\n');
+const names = namesRaw.replace(/\r\n/g, '\n');
+const styles = stylesRaw.replace(/\r\n/g, '\n');
 
 const htmlIds = [...html.matchAll(/\bid="([^"]+)"/g)].map(match => match[1]);
 const uniqueHtmlIds = new Set(htmlIds);
